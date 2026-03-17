@@ -45,16 +45,29 @@ export interface ExtractedBillData {
 }
 
 export interface InvoiceBinaryInput {
-  buffer: Buffer;
-  mimeType: string;
   fileName: string;
+  mimeType?: string;
+  buffer?: Buffer;
+  /**
+   * Texto ya extraído del PDF con pdf-parse / OCR / regex pipeline.
+   * Si existe y tiene suficiente contenido útil, se usa en lugar del PDF completo.
+   */
+  extractedText?: string;
 }
+
+const DEFAULT_MODEL =
+  process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash-lite";
+
+const ENABLE_TOKEN_DEBUG = process.env.GEMINI_DEBUG_TOKENS === "true";
+const MAX_TEXT_CHARS = Number(process.env.GEMINI_MAX_TEXT_CHARS || 14000);
 
 const extractionResponseSchema = {
   type: "object",
+  additionalProperties: false,
   properties: {
     customer: {
       type: "object",
+      additionalProperties: false,
       properties: {
         name: { type: "string", nullable: true },
         lastname1: { type: "string", nullable: true },
@@ -78,6 +91,7 @@ const extractionResponseSchema = {
     },
     location: {
       type: "object",
+      additionalProperties: false,
       properties: {
         address: { type: "string", nullable: true },
         street: { type: "string", nullable: true },
@@ -97,6 +111,7 @@ const extractionResponseSchema = {
     },
     invoice_data: {
       type: "object",
+      additionalProperties: false,
       properties: {
         type: {
           anyOf: [{ type: "string", enum: ["2TD", "3TD"] }, { type: "null" }],
@@ -105,6 +120,7 @@ const extractionResponseSchema = {
         averageMonthlyConsumptionKwh: { type: "number", nullable: true },
         periods: {
           type: "object",
+          additionalProperties: false,
           properties: {
             P1: { type: "number", nullable: true },
             P2: { type: "number", nullable: true },
@@ -125,6 +141,7 @@ const extractionResponseSchema = {
     },
     extraction: {
       type: "object",
+      additionalProperties: false,
       properties: {
         confidenceScore: { type: "number", nullable: true },
         missingFields: {
@@ -142,11 +159,11 @@ const extractionResponseSchema = {
   required: ["customer", "location", "invoice_data", "extraction"],
 } as const;
 
+const RELEVANT_INVOICE_LINE =
+  /(titular|cliente|raz[oó]n social|nombre|apellid|dni|nif|nie|cups|iban|correo|e-?mail|tel[eé]fono|m[oó]vil|direcci[oó]n|domicilio|municipio|poblaci[oó]n|provincia|c\.?\s*p\.?|c[oó]digo postal|postal|pa[ií]s|tarifa|peaje|2\.?0?\s*td|3\.?0?\s*td|2td|3td|consumo|kwh|periodo|p[1-6]\b|energ[ií]a|hist[oó]rico|suministro|factura|potencia)/i;
+
 function getAiClient() {
   const apiKey = process.env.GEMINI_API_KEY?.trim() || "";
-
-  console.log("GEMINI_API_KEY cargada:", Boolean(apiKey));
-  console.log("Longitud GEMINI_API_KEY:", apiKey.length);
 
   if (!apiKey) {
     throw new Error("Falta GEMINI_API_KEY en el archivo .env");
@@ -179,9 +196,19 @@ function safeNumber(value: unknown): number | null {
 
 function safeString(value: unknown): string | null {
   if (typeof value !== "string") return null;
-
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeBillType(value: unknown): BillType {
+  if (typeof value !== "string") return null;
+
+  const normalized = value.replace(/\s+/g, "").toUpperCase();
+
+  if (normalized === "2TD" || normalized === "2.0TD") return "2TD";
+  if (normalized === "3TD" || normalized === "3.0TD") return "3TD";
+
+  return null;
 }
 
 function extractResponseText(response: unknown): string {
@@ -202,6 +229,58 @@ function extractResponseText(response: unknown): string {
   return "";
 }
 
+function compactInvoiceText(rawText?: string): string {
+  if (!rawText) return "";
+
+  const lines = rawText
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+
+  if (!lines.length) return "";
+
+  const selected = new Set<number>();
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (RELEVANT_INVOICE_LINE.test(line)) {
+      if (i - 1 >= 0) selected.add(i - 1);
+      selected.add(i);
+      if (i + 1 < lines.length) selected.add(i + 1);
+    }
+  }
+
+  const compacted = (
+    selected.size > 0
+      ? [...selected]
+          .sort((a, b) => a - b)
+          .map((i) => lines[i])
+          .join("\n")
+      : lines.join("\n")
+  ).slice(0, MAX_TEXT_CHARS);
+
+  return compacted;
+}
+
+function buildPrompt(fileName: string, sourceMode: "text" | "pdf"): string {
+  return [
+    "Extrae datos de una factura eléctrica española.",
+    "Devuelve solo JSON válido ajustado al schema.",
+    "No inventes datos: usa null si no aparece con claridad.",
+    "customer.name debe ser un nombre real de persona o empresa, nunca una etiqueta.",
+    "Separa apellidos solo si se distinguen claramente.",
+    "invoice_data.type solo puede ser 2TD, 3TD o null.",
+    "Si es 2TD, P4, P5 y P6 deben ser null.",
+    "warnings solo para ambigüedades reales.",
+    sourceMode === "text"
+      ? "La entrada es texto extraído del PDF; ignora ruido obvio de OCR."
+      : "La entrada es el PDF original.",
+    `Archivo: ${fileName}`,
+  ].join("\n");
+}
+
 function listMissingFields(data: ExtractedBillData): string[] {
   const missing: string[] = [];
 
@@ -218,23 +297,23 @@ function listMissingFields(data: ExtractedBillData): string[] {
   if (!data.location.province) missing.push("location.province");
 
   if (!data.invoice_data.type) missing.push("invoice_data.type");
-  if (!data.invoice_data.consumptionKwh) {
+  if (data.invoice_data.consumptionKwh == null) {
     missing.push("invoice_data.consumptionKwh");
   }
-  if (!data.invoice_data.averageMonthlyConsumptionKwh) {
+  if (data.invoice_data.averageMonthlyConsumptionKwh == null) {
     missing.push("invoice_data.averageMonthlyConsumptionKwh");
   }
 
   const { P1, P2, P3, P4, P5, P6 } = data.invoice_data.periods;
 
-  if (!P1) missing.push("invoice_data.periods.P1");
-  if (!P2) missing.push("invoice_data.periods.P2");
-  if (!P3) missing.push("invoice_data.periods.P3");
+  if (P1 == null) missing.push("invoice_data.periods.P1");
+  if (P2 == null) missing.push("invoice_data.periods.P2");
+  if (P3 == null) missing.push("invoice_data.periods.P3");
 
   if (data.invoice_data.type === "3TD") {
-    if (!P4) missing.push("invoice_data.periods.P4");
-    if (!P5) missing.push("invoice_data.periods.P5");
-    if (!P6) missing.push("invoice_data.periods.P6");
+    if (P4 == null) missing.push("invoice_data.periods.P4");
+    if (P5 == null) missing.push("invoice_data.periods.P5");
+    if (P6 == null) missing.push("invoice_data.periods.P6");
   }
 
   return missing;
@@ -261,10 +340,7 @@ function normalizeExtraction(data: any): ExtractedBillData {
       country: safeString(data?.location?.country) ?? "España",
     },
     invoice_data: {
-      type:
-        data?.invoice_data?.type === "2TD" || data?.invoice_data?.type === "3TD"
-          ? data.invoice_data.type
-          : null,
+      type: normalizeBillType(data?.invoice_data?.type),
       consumptionKwh: safeNumber(data?.invoice_data?.consumptionKwh),
       averageMonthlyConsumptionKwh: safeNumber(
         data?.invoice_data?.averageMonthlyConsumptionKwh,
@@ -299,113 +375,140 @@ function normalizeExtraction(data: any): ExtractedBillData {
   return normalized;
 }
 
-function buildPrompt(fileName: string): string {
-  return `
-Eres un sistema experto en extracción de datos de facturas eléctricas españolas.
+function buildContents(input: InvoiceBinaryInput): {
+  contents: Array<{
+    role: "user";
+    parts: Array<Record<string, unknown>>;
+  }>;
+  sourceMode: "text" | "pdf";
+} {
+  const compactedText = compactInvoiceText(input.extractedText);
 
-Debes analizar el documento adjunto y devolver EXCLUSIVAMENTE un JSON válido.
-No expliques nada.
-No uses markdown.
-No inventes datos.
-Si un dato no aparece claramente, usa null.
-
-MUY IMPORTANTE:
-- No confundas etiquetas con valores.
-- Nunca devuelvas como nombre palabras como: "Potencia", "Titular", "Cliente", "Dirección", "CUPS", "IBAN", "Consumo".
-- Solo devuelve un nombre real de persona o empresa si está claramente identificado.
-- Si no puedes distinguir correctamente el valor, usa null.
-- Separa los apellidos en lastname1 y lastname2 si es posible.
-- Si solo ves un apellido claro, usa lastname1 y deja lastname2 en null.
-- Si la factura pertenece a una empresa y no hay persona identificable, usa customer.name con el nombre comercial y deja apellidos en null.
-- La dirección debe ser el valor real completo, no el label del campo.
-- El CUPS debe ser un código real.
-- El IBAN debe ser un valor real, no una etiqueta.
-- El consumo mensual medio debe estimarse a partir de gráficos o históricos si existen.
-- Si no se puede calcular el promedio mensual, usa el consumo visible de la factura como referencia.
-- Si la tarifa es 2TD, rellena P1, P2 y P3; deja P4, P5 y P6 en null.
-- Si la tarifa es 3TD, intenta rellenar P1 a P6.
-- Devuelve warnings solo para ambigüedades reales.
-
-Devuelve exactamente esta estructura:
-
-{
-  "customer": {
-    "name": null,
-    "lastname1": null,
-    "lastname2": null,
-    "dni": null,
-    "cups": null,
-    "iban": null,
-    "email": null,
-    "phone": null
-  },
-  "location": {
-    "address": null,
-    "street": null,
-    "postalCode": null,
-    "city": null,
-    "province": null,
-    "country": "España"
-  },
-  "invoice_data": {
-    "type": null,
-    "consumptionKwh": null,
-    "averageMonthlyConsumptionKwh": null,
-    "periods": {
-      "P1": null,
-      "P2": null,
-      "P3": null,
-      "P4": null,
-      "P5": null,
-      "P6": null
-    }
-  },
-  "extraction": {
-    "confidenceScore": null,
-    "missingFields": [],
-    "warnings": []
+  if (compactedText.length >= 200) {
+    return {
+      sourceMode: "text",
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: buildPrompt(input.fileName, "text") },
+            {
+              text: `TEXTO_FACTURA:\n${compactedText}`,
+            },
+          ],
+        },
+      ],
+    };
   }
+
+  if (input.buffer?.length && input.mimeType) {
+    return {
+      sourceMode: "pdf",
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: buildPrompt(input.fileName, "pdf") },
+            {
+              inlineData: {
+                mimeType: input.mimeType,
+                data: bufferToBase64(input.buffer),
+              },
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  throw new Error(
+    "No se ha recibido ni texto extraído útil ni contenido binario válido de la factura",
+  );
 }
 
-El nombre del archivo es: ${fileName}
-`.trim();
+function buildConfig(model: string) {
+  const config: Record<string, unknown> = {
+    responseMimeType: "application/json",
+    responseSchema: extractionResponseSchema,
+    temperature: 0,
+    candidateCount: 1,
+    maxOutputTokens: 1024,
+  };
+
+  if (model.startsWith("gemini-2.5")) {
+    config.thinkingConfig = { thinkingBudget: 0 };
+  }
+
+  return config;
 }
 
 export async function extractDataFromBill(
   input: InvoiceBinaryInput,
 ): Promise<ExtractedBillData> {
-  const { buffer, mimeType, fileName } = input;
+  const ai = getAiClient();
+  const model = DEFAULT_MODEL;
+  const { contents, sourceMode } = buildContents(input);
+  const config = buildConfig(model);
 
-  if (!buffer || !buffer.length) {
-    throw new Error("No se ha recibido contenido de archivo válido");
+  if (ENABLE_TOKEN_DEBUG) {
+    try {
+      const estimated = await ai.models.countTokens({
+        model,
+        contents,
+      });
+
+      console.info("[Gemini][countTokens]", {
+        model,
+        fileName: input.fileName,
+        sourceMode,
+        estimatedPromptTokens: estimated.totalTokens ?? null,
+        cachedContentTokenCount: estimated.cachedContentTokenCount ?? 0,
+      });
+    } catch (error: any) {
+      const raw = error?.message || error?.toString?.() || "";
+
+      console.error("Error en extracción de factura con IA:", raw);
+
+      if (isQuotaError(error) || raw.includes('"code":429')) {
+        throw new Error(
+          "La extracción automática no está disponible ahora mismo porque la cuota del modelo Gemini actual está agotada o no permitida. Cambia a gemini-2.5-flash-lite o revisa la facturación/cuotas del proyecto en Google AI Studio.",
+        );
+      }
+
+      throw new Error(
+        "No se pudo completar la extracción automática de la factura.",
+      );
+    }
   }
 
-  const ai = getAiClient();
-
   const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash",
-    contents: [
-      {
-        role: "user",
-        parts: [
-          { text: buildPrompt(fileName) },
-          {
-            inlineData: {
-              mimeType,
-              data: bufferToBase64(buffer),
-            },
-          },
-        ],
-      },
-    ],
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: extractionResponseSchema as any,
-      temperature: 0.05,
-      candidateCount: 1,
-      maxOutputTokens: 4096,
-    },
+    model,
+    contents,
+    config,
   });
+
+  const usage = (response as any)?.usageMetadata;
+  const finishReason = (response as any)?.candidates?.[0]?.finishReason ?? null;
+
+  console.info("[Gemini][usageMetadata]", {
+    model,
+    fileName: input.fileName,
+    sourceMode,
+    finishReason,
+    promptTokenCount: usage?.promptTokenCount ?? null,
+    candidatesTokenCount: usage?.candidatesTokenCount ?? null,
+    thoughtsTokenCount: usage?.thoughtsTokenCount ?? 0,
+    totalTokenCount: usage?.totalTokenCount ?? null,
+  });
+
+  function isQuotaError(error: any): boolean {
+    return (
+      error?.status === 429 ||
+      error?.error?.code === 429 ||
+      String(error?.message || "").includes("RESOURCE_EXHAUSTED") ||
+      String(error?.message || "").includes("quota")
+    );
+  }
 
   const rawText = extractResponseText(response);
 
