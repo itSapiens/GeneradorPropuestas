@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Layout from "./components/shared/Layout";
 import FileUploader from "./components/shared/FileUploader";
 import Button from "./components/ui/Button";
@@ -10,7 +10,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { BillDataSchema, type BillData } from "./lib/validators";
 import { motion, AnimatePresence } from "motion/react";
 import { extractBillFromApi } from "./services/extractionApiService";
-import type { ExtractedBillData, BillType } from "./services/geminiService";
+import type { ExtractedBillData } from "./services/geminiService";
+import { z } from "zod";
 import {
   Check,
   MapPin,
@@ -30,7 +31,10 @@ import {
 } from "lucide-react";
 import { sileo } from "sileo";
 import axios from "axios";
-import { calculateEnergyStudy, type CalculationResult } from "./modules/calculation/energyService";
+import {
+  calculateEnergyStudy,
+  type CalculationResult,
+} from "./modules/calculation/energyService";
 import { formatCurrency, formatNumber, cn } from "./lib/utils";
 import { generateStudyPDF } from "./modules/pdf/pdfService";
 import { sendStudyByEmail } from "./modules/email/emailService";
@@ -57,7 +61,85 @@ interface ApiInstallation {
   distance_meters?: number;
 }
 
-function buildLastName(lastname1: string | null, lastname2: string | null): string {
+const BILL_TYPES = ["2TD", "3TD"] as const;
+type ValidationBillType = (typeof BILL_TYPES)[number];
+
+const isBillType = (value: unknown): value is ValidationBillType => {
+  return value === "2TD" || value === "3TD";
+};
+
+const parseFormNumber = (value: unknown): number | undefined => {
+  if (value === "" || value === null || value === undefined) return undefined;
+
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : Number.NaN;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.replace(",", ".").trim();
+    if (!normalized) return undefined;
+
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : Number.NaN;
+  }
+
+  return Number.NaN;
+};
+
+const requiredNumberField = z.preprocess(
+  (value) => parseFormNumber(value),
+  z
+    .number({
+      error: (issue) =>
+        issue.input === undefined
+          ? "Este campo es obligatorio"
+          : "Debe ser un número válido",
+    })
+    .min(0, { error: "Debe ser un número válido" })
+);
+
+const optionalNumberField = z.preprocess(
+  (value) => parseFormNumber(value),
+  z
+    .number({
+      error: "Debe ser un número válido",
+    })
+    .min(0, { error: "Debe ser un número válido" })
+    .optional()
+);
+
+const ValidationBillDataSchema = BillDataSchema.extend({
+  monthlyConsumption: requiredNumberField,
+  billType: z.enum(BILL_TYPES, {
+    error: "Selecciona el tipo de factura",
+  }),
+  currentInvoiceConsumptionKwh: requiredNumberField,
+  averageMonthlyConsumptionKwh: requiredNumberField,
+
+  periodConsumptionP1: optionalNumberField,
+  periodConsumptionP2: optionalNumberField,
+  periodConsumptionP3: optionalNumberField,
+  periodConsumptionP4: optionalNumberField,
+  periodConsumptionP5: optionalNumberField,
+  periodConsumptionP6: optionalNumberField,
+
+  periodPriceP1: optionalNumberField,
+  periodPriceP2: optionalNumberField,
+  periodPriceP3: optionalNumberField,
+  periodPriceP4: optionalNumberField,
+  periodPriceP5: optionalNumberField,
+  periodPriceP6: optionalNumberField,
+});
+
+type ValidationBillDataFormInput = z.input<typeof ValidationBillDataSchema>;
+type ValidationBillData = z.output<typeof ValidationBillDataSchema>;
+
+const PERIODS = ["P1", "P2", "P3", "P4", "P5", "P6"] as const;
+
+function buildLastName(
+  lastname1: string | null | undefined,
+  lastname2: string | null | undefined
+): string {
   return [lastname1, lastname2].filter(Boolean).join(" ").trim();
 }
 
@@ -71,8 +153,16 @@ function displayPercentage(value: number | null | undefined): number {
   return Math.round(normalized * 100);
 }
 
-function mapExtractedToBillData(data: ExtractedBillData): Partial<BillData> {
-  const fullLastName = buildLastName(data.customer.lastname1, data.customer.lastname2);
+function mapExtractedToBillData(
+  data: ExtractedBillData
+): Partial<ValidationBillData> {
+  const fullLastName = buildLastName(
+    data.customer.lastname1,
+    data.customer.lastname2
+  );
+
+  const rawBillType = data.invoice_data.type;
+  const safeBillType = isBillType(rawBillType) ? rawBillType : undefined;
 
   return {
     name: data.customer.name ?? "",
@@ -82,43 +172,181 @@ function mapExtractedToBillData(data: ExtractedBillData): Partial<BillData> {
     address: data.location.address ?? "",
     email: data.customer.email ?? "",
     phone: data.customer.phone ?? "",
+    iban: data.customer.iban ?? "",
+    billType: safeBillType,
+
     monthlyConsumption:
       data.invoice_data.averageMonthlyConsumptionKwh ??
+      data.invoice_data.currentInvoiceConsumptionKwh ??
       data.invoice_data.consumptionKwh ??
       undefined,
-    billType: (data.invoice_data.type as BillType) ?? undefined,
-    iban: data.customer.iban ?? "",
-  } as Partial<BillData>;
+
+    currentInvoiceConsumptionKwh:
+      data.invoice_data.currentInvoiceConsumptionKwh ??
+      data.invoice_data.consumptionKwh ??
+      undefined,
+
+    averageMonthlyConsumptionKwh:
+      data.invoice_data.averageMonthlyConsumptionKwh ?? undefined,
+
+    periodConsumptionP1: data.invoice_data.periods?.P1 ?? undefined,
+    periodConsumptionP2: data.invoice_data.periods?.P2 ?? undefined,
+    periodConsumptionP3: data.invoice_data.periods?.P3 ?? undefined,
+    periodConsumptionP4: data.invoice_data.periods?.P4 ?? undefined,
+    periodConsumptionP5: data.invoice_data.periods?.P5 ?? undefined,
+    periodConsumptionP6: data.invoice_data.periods?.P6 ?? undefined,
+
+    periodPriceP1: data.invoice_data.periodPricesEurPerKwh?.P1 ?? undefined,
+    periodPriceP2: data.invoice_data.periodPricesEurPerKwh?.P2 ?? undefined,
+    periodPriceP3: data.invoice_data.periodPricesEurPerKwh?.P3 ?? undefined,
+    periodPriceP4: data.invoice_data.periodPricesEurPerKwh?.P4 ?? undefined,
+    periodPriceP5: data.invoice_data.periodPricesEurPerKwh?.P5 ?? undefined,
+    periodPriceP6: data.invoice_data.periodPricesEurPerKwh?.P6 ?? undefined,
+  };
+}
+
+function toBaseBillData(data: Partial<ValidationBillData>): BillData {
+  return {
+    name: data.name ?? "",
+    lastName: data.lastName ?? "",
+    dni: data.dni ?? "",
+    cups: data.cups ?? "",
+    address: data.address ?? "",
+    email: data.email ?? "",
+    phone: data.phone ?? "",
+    monthlyConsumption:
+      data.averageMonthlyConsumptionKwh ?? data.monthlyConsumption ?? 0,
+    billType: (data.billType ?? "2TD") as BillData["billType"],
+    iban: data.iban ?? "",
+  };
+}
+
+function showExtractionToasts(extraction: ExtractedBillData) {
+  let delay = 0;
+
+  const queueInfo = (title: string, description?: string) => {
+    window.setTimeout(() => {
+      sileo.info({ title, description });
+    }, delay);
+    delay += 220;
+  };
+
+  const queueError = (title: string, description?: string) => {
+    window.setTimeout(() => {
+      sileo.error({ title, description });
+    }, delay);
+    delay += 220;
+  };
+
+  if (extraction.extraction.fallbackUsed) {
+    queueInfo(
+      "Extracción completada con apoyo del fallback",
+      "Revisa los datos detectados antes de continuar."
+    );
+  }
+
+  if (extraction.customer.ibanNeedsCompletion) {
+    queueInfo(
+      "Revisión del IBAN",
+      "La factura oculta parte del IBAN con asteriscos. El cliente debe completar manualmente los dígitos faltantes."
+    );
+  }
+
+  extraction.extraction.warnings.slice(0, 4).forEach((warning, index) => {
+    queueInfo(`Aviso ${index + 1}`, warning);
+  });
+
+  if (extraction.extraction.manualReviewFields?.length) {
+    const fields = extraction.extraction.manualReviewFields
+      .slice(0, 4)
+      .join(", ");
+
+    queueError(
+      "Campos que requieren revisión",
+      `Comprueba manualmente estos campos: ${fields}`
+    );
+  }
+
+  if (extraction.extraction.missingFields?.length) {
+    queueInfo(
+      "Campos incompletos",
+      `Hay ${extraction.extraction.missingFields.length} campos que pueden necesitar revisión manual.`
+    );
+  }
+}
+
+function FormSection({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-5">
+      <div>
+        <h3 className="text-lg font-bold text-brand-navy">{title}</h3>
+        {subtitle ? (
+          <p className="text-sm text-brand-gray mt-1">{subtitle}</p>
+        ) : null}
+      </div>
+      {children}
+    </div>
+  );
 }
 
 export default function App() {
   const [view, setView] = useState<"public" | "admin">("public");
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [currentStep, setCurrentStep] = useState<Step>("upload");
-  const [isExtracting, setIsExtracting] = useState(false);
-  const [extractedData, setExtractedData] = useState<Partial<BillData> | null>(null);
-  const [rawExtraction, setRawExtraction] = useState<ExtractedBillData | null>(null);
-  const [calculationResult, setCalculationResult] = useState<CalculationResult | null>(null);
+  const [extractedData, setExtractedData] = useState<
+    Partial<ValidationBillData> | null
+  >(null);
+  const [rawExtraction, setRawExtraction] = useState<ExtractedBillData | null>(
+    null
+  );
+  const [calculationResult, setCalculationResult] =
+    useState<CalculationResult | null>(null);
   const [installations, setInstallations] = useState<ApiInstallation[]>([]);
-  const [selectedInstallation, setSelectedInstallation] = useState<ApiInstallation | null>(null);
+  const [selectedInstallation, setSelectedInstallation] =
+    useState<ApiInstallation | null>(null);
   const [isLoadingInstallations, setIsLoadingInstallations] = useState(false);
 
   const {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
-  } = useForm<BillData>({
-    resolver: zodResolver(BillDataSchema),
+  } = useForm<ValidationBillDataFormInput, unknown, ValidationBillData>({
+    resolver: zodResolver(ValidationBillDataSchema),
   });
+
+  const watchedBillType = watch("billType");
+  const watchedAverageMonthlyConsumption = watch(
+    "averageMonthlyConsumptionKwh"
+  );
+
+  useEffect(() => {
+    const parsed = parseFormNumber(watchedAverageMonthlyConsumption);
+    if (typeof parsed === "number" && Number.isFinite(parsed)) {
+      setValue("monthlyConsumption", parsed, {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
+    }
+  }, [watchedAverageMonthlyConsumption, setValue]);
 
   const handleDownloadPDF = async () => {
     if (!calculationResult || !extractedData) return;
 
     sileo.promise(
       (async () => {
-        const doc = generateStudyPDF(extractedData as BillData, calculationResult);
-        doc.save(`Estudio_Solar_${extractedData.name || "cliente"}.pdf`);
+        const billData = toBaseBillData(extractedData);
+        const doc = generateStudyPDF(billData, calculationResult);
+        doc.save(`Estudio_Solar_${billData.name || "cliente"}.pdf`);
       })(),
       {
         loading: { title: "Generando tu estudio en PDF..." },
@@ -152,62 +380,104 @@ export default function App() {
   };
 
   const handleFileSelect = async (file: File) => {
-    setIsExtracting(true);
+    sileo.promise(
+      (async () => {
+        const extraction = await extractBillFromApi(file);
+        const mappedData = mapExtractedToBillData(extraction);
 
-    sileo
-      .promise(
-        (async () => {
-          const extraction = await extractBillFromApi(file);
-          const mappedData = mapExtractedToBillData(extraction);
+        setRawExtraction(extraction);
+        setExtractedData(mappedData);
 
-          setRawExtraction(extraction);
-          setExtractedData(mappedData);
+        if (mappedData.name) setValue("name", mappedData.name);
+        if (mappedData.lastName) setValue("lastName", mappedData.lastName);
+        if (mappedData.dni) setValue("dni", mappedData.dni);
+        if (mappedData.cups) setValue("cups", mappedData.cups);
+        if (mappedData.address) setValue("address", mappedData.address);
+        if (mappedData.email) setValue("email", mappedData.email);
+        if (mappedData.phone) setValue("phone", mappedData.phone);
+        if (mappedData.iban) setValue("iban", mappedData.iban);
 
-          if (mappedData.name) setValue("name", mappedData.name as string);
-          if (mappedData.lastName) setValue("lastName", mappedData.lastName as string);
-          if (mappedData.dni) setValue("dni", mappedData.dni as string);
-          if (mappedData.cups) setValue("cups", mappedData.cups as string);
-          // if (mappedData.cups) setValue("cups", mappedData.cups as string);
-          if (mappedData.address) setValue("address", mappedData.address as string);
-          if (mappedData.email) setValue("email", mappedData.email as string);
-          if (mappedData.phone) setValue("phone", mappedData.phone as string);
-          if (mappedData.cups) setValue("cups", mappedData.cups as string);
-          if (mappedData.iban) setValue("iban", mappedData.iban as string);
-
-          if (typeof mappedData.monthlyConsumption === "number") {
-            setValue("monthlyConsumption", mappedData.monthlyConsumption as number);
-          }
-          if (mappedData.billType) {
-            setValue("billType", mappedData.billType as BillData["billType"]);
-          }
-          if (mappedData.iban) {
-            setValue("iban" as keyof BillData, mappedData.iban as BillData[keyof BillData]);
-          }
-
-          setCurrentStep("validation");
-
-          if (extraction.extraction.fallbackUsed) {
-            sileo.info({
-              title: "Extracción completada con apoyo del fallback",
-              description: "Revisa los datos detectados antes de continuar.",
-            });
-          }
-
-          return extraction;
-        })(),
-        {
-          loading: { title: "Procesando factura..." },
-          success: { title: "Factura procesada con éxito" },
-          error: { title: "No se pudo extraer la información de la factura" },
+        if (typeof mappedData.monthlyConsumption === "number") {
+          setValue("monthlyConsumption", mappedData.monthlyConsumption);
         }
-      )
-      .finally(() => {
-        setIsExtracting(false);
-      });
+
+        if (mappedData.billType) {
+          setValue("billType", mappedData.billType);
+        }
+
+        if (typeof mappedData.currentInvoiceConsumptionKwh === "number") {
+          setValue(
+            "currentInvoiceConsumptionKwh",
+            mappedData.currentInvoiceConsumptionKwh
+          );
+        }
+
+        if (typeof mappedData.averageMonthlyConsumptionKwh === "number") {
+          setValue(
+            "averageMonthlyConsumptionKwh",
+            mappedData.averageMonthlyConsumptionKwh
+          );
+        }
+
+        if (typeof mappedData.periodConsumptionP1 === "number") {
+          setValue("periodConsumptionP1", mappedData.periodConsumptionP1);
+        }
+        if (typeof mappedData.periodConsumptionP2 === "number") {
+          setValue("periodConsumptionP2", mappedData.periodConsumptionP2);
+        }
+        if (typeof mappedData.periodConsumptionP3 === "number") {
+          setValue("periodConsumptionP3", mappedData.periodConsumptionP3);
+        }
+        if (typeof mappedData.periodConsumptionP4 === "number") {
+          setValue("periodConsumptionP4", mappedData.periodConsumptionP4);
+        }
+        if (typeof mappedData.periodConsumptionP5 === "number") {
+          setValue("periodConsumptionP5", mappedData.periodConsumptionP5);
+        }
+        if (typeof mappedData.periodConsumptionP6 === "number") {
+          setValue("periodConsumptionP6", mappedData.periodConsumptionP6);
+        }
+
+        if (typeof mappedData.periodPriceP1 === "number") {
+          setValue("periodPriceP1", mappedData.periodPriceP1);
+        }
+        if (typeof mappedData.periodPriceP2 === "number") {
+          setValue("periodPriceP2", mappedData.periodPriceP2);
+        }
+        if (typeof mappedData.periodPriceP3 === "number") {
+          setValue("periodPriceP3", mappedData.periodPriceP3);
+        }
+        if (typeof mappedData.periodPriceP4 === "number") {
+          setValue("periodPriceP4", mappedData.periodPriceP4);
+        }
+        if (typeof mappedData.periodPriceP5 === "number") {
+          setValue("periodPriceP5", mappedData.periodPriceP5);
+        }
+        if (typeof mappedData.periodPriceP6 === "number") {
+          setValue("periodPriceP6", mappedData.periodPriceP6);
+        }
+
+        setCurrentStep("validation");
+        showExtractionToasts(extraction);
+
+        return extraction;
+      })(),
+      {
+        loading: { title: "Procesando factura..." },
+        success: { title: "Factura procesada con éxito" },
+        error: { title: "No se pudo extraer la información de la factura" },
+      }
+    );
   };
 
-  const onValidationSubmit = (data: BillData) => {
-    setExtractedData(data);
+  const onValidationSubmit = (data: ValidationBillData) => {
+    const normalizedData: ValidationBillData = {
+      ...data,
+      monthlyConsumption:
+        data.averageMonthlyConsumptionKwh ?? data.monthlyConsumption,
+    };
+
+    setExtractedData(normalizedData);
     setCurrentStep("map");
     fetchInstallations();
     sileo.success({ title: "Datos validados correctamente" });
@@ -215,6 +485,7 @@ export default function App() {
 
   const fetchInstallations = async () => {
     setIsLoadingInstallations(true);
+
     try {
       const response = await axios.get<ApiInstallation[]>("/api/installations");
       setInstallations(response.data);
@@ -235,28 +506,33 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (currentStep === "calculation") {
-      const timer = setTimeout(() => {
-        if (extractedData && selectedInstallation) {
-          const result = calculateEnergyStudy({
-            monthlyConsumptionKwh: extractedData.monthlyConsumption || 0,
-            billType: extractedData.billType || "2TD",
-            effectiveHours: selectedInstallation.horas_efectivas,
-            investmentCostKwh: selectedInstallation.coste_kwh_inversion,
-            serviceCostKwh: selectedInstallation.coste_kwh_servicio,
-            selfConsumptionRatio: normalizeSelfConsumption(
-              selectedInstallation.porcentaje_autoconsumo
-            ),
-          });
+    if (currentStep !== "calculation") return;
 
-          setCalculationResult(result);
-          setCurrentStep("result");
-          sileo.success({ title: "Estudio generado con éxito" });
-        }
-      }, 4000);
+    const timer = setTimeout(() => {
+      if (extractedData && selectedInstallation) {
+        const result = calculateEnergyStudy({
+          monthlyConsumptionKwh:
+            extractedData.averageMonthlyConsumptionKwh ??
+            extractedData.monthlyConsumption ??
+            0,
+          billType:
+            (extractedData.billType as BillData["billType"] | undefined) ||
+            "2TD",
+          effectiveHours: selectedInstallation.horas_efectivas,
+          investmentCostKwh: selectedInstallation.coste_kwh_inversion,
+          serviceCostKwh: selectedInstallation.coste_kwh_servicio,
+          selfConsumptionRatio: normalizeSelfConsumption(
+            selectedInstallation.porcentaje_autoconsumo
+          ),
+        });
 
-      return () => clearTimeout(timer);
-    }
+        setCalculationResult(result);
+        setCurrentStep("result");
+        sileo.success({ title: "Estudio generado con éxito" });
+      }
+    }, 4000);
+
+    return () => clearTimeout(timer);
   }, [currentStep, extractedData, selectedInstallation]);
 
   return (
@@ -290,10 +566,10 @@ export default function App() {
                   { label: "Ubicación", icon: MapPin },
                   { label: "Resultado", icon: Zap },
                 ].map((step, i) => {
-                  const steps = ["upload", "validation", "map", "result"];
-                  const currentIndex = steps.indexOf(
-                    currentStep === "calculation" ? "map" : currentStep
-                  );
+                  const steps = ["upload", "validation", "map", "result"] as const;
+                  const currentVisualStep =
+                    currentStep === "calculation" ? "map" : currentStep;
+                  const currentIndex = steps.indexOf(currentVisualStep);
                   const isActive = i <= currentIndex;
                   const isCurrent = i === currentIndex;
 
@@ -316,6 +592,7 @@ export default function App() {
                           <step.icon className="w-5 h-5 md:w-7 md:h-7" />
                         )}
                       </div>
+
                       <span
                         className={cn(
                           "text-[8px] md:text-[10px] uppercase tracking-[0.15em] md:tracking-[0.2em] font-bold transition-colors duration-500",
@@ -325,6 +602,7 @@ export default function App() {
                       >
                         {step.label}
                       </span>
+
                       {isCurrent && (
                         <motion.div
                           layoutId="stepper-glow"
@@ -357,8 +635,9 @@ export default function App() {
                   </h1>
 
                   <p className="text-brand-gray text-lg mb-16 max-w-2xl mx-auto leading-relaxed">
-                    Sube tu última factura eléctrica y deja que nuestra inteligencia artificial
-                    diseñe la solución de ahorro perfecta para tu hogar.
+                    Sube tu última factura eléctrica y deja que nuestra
+                    inteligencia artificial diseñe la solución de ahorro perfecta
+                    para tu hogar.
                   </p>
 
                   <FileUploader onFileSelect={handleFileSelect} />
@@ -388,8 +667,12 @@ export default function App() {
                         <div className="w-10 h-10 rounded-xl bg-brand-navy/5 flex items-center justify-center mb-4 text-brand-navy">
                           <item.icon className="w-5 h-5" />
                         </div>
-                        <h3 className="font-bold text-brand-navy mb-2">{item.title}</h3>
-                        <p className="text-brand-gray text-xs leading-relaxed">{item.desc}</p>
+                        <h3 className="font-bold text-brand-navy mb-2">
+                          {item.title}
+                        </h3>
+                        <p className="text-brand-gray text-xs leading-relaxed">
+                          {item.desc}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -402,85 +685,273 @@ export default function App() {
                   initial={{ opacity: 0, x: 30 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -30 }}
-                  className="max-w-3xl mx-auto"
+                  className="max-w-5xl mx-auto"
                 >
                   <div className="mb-12 text-center">
-                    <h2 className="text-4xl font-bold mb-4">Verifica tu información</h2>
+                    <h2 className="text-4xl font-bold mb-4">
+                      Verifica tu información
+                    </h2>
                     <p className="text-brand-gray">
-                      Hemos analizado tu factura. Por favor, confirma que los datos extraídos son
-                      correctos.
+                      Hemos analizado tu factura. Por favor, confirma que los
+                      datos extraídos son correctos.
                     </p>
-
-                    {rawExtraction?.extraction?.warnings?.length ? (
-                      <div className="mt-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
-                        {rawExtraction.extraction.warnings[0]}
-                      </div>
-                    ) : null}
                   </div>
 
                   <div className="bg-white rounded-[2.5rem] p-10 border border-brand-navy/5 shadow-2xl shadow-brand-navy/5">
-                    <form onSubmit={handleSubmit(onValidationSubmit)} className="space-y-8">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <Input
-                          label="Nombre"
-                          {...register("name")}
-                          error={errors.name?.message}
-                          placeholder="Ej. Juan"
-                        />
-                        <Input
-                          label="Apellidos"
-                          {...register("lastName")}
-                          error={errors.lastName?.message}
-                          placeholder="Ej. Pérez"
-                        />
-                        <Input
-                          label="DNI / NIF"
-                          {...register("dni")}
-                          error={errors.dni?.message}
-                          placeholder="12345678X"
-                        />
-                        <Input
-                          label="IBAN"
-                          {...register("iban")}
-                          error={errors.iban?.message}
-                          placeholder="ES15..."
-                        />
-                        <Input
-                          label="CUPS"
-                          {...register("cups")}
-                          error={errors.cups?.message}
-                          placeholder="ES00..."
-                        />
-                        <Input
-                          label="Dirección"
-                          className="md:col-span-2"
-                          {...register("address")}
-                          error={errors.address?.message}
-                          placeholder="Calle, Número, Ciudad"
-                        />
-                        <Input
-                          label="Email"
-                          {...register("email")}
-                          error={errors.email?.message}
-                          placeholder="tu@email.com"
-                        />
-                        <Input
-                          label="Teléfono"
-                          {...register("phone")}
-                          error={errors.phone?.message}
-                          placeholder="600 000 000"
-                        />
-                        <Input
-                          label="Consumo Mensual (kWh)"
-                          type="number"
-                          {...register("monthlyConsumption", { valueAsNumber: true })}
-                          error={errors.monthlyConsumption?.message}
-                        />
-                      </div>
+                    <form
+                      onSubmit={handleSubmit(onValidationSubmit)}
+                      className="space-y-10"
+                    >
+                      <FormSection
+                        title="Datos del titular"
+                        subtitle="Confirma la información personal detectada en la factura."
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <Input
+                            label="Nombre"
+                            {...register("name")}
+                            error={errors.name?.message}
+                            placeholder="Ej. Juan"
+                          />
 
-                      <div className="flex justify-center pt-8">
-                        <Button type="submit" size="lg" className="w-full md:w-auto px-12 py-7 text-lg rounded-2xl">
-                          Confirmar y Continuar <ArrowRight className="ml-3 w-5 h-5" />
+                          <Input
+                            label="Apellidos"
+                            {...register("lastName")}
+                            error={errors.lastName?.message}
+                            placeholder="Ej. Pérez García"
+                          />
+
+                          <Input
+                            label="DNI / NIF"
+                            {...register("dni")}
+                            error={errors.dni?.message}
+                            placeholder="12345678X"
+                          />
+
+                          <Input
+                            label="IBAN"
+                            {...register("iban")}
+                            error={errors.iban?.message}
+                            placeholder="ES12 3456 7890 1234 ****"
+                          />
+
+                          <Input
+                            label="Email"
+                            {...register("email")}
+                            error={errors.email?.message}
+                            placeholder="tu@email.com"
+                          />
+
+                          <Input
+                            label="Teléfono"
+                            {...register("phone")}
+                            error={errors.phone?.message}
+                            placeholder="600 000 000"
+                          />
+                        </div>
+
+                        {rawExtraction?.customer?.ibanNeedsCompletion ? (
+                          <div className="rounded-2xl bg-brand-sky/10 border border-brand-sky/20 px-4 py-3 text-sm text-brand-navy">
+                            La factura oculta parte del IBAN por seguridad.
+                            Complétalo manualmente si faltan dígitos.
+                          </div>
+                        ) : null}
+                      </FormSection>
+
+                      <FormSection
+                        title="Datos del suministro"
+                        subtitle="Revisa el punto de suministro y la dirección completa."
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <Input
+                            label="CUPS"
+                            {...register("cups")}
+                            error={errors.cups?.message}
+                            placeholder="ES00..."
+                          />
+
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-[0.2em] text-brand-navy/50">
+                              Tipo de factura
+                            </label>
+                            <select
+                              {...register("billType")}
+                              className="w-full rounded-2xl border border-brand-navy/10 bg-white px-5 py-4 text-brand-navy outline-none focus:border-brand-mint"
+                            >
+                              <option value="">Selecciona una opción</option>
+                              <option value="2TD">2TD</option>
+                              <option value="3TD">3TD</option>
+                            </select>
+                            {errors.billType?.message ? (
+                              <p className="text-sm text-red-500">
+                                {errors.billType.message}
+                              </p>
+                            ) : null}
+                          </div>
+
+                          <Input
+                            label="Dirección completa"
+                            className="md:col-span-2"
+                            {...register("address")}
+                            error={errors.address?.message}
+                            placeholder="Calle, número, CP, ciudad, provincia"
+                          />
+                        </div>
+                      </FormSection>
+
+                      <FormSection
+                        title="Consumos detectados"
+                        subtitle="Aquí se muestran tanto el consumo real de esta factura como el consumo medio mensual estimado."
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <Input
+                            label="Consumo real de esta factura (kWh)"
+                            type="number"
+                            step="0.01"
+                            {...register("currentInvoiceConsumptionKwh")}
+                            error={errors.currentInvoiceConsumptionKwh?.message}
+                            placeholder="Ej. 421"
+                          />
+
+                          <Input
+                            label="Consumo medio mensual estimado (kWh)"
+                            type="number"
+                            step="0.01"
+                            {...register("averageMonthlyConsumptionKwh")}
+                            error={errors.averageMonthlyConsumptionKwh?.message}
+                            placeholder="Ej. 388.83"
+                          />
+                        </div>
+                      </FormSection>
+
+                      <FormSection
+                        title="Consumo por periodos (kWh)"
+                        subtitle="Confirma los kWh de cada periodo tarifario detectados en la factura."
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <Input
+                            label="P1 (kWh)"
+                            type="number"
+                            step="0.01"
+                            {...register("periodConsumptionP1")}
+                            error={errors.periodConsumptionP1?.message}
+                            placeholder="Ej. 122"
+                          />
+                          <Input
+                            label="P2 (kWh)"
+                            type="number"
+                            step="0.01"
+                            {...register("periodConsumptionP2")}
+                            error={errors.periodConsumptionP2?.message}
+                            placeholder="Ej. 100"
+                          />
+                          <Input
+                            label="P3 (kWh)"
+                            type="number"
+                            step="0.01"
+                            {...register("periodConsumptionP3")}
+                            error={errors.periodConsumptionP3?.message}
+                            placeholder="Ej. 199"
+                          />
+
+                          <Input
+                            label="P4 (kWh)"
+                            type="number"
+                            step="0.01"
+                            disabled={watchedBillType !== "3TD"}
+                            {...register("periodConsumptionP4")}
+                            error={errors.periodConsumptionP4?.message}
+                            placeholder="Solo 3TD"
+                          />
+                          <Input
+                            label="P5 (kWh)"
+                            type="number"
+                            step="0.01"
+                            disabled={watchedBillType !== "3TD"}
+                            {...register("periodConsumptionP5")}
+                            error={errors.periodConsumptionP5?.message}
+                            placeholder="Solo 3TD"
+                          />
+                          <Input
+                            label="P6 (kWh)"
+                            type="number"
+                            step="0.01"
+                            disabled={watchedBillType !== "3TD"}
+                            {...register("periodConsumptionP6")}
+                            error={errors.periodConsumptionP6?.message}
+                            placeholder="Solo 3TD"
+                          />
+                        </div>
+                      </FormSection>
+
+                      <FormSection
+                        title="Precio por periodos (€/kWh)"
+                        subtitle="Si la factura no muestra estos importes explícitamente, pueden venir vacíos y podrás completarlos manualmente."
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <Input
+                            label="P1 (€/kWh)"
+                            type="number"
+                            step="0.00001"
+                            {...register("periodPriceP1")}
+                            error={errors.periodPriceP1?.message}
+                            placeholder="Ej. 0.18508"
+                          />
+                          <Input
+                            label="P2 (€/kWh)"
+                            type="number"
+                            step="0.00001"
+                            {...register("periodPriceP2")}
+                            error={errors.periodPriceP2?.message}
+                            placeholder="Ej. 0.17790"
+                          />
+                          <Input
+                            label="P3 (€/kWh)"
+                            type="number"
+                            step="0.00001"
+                            {...register("periodPriceP3")}
+                            error={errors.periodPriceP3?.message}
+                            placeholder="Ej. 0.15000"
+                          />
+
+                          <Input
+                            label="P4 (€/kWh)"
+                            type="number"
+                            step="0.00001"
+                            disabled={watchedBillType !== "3TD"}
+                            {...register("periodPriceP4")}
+                            error={errors.periodPriceP4?.message}
+                            placeholder="Solo 3TD"
+                          />
+                          <Input
+                            label="P5 (€/kWh)"
+                            type="number"
+                            step="0.00001"
+                            disabled={watchedBillType !== "3TD"}
+                            {...register("periodPriceP5")}
+                            error={errors.periodPriceP5?.message}
+                            placeholder="Solo 3TD"
+                          />
+                          <Input
+                            label="P6 (€/kWh)"
+                            type="number"
+                            step="0.00001"
+                            disabled={watchedBillType !== "3TD"}
+                            {...register("periodPriceP6")}
+                            error={errors.periodPriceP6?.message}
+                            placeholder="Solo 3TD"
+                          />
+                        </div>
+                      </FormSection>
+
+                      <div className="flex justify-center pt-4">
+                        <Button
+                          type="submit"
+                          size="lg"
+                          className="w-full md:w-auto px-12 py-7 text-lg rounded-2xl"
+                        >
+                          Confirmar y Continuar
+                          <ArrowRight className="ml-3 w-5 h-5" />
                         </Button>
                       </div>
                     </form>
@@ -496,9 +967,12 @@ export default function App() {
                   className="space-y-8"
                 >
                   <div className="text-center mb-12">
-                    <h2 className="text-4xl font-bold mb-4">Selecciona tu comunidad</h2>
+                    <h2 className="text-4xl font-bold mb-4">
+                      Selecciona tu comunidad
+                    </h2>
                     <p className="text-brand-gray">
-                      Elige una de las instalaciones cercanas para calcular tu ahorro compartido.
+                      Elige una de las instalaciones cercanas para calcular tu
+                      ahorro compartido.
                     </p>
                   </div>
 
@@ -597,19 +1071,27 @@ export default function App() {
                                   Autoconsumo
                                 </p>
                                 <p className="font-bold text-brand-navy">
-                                  {displayPercentage(inst.porcentaje_autoconsumo)}%
+                                  {displayPercentage(
+                                    inst.porcentaje_autoconsumo
+                                  )}
+                                  %
                                 </p>
                               </div>
                             </div>
 
                             <div className="mt-5 flex items-center gap-3 text-xs text-brand-gray">
                               <Building2 className="w-4 h-4" />
-                              <span>{formatNumber(inst.horas_efectivas)} h efectivas</span>
+                              <span>
+                                {formatNumber(inst.horas_efectivas)} h efectivas
+                              </span>
                             </div>
 
                             <div className="mt-2 flex items-center gap-3 text-xs text-brand-gray">
                               <BatteryCharging className="w-4 h-4" />
-                              <span>{formatNumber(inst.almacenamiento_kwh)} kWh almacenamiento</span>
+                              <span>
+                                {formatNumber(inst.almacenamiento_kwh)} kWh
+                                almacenamiento
+                              </span>
                             </div>
                           </motion.div>
                         ))
@@ -632,13 +1114,15 @@ export default function App() {
                   </div>
 
                   <h2 className="text-4xl font-bold mb-6">
-                    Generando tu estudio <br />{" "}
-                    <span className="brand-gradient-text">de alta precisión</span>
+                    Generando tu estudio <br />
+                    <span className="brand-gradient-text">
+                      de alta precisión
+                    </span>
                   </h2>
 
                   <p className="text-brand-gray mb-12 max-w-sm mx-auto">
-                    Nuestros algoritmos están procesando miles de variables para ofrecerte el mejor
-                    resultado.
+                    Nuestros algoritmos están procesando miles de variables para
+                    ofrecerte el mejor resultado.
                   </p>
 
                   <div className="space-y-4 max-w-xs w-full">
@@ -657,7 +1141,9 @@ export default function App() {
                         <div className="w-6 h-6 rounded-full brand-gradient flex items-center justify-center shrink-0">
                           <Check className="w-4 h-4 text-brand-navy" />
                         </div>
-                        <span className="text-sm font-bold text-brand-navy/60">{text}</span>
+                        <span className="text-sm font-bold text-brand-navy/60">
+                          {text}
+                        </span>
                       </motion.div>
                     ))}
                   </div>
@@ -683,8 +1169,11 @@ export default function App() {
                           </div>
 
                           <h2 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">
-                            Ahorra hasta <br className="hidden md:block" />{" "}
-                            {formatCurrency(calculationResult.annualSavingsInvestment)} / año
+                            Ahorra hasta <br className="hidden md:block" />
+                            {formatCurrency(
+                              calculationResult.annualSavingsInvestment
+                            )}{" "}
+                            / año
                           </h2>
 
                           <p className="text-brand-navy/60 font-medium text-base md:text-lg">
@@ -697,7 +1186,9 @@ export default function App() {
                             Ahorro a 25 años
                           </p>
                           <p className="text-3xl md:text-4xl font-bold">
-                            {formatCurrency(calculationResult.annualSavingsInvestment * 25)}
+                            {formatCurrency(
+                              calculationResult.annualSavingsInvestment * 25
+                            )}
                           </p>
                         </div>
                       </div>
@@ -710,11 +1201,15 @@ export default function App() {
                           },
                           {
                             label: "Consumo Anual",
-                            value: `${formatNumber(calculationResult.annualConsumptionKwh)} kWh`,
+                            value: `${formatNumber(
+                              calculationResult.annualConsumptionKwh
+                            )} kWh`,
                           },
                           {
                             label: "Inversión",
-                            value: formatCurrency(calculationResult.investmentCost),
+                            value: formatCurrency(
+                              calculationResult.investmentCost
+                            ),
                           },
                           { label: "Payback", value: "4.2 años" },
                         ].map((stat, i) => (
@@ -761,7 +1256,9 @@ export default function App() {
                                 <Check className="w-5 h-5 text-brand-navy" />
                               </div>
                               <div>
-                                <h4 className="font-bold text-brand-navy mb-1">{item.title}</h4>
+                                <h4 className="font-bold text-brand-navy mb-1">
+                                  {item.title}
+                                </h4>
                                 <p className="text-xs text-brand-gray leading-relaxed">
                                   {item.desc}
                                 </p>
@@ -774,7 +1271,9 @@ export default function App() {
 
                     <div className="space-y-6">
                       <div className="bg-brand-navy rounded-[3rem] p-10 text-white shadow-2xl shadow-brand-navy/20">
-                        <h3 className="font-bold text-xl mb-8">Próximos Pasos</h3>
+                        <h3 className="font-bold text-xl mb-8">
+                          Próximos Pasos
+                        </h3>
 
                         <div className="space-y-4">
                           <Button
