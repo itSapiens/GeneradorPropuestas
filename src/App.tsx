@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Layout from "./components/shared/Layout";
 import FileUploader from "./components/shared/FileUploader";
 import Button from "./components/ui/Button";
@@ -11,6 +11,7 @@ import { BillDataSchema, type BillData } from "./lib/validators";
 import { motion, AnimatePresence } from "motion/react";
 import { extractBillFromApi } from "./services/extractionApiService";
 import type { ExtractedBillData } from "./services/geminiService";
+import { confirmStudy } from "./services/confirmStudyService";
 import { z } from "zod";
 import {
   Check,
@@ -388,6 +389,44 @@ function savePdfArtifactLocally(pdfArtifact: PdfArtifact, fileName: string) {
   throw new Error("Formato de PDF no soportado");
 }
 
+function pdfArtifactToBlob(pdfArtifact: PdfArtifact): Blob {
+  if (!pdfArtifact) {
+    throw new Error("No se pudo generar el PDF");
+  }
+
+  if (isBlob(pdfArtifact)) {
+    return pdfArtifact;
+  }
+
+  if (isUint8Array(pdfArtifact)) {
+    const buffer = uint8ArrayToArrayBuffer(pdfArtifact);
+    return new Blob([buffer], { type: "application/pdf" });
+  }
+
+  if (isArrayBuffer(pdfArtifact)) {
+    return new Blob([pdfArtifact], { type: "application/pdf" });
+  }
+
+  if (hasSaveMethod(pdfArtifact) && typeof pdfArtifact.output === "function") {
+    const output = pdfArtifact.output("blob");
+
+    if (output instanceof Blob) {
+      return output;
+    }
+
+    if (output instanceof Uint8Array) {
+      const buffer = uint8ArrayToArrayBuffer(output);
+      return new Blob([buffer], { type: "application/pdf" });
+    }
+
+    if (output instanceof ArrayBuffer) {
+      return new Blob([output], { type: "application/pdf" });
+    }
+  }
+
+  throw new Error("Formato de PDF no soportado");
+}
+
 async function sendStudyEmailWithFallback(params: {
   to: string;
   customerName: string;
@@ -432,6 +471,11 @@ export default function App() {
   const [selectedInstallation, setSelectedInstallation] =
     useState<ApiInstallation | null>(null);
   const [isLoadingInstallations, setIsLoadingInstallations] = useState(false);
+  const [uploadedInvoiceFile, setUploadedInvoiceFile] = useState<File | null>(
+    null,
+  );
+  const [savedStudy, setSavedStudy] = useState<any | null>(null);
+  const studyPersistLock = useRef(false);
 
   const {
     register,
@@ -479,6 +523,94 @@ export default function App() {
         error: { title: "No se pudo generar el PDF" },
       },
     );
+  };
+
+  const persistStudyAutomatically = async (
+    validatedData: ValidationBillData,
+    result: CalculationResult,
+    installation: ApiInstallation,
+  ) => {
+    if (!uploadedInvoiceFile) {
+      throw new Error(
+        "No se encuentra la factura original subida por el cliente",
+      );
+    }
+
+    const billData = toBaseBillData(validatedData);
+    const pdfArtifact = await buildPdfArtifact(billData, result);
+    const proposalBlob = pdfArtifactToBlob(pdfArtifact);
+
+    const proposalFile = new File(
+      [proposalBlob],
+      `Estudio_Solar_${validatedData.name || "cliente"}.pdf`,
+      { type: "application/pdf" },
+    );
+
+    const customerPayload = {
+      nombre: validatedData.name,
+      apellidos: validatedData.lastName,
+      dni: validatedData.dni,
+      cups: validatedData.cups,
+      direccion_completa: validatedData.address,
+      email: validatedData.email,
+      phone: validatedData.phone,
+      iban: validatedData.iban,
+      tipo_factura: validatedData.billType,
+      consumo_mensual_real_kwh: validatedData.currentInvoiceConsumptionKwh,
+      consumo_medio_mensual_kwh: validatedData.averageMonthlyConsumptionKwh,
+      precio_p1_eur_kwh: validatedData.periodPriceP1 ?? null,
+      precio_p2_eur_kwh: validatedData.periodPriceP2 ?? null,
+      precio_p3_eur_kwh: validatedData.periodPriceP3 ?? null,
+      precio_p4_eur_kwh: validatedData.periodPriceP4 ?? null,
+      precio_p5_eur_kwh: validatedData.periodPriceP5 ?? null,
+      precio_p6_eur_kwh: validatedData.periodPriceP6 ?? null,
+    };
+
+    const invoiceDataPayload = {
+      ...(rawExtraction?.invoice_data ?? {}),
+      type: validatedData.billType,
+      currentInvoiceConsumptionKwh: validatedData.currentInvoiceConsumptionKwh,
+      averageMonthlyConsumptionKwh: validatedData.averageMonthlyConsumptionKwh,
+      consumptionKwh: validatedData.currentInvoiceConsumptionKwh,
+      periods: {
+        P1: validatedData.periodConsumptionP1 ?? null,
+        P2: validatedData.periodConsumptionP2 ?? null,
+        P3: validatedData.periodConsumptionP3 ?? null,
+        P4: validatedData.periodConsumptionP4 ?? null,
+        P5: validatedData.periodConsumptionP5 ?? null,
+        P6: validatedData.periodConsumptionP6 ?? null,
+      },
+      periodPricesEurPerKwh: {
+        P1: validatedData.periodPriceP1 ?? null,
+        P2: validatedData.periodPriceP2 ?? null,
+        P3: validatedData.periodPriceP3 ?? null,
+        P4: validatedData.periodPriceP4 ?? null,
+        P5: validatedData.periodPriceP5 ?? null,
+        P6: validatedData.periodPriceP6 ?? null,
+      },
+    };
+
+    const locationPayload = {
+      ...(rawExtraction?.location ?? {}),
+      address: validatedData.address,
+    };
+
+    const response = await confirmStudy({
+      invoiceFile: uploadedInvoiceFile,
+      proposalFile,
+      customer: customerPayload,
+      location: locationPayload,
+      invoiceData: invoiceDataPayload,
+      calculation: result,
+      selectedInstallationId: installation.id,
+      selectedInstallationSnapshot: installation,
+      language: "ES",
+      consentAccepted: true,
+    });
+
+    setSavedStudy(response);
+
+    return response;
   };
 
   // const handleSendEmail = async () => {
@@ -700,6 +832,46 @@ export default function App() {
           pdfBlob,
           `Estudio_Solar_${billData.name || "cliente"}.pdf`,
         );
+        function pdfArtifactToBlob(pdfArtifact: PdfArtifact): Blob {
+          if (!pdfArtifact) {
+            throw new Error("No se pudo generar el PDF");
+          }
+
+          if (isBlob(pdfArtifact)) {
+            return pdfArtifact;
+          }
+
+          if (isUint8Array(pdfArtifact)) {
+            const buffer = uint8ArrayToArrayBuffer(pdfArtifact);
+            return new Blob([buffer], { type: "application/pdf" });
+          }
+
+          if (isArrayBuffer(pdfArtifact)) {
+            return new Blob([pdfArtifact], { type: "application/pdf" });
+          }
+
+          if (
+            hasSaveMethod(pdfArtifact) &&
+            typeof pdfArtifact.output === "function"
+          ) {
+            const output = pdfArtifact.output("blob");
+
+            if (output instanceof Blob) {
+              return output;
+            }
+
+            if (output instanceof Uint8Array) {
+              const buffer = uint8ArrayToArrayBuffer(output);
+              return new Blob([buffer], { type: "application/pdf" });
+            }
+
+            if (output instanceof ArrayBuffer) {
+              return new Blob([output], { type: "application/pdf" });
+            }
+          }
+
+          throw new Error("Formato de PDF no soportado");
+        }
 
         // Convertir el PDF Blob a Base64
         const pdfBase64 = await blobToBase64DataUrl(pdfBlob);
@@ -738,6 +910,7 @@ export default function App() {
     });
   }
   const handleFileSelect = async (file: File) => {
+    setUploadedInvoiceFile(file);
     sileo.promise(
       (async () => {
         const extraction = await extractBillFromApi(file);
@@ -883,13 +1056,15 @@ export default function App() {
     if (!extractedData || !selectedInstallation) return;
 
     const timer = window.setTimeout(() => {
+      const validatedData = extractedData as ValidationBillData;
+
       const result = calculateEnergyStudy({
         monthlyConsumptionKwh:
-          extractedData.averageMonthlyConsumptionKwh ??
-          extractedData.monthlyConsumption ??
+          validatedData.averageMonthlyConsumptionKwh ??
+          validatedData.monthlyConsumption ??
           0,
         billType:
-          (extractedData.billType as BillData["billType"] | undefined) || "2TD",
+          (validatedData.billType as BillData["billType"] | undefined) || "2TD",
         effectiveHours: selectedInstallation.horas_efectivas,
         investmentCostKwh: selectedInstallation.coste_kwh_inversion,
         serviceCostKwh: selectedInstallation.coste_kwh_servicio,
@@ -901,6 +1076,34 @@ export default function App() {
       setCalculationResult(result);
       setCurrentStep("result");
       sileo.success({ title: "Estudio generado con éxito" });
+
+      void (async () => {
+        if (studyPersistLock.current) return;
+        studyPersistLock.current = true;
+
+        try {
+          await persistStudyAutomatically(
+            validatedData,
+            result,
+            selectedInstallation,
+          );
+
+          sileo.success({
+            title: "Propuesta guardada automáticamente",
+            description: "Cliente, factura, propuesta y estudio registrados.",
+          });
+        } catch (error: any) {
+          console.error("Error guardando estudio confirmado:", error);
+
+          sileo.error({
+            title: "El estudio se generó, pero no se pudo guardar",
+            description:
+              error?.message || "Revisa la configuración del servidor.",
+          });
+        } finally {
+          studyPersistLock.current = false;
+        }
+      })();
     }, 2500);
 
     return () => window.clearTimeout(timer);
