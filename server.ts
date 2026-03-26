@@ -2772,6 +2772,52 @@ async function startServer() {
         }
       }
 
+      const { data: existingReservation, error: reservationLookupError } =
+        await supabase
+          .from("installation_reservations")
+          .select("id, reservation_status, payment_status, payment_deadline_at")
+          .eq("contract_id", contract.id)
+          .maybeSingle();
+
+      if (reservationLookupError) {
+        return res.status(500).json({
+          error: "No se pudo comprobar si el contrato ya tenía reserva",
+          details: reservationLookupError.message,
+        });
+      }
+
+      const alreadySigned =
+        contract.status !== "generated" ||
+        Boolean(contract.signed_at) ||
+        Boolean(contract.uploaded_at) ||
+        Boolean(existingReservation);
+
+      if (alreadySigned) {
+        return res.status(409).json({
+          success: false,
+          alreadySigned: true,
+          message: "Este pre-contrato ya fue firmado anteriormente.",
+          contract: {
+            id: contract.id,
+            status: contract.status,
+            proposal_mode: contract.proposal_mode,
+            contract_number: contract.contract_number,
+            signed_at: contract.signed_at ?? null,
+            uploaded_at: contract.uploaded_at ?? null,
+            confirmed_at: contract.confirmed_at ?? null,
+          },
+          reservationSummary: existingReservation
+            ? {
+                reservationStatus:
+                  existingReservation.reservation_status ?? null,
+                paymentStatus: existingReservation.payment_status ?? null,
+                paymentDeadlineAt:
+                  existingReservation.payment_deadline_at ?? null,
+              }
+            : null,
+        });
+      }
+
       const previewHtml = buildBasicContractHtml({
         contractId: contract.id,
         contractNumber: contract.contract_number,
@@ -3136,8 +3182,15 @@ async function startServer() {
         }
 
         if (contract.status !== "generated") {
-          return res.status(400).json({
-            error: "Este contrato ya fue firmado o procesado anteriormente",
+          return res.status(409).json({
+            alreadySigned: true,
+            error: "Este pre-contrato ya fue firmado anteriormente",
+            message: "Este pre-contrato ya fue firmado anteriormente",
+            contract: {
+              id: contract.id,
+              status: contract.status,
+              contract_number: contract.contract_number,
+            },
           });
         }
 
@@ -3147,9 +3200,25 @@ async function startServer() {
           .eq("contract_id", contract.id)
           .maybeSingle();
 
+        // if (existingReservation) {
+        //   return res.status(400).json({
+        //     error: "Este contrato ya tiene una reserva asociada",
+        //   });
+        // }
         if (existingReservation) {
-          return res.status(400).json({
-            error: "Este contrato ya tiene una reserva asociada",
+          return res.status(409).json({
+            alreadySigned: true,
+            error: "Este pre-contrato ya tiene una reserva asociada",
+            message: "Este pre-contrato ya fue firmado anteriormente",
+            contract: {
+              id: contract.id,
+              status: contract.status,
+              contract_number: contract.contract_number,
+            },
+            reservationSummary: {
+              reservationStatus: existingReservation.reservation_status ?? null,
+              paymentStatus: existingReservation.payment_status ?? null,
+            },
           });
         }
 

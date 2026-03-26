@@ -5,7 +5,7 @@ import Button from "./components/ui/Button";
 import Input from "./components/ui/Input";
 import AdminLogin from "./components/admin/AdminLogin";
 import AdminDashboard from "./components/admin/AdminDashboard";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BillDataSchema, type BillData } from "./lib/validators";
 import { motion, AnimatePresence } from "motion/react";
@@ -13,7 +13,7 @@ import { extractBillFromApi } from "./services/extractionApiService";
 import type { ExtractedBillData } from "./services/geminiService";
 import { confirmStudy } from "./services/confirmStudyService";
 import { Routes, Route } from "react-router-dom";
-
+import SelectField from "./components/ui/SelectField";
 import ContinuarContratacionPage from "./pages/ContinueContraction";
 import { z } from "zod";
 import {
@@ -154,17 +154,17 @@ type StudyComparisonResult = {
   service: CalculationResult;
 };
 
-const requiredNumberField = z.preprocess(
-  (value) => parseFormNumber(value),
-  z
-    .number({
-      error: (issue) =>
-        issue.input === undefined
-          ? "Este campo es obligatorio"
-          : "Debe ser un número válido",
-    })
-    .min(0, { error: "Debe ser un número válido" }),
-);
+// const requiredNumberField = z.preprocess(
+//   (value) => parseFormNumber(value),
+//   z
+//     .number({
+//       error: (issue) =>
+//         issue.input === undefined
+//           ? "Este campo es obligatorio"
+//           : "Debe ser un número válido",
+//     })
+//     .min(0, { error: "Debe ser un número válido" }),
+// );
 
 const optionalNumberField = z.preprocess(
   (value) => parseFormNumber(value),
@@ -177,12 +177,17 @@ const optionalNumberField = z.preprocess(
 );
 
 const ValidationBillDataSchema = BillDataSchema.extend({
-  monthlyConsumption: requiredNumberField,
+  cups: z.string().optional(),
+  iban: z.string().optional(),
+
+  monthlyConsumption: optionalNumberField,
+
   billType: z.enum(BILL_TYPES, {
     error: "Selecciona el tipo de factura",
   }),
-  currentInvoiceConsumptionKwh: requiredNumberField,
-  averageMonthlyConsumptionKwh: requiredNumberField,
+
+  currentInvoiceConsumptionKwh: optionalNumberField,
+  averageMonthlyConsumptionKwh: optionalNumberField,
 
   periodConsumptionP1: optionalNumberField,
   periodConsumptionP2: optionalNumberField,
@@ -309,6 +314,28 @@ function toBaseBillData(data: Partial<ValidationBillData>): BillData {
   };
 }
 
+function shouldHideFromValidation(field: string): boolean {
+  const normalized = field.toLowerCase();
+
+  return [
+    "iban",
+    "cups",
+    "currentinvoiceconsumptionkwh",
+    "averagemonthlyconsumptionkwh",
+    "consumptionkwh",
+    "periodconsumption",
+    "periodprice",
+    "periods",
+    "periodpriceseurperkwh",
+    "p1",
+    "p2",
+    "p3",
+    "p4",
+    "p5",
+    "p6",
+  ].some((token) => normalized.includes(token));
+}
+
 function showExtractionToasts(extraction: ExtractedBillData) {
   let delay = 0;
 
@@ -326,6 +353,18 @@ function showExtractionToasts(extraction: ExtractedBillData) {
     delay += 220;
   };
 
+  const visibleWarnings = (extraction.extraction.warnings ?? []).filter(
+    (warning) => !shouldHideFromValidation(warning),
+  );
+
+  const visibleManualReviewFields = (
+    extraction.extraction.manualReviewFields ?? []
+  ).filter((field) => !shouldHideFromValidation(field));
+
+  const visibleMissingFields = (
+    extraction.extraction.missingFields ?? []
+  ).filter((field) => !shouldHideFromValidation(field));
+
   if (extraction.extraction.fallbackUsed) {
     queueInfo(
       "Extracción completada con apoyo del fallback",
@@ -333,21 +372,12 @@ function showExtractionToasts(extraction: ExtractedBillData) {
     );
   }
 
-  if (extraction.customer.ibanNeedsCompletion) {
-    queueInfo(
-      "Revisión del IBAN",
-      "La factura oculta parte del IBAN con asteriscos. El cliente debe completar manualmente los dígitos faltantes.",
-    );
-  }
-
-  extraction.extraction.warnings.slice(0, 4).forEach((warning, index) => {
+  visibleWarnings.slice(0, 4).forEach((warning, index) => {
     queueInfo(`Aviso ${index + 1}`, warning);
   });
 
-  if (extraction.extraction.manualReviewFields?.length) {
-    const fields = extraction.extraction.manualReviewFields
-      .slice(0, 4)
-      .join(", ");
+  if (visibleManualReviewFields.length) {
+    const fields = visibleManualReviewFields.slice(0, 4).join(", ");
 
     queueError(
       "Campos que requieren revisión",
@@ -355,10 +385,10 @@ function showExtractionToasts(extraction: ExtractedBillData) {
     );
   }
 
-  if (extraction.extraction.missingFields?.length) {
+  if (visibleMissingFields.length) {
     queueInfo(
       "Campos incompletos",
-      `Hay ${extraction.extraction.missingFields.length} campos que pueden necesitar revisión manual.`,
+      `Hay ${visibleMissingFields.length} campos que pueden necesitar revisión manual.`,
     );
   }
 }
@@ -1172,9 +1202,9 @@ function MainAppContent() {
 
   const {
     register,
+    control,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<ValidationBillDataFormInput, unknown, ValidationBillData>({
     resolver: zodResolver(ValidationBillDataSchema),
@@ -1183,42 +1213,42 @@ function MainAppContent() {
     },
   });
 
-  const handleRoundUpBlur = (
-    fieldName: keyof ValidationBillDataFormInput,
-    decimals: number,
-  ) => {
-    return (e: React.FocusEvent<HTMLInputElement>) => {
-      const rounded = normalizeAndRoundUp(e.target.value, decimals);
+  // const handleRoundUpBlur = (
+  //   fieldName: keyof ValidationBillDataFormInput,
+  //   decimals: number,
+  // ) => {
+  //   return (e: React.FocusEvent<HTMLInputElement>) => {
+  //     const rounded = normalizeAndRoundUp(e.target.value, decimals);
 
-      if (rounded === undefined) return;
+  //     if (rounded === undefined) return;
 
-      setValue(fieldName, rounded as any, {
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true,
-      });
-    };
-  };
+  //     setValue(fieldName, rounded as any, {
+  //       shouldValidate: true,
+  //       shouldDirty: true,
+  //       shouldTouch: true,
+  //     });
+  //   };
+  // };
 
-  const watchedBillType = watch("billType");
-  const watchedAverageMonthlyConsumption = watch(
-    "averageMonthlyConsumptionKwh",
-  );
+  // const watchedBillType = watch("billType");
+  // const watchedAverageMonthlyConsumption = watch(
+  //   "averageMonthlyConsumptionKwh",
+  // );
+  // // useEffect(() => {
+  // //   if (currentStep === "map") {
+  // //     void fetchInstallations();
+  // //   }
+  // // }, [currentStep, rawExtraction]);
+
   // useEffect(() => {
-  //   if (currentStep === "map") {
-  //     void fetchInstallations();
+  //   const parsed = parseFormNumber(watchedAverageMonthlyConsumption);
+  //   if (typeof parsed === "number" && Number.isFinite(parsed)) {
+  //     setValue("monthlyConsumption", parsed, {
+  //       shouldValidate: false,
+  //       shouldDirty: false,
+  //     });
   //   }
-  // }, [currentStep, rawExtraction]);
-
-  useEffect(() => {
-    const parsed = parseFormNumber(watchedAverageMonthlyConsumption);
-    if (typeof parsed === "number" && Number.isFinite(parsed)) {
-      setValue("monthlyConsumption", parsed, {
-        shouldValidate: false,
-        shouldDirty: false,
-      });
-    }
-  }, [watchedAverageMonthlyConsumption, setValue]);
+  // }, [watchedAverageMonthlyConsumption, setValue]);
 
   const handleDownloadPDF = async () => {
     if (!activeCalculationResult || !extractedData) return;
@@ -2001,9 +2031,14 @@ function MainAppContent() {
     sileo.promise(
       (async () => {
         const normalizedData: ValidationBillData = {
+          ...(extractedData ?? {}),
           ...data,
           monthlyConsumption:
-            data.averageMonthlyConsumptionKwh ?? data.monthlyConsumption,
+            data.averageMonthlyConsumptionKwh ??
+            extractedData?.averageMonthlyConsumptionKwh ??
+            data.monthlyConsumption ??
+            extractedData?.monthlyConsumption ??
+            0,
         };
 
         setExtractedData(normalizedData);
@@ -2395,13 +2430,6 @@ function MainAppContent() {
                           />
 
                           <Input
-                            label="IBAN"
-                            {...register("iban")}
-                            error={errors.iban?.message}
-                            placeholder="ES12 3456 7890 1234 ****"
-                          />
-
-                          <Input
                             label="Email"
                             {...register("email")}
                             error={errors.email?.message}
@@ -2415,49 +2443,34 @@ function MainAppContent() {
                             placeholder="600 000 000"
                           />
                         </div>
-
-                        {rawExtraction?.customer?.ibanNeedsCompletion ? (
-                          <div className="rounded-2xl bg-brand-sky/10 border border-brand-sky/20 px-4 py-3 text-sm text-brand-navy">
-                            La factura oculta parte del IBAN por seguridad.
-                            Complétalo manualmente si faltan dígitos.
-                          </div>
-                        ) : null}
                       </FormSection>
 
                       <FormSection
                         title="Datos del suministro"
-                        subtitle="Revisa el punto de suministro y la dirección completa."
+                        subtitle="Revisa la dirección completa y el tipo de factura."
                       >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                          <Input
-                            label="CUPS"
-                            {...register("cups")}
-                            error={errors.cups?.message}
-                            placeholder="ES00..."
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                          <Controller
+                            name="billType"
+                            control={control}
+                            render={({ field }) => (
+                              <SelectField
+                                label="Tipo de factura"
+                                value={field.value}
+                                onChange={field.onChange}
+                                error={errors.billType?.message}
+                                options={[
+                                  { value: "2TD", label: "2TD" },
+                                  { value: "3TD", label: "3TD" },
+                                ]}
+                                placeholder="Selecciona una opción"
+                              />
+                            )}
                           />
 
-                          <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-[0.2em] text-brand-navy/50">
-                              Tipo de factura
-                            </label>
-                            <select
-                              {...register("billType")}
-                              className="w-full rounded-2xl border border-brand-navy/10 bg-white px-5 py-4 text-brand-navy outline-none focus:border-brand-mint"
-                            >
-                              <option value="">Selecciona una opción</option>
-                              <option value="2TD">2TD</option>
-                              <option value="3TD">3TD</option>
-                            </select>
-                            {errors.billType?.message ? (
-                              <p className="text-sm text-red-500">
-                                {errors.billType.message}
-                              </p>
-                            ) : null}
-                          </div>
-
                           <Input
+                          
                             label="Dirección completa"
-                            className="md:col-span-2"
                             {...register("address")}
                             error={errors.address?.message}
                             placeholder="Calle, número, CP, ciudad, provincia"
@@ -2465,7 +2478,18 @@ function MainAppContent() {
                         </div>
                       </FormSection>
 
-                      <FormSection
+                      <div className="flex justify-center pt-4">
+                        <Button
+                          type="submit"
+                          size="lg"
+                          className="w-full md:w-auto px-12 py-7 text-lg rounded-2xl"
+                        >
+                          Confirmar y Continuar
+                          <ArrowRight className="ml-3 w-5 h-5" />
+                        </Button>
+                      </div>
+
+                      {/* <FormSection
                         title="Consumos detectados"
                         subtitle="Aquí se muestran tanto el consumo real de esta factura como el consumo medio mensual estimado."
                       >
@@ -2622,8 +2646,8 @@ function MainAppContent() {
                             placeholder="Solo 3TD"
                           />
                         </div>
-                      </FormSection>
-
+                      </FormSection> */}
+                      {/* 
                       <div className="flex justify-center pt-4">
                         <Button
                           type="submit"
@@ -2633,7 +2657,7 @@ function MainAppContent() {
                           Confirmar y Continuar
                           <ArrowRight className="ml-3 w-5 h-5" />
                         </Button>
-                      </div>
+                      </div> */}
                     </form>
                   </div>
                 </motion.div>

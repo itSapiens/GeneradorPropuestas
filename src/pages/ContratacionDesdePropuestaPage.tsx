@@ -83,50 +83,81 @@ export default function ContratacionDesdePropuestaPage() {
   const signatureDrawingRef = useRef(false);
   const hasLoadedContractRef = useRef(false);
 
-useEffect(() => {
-  if (hasLoadedContractRef.current) return;
-  hasLoadedContractRef.current = true;
+  useEffect(() => {
+    if (hasLoadedContractRef.current) return;
+    hasLoadedContractRef.current = true;
 
-  const loadContract = async () => {
-    if (!resumeToken) {
-      sileo.error({
-        title: "Acceso no válido",
-        description: "No se ha encontrado el token de continuación.",
-      });
-      navigate("/");
-      return;
-    }
+    const loadContract = async () => {
+      if (!resumeToken) {
+        sileo.error({
+          title: "Acceso no válido",
+          description: "No se ha encontrado el token de continuación.",
+        });
+        navigate("/");
+        return;
+      }
 
-    try {
-      const { data } = await axios.post<GeneratedContractResponse>(
-        "/api/contracts/generate-from-access",
-        {
-          resumeToken,
-        },
-      );
+      try {
+        const { data } = await axios.post<GeneratedContractResponse>(
+          "/api/contracts/generate-from-access",
+          {
+            resumeToken,
+          },
+        );
 
-      setGeneratedContract(data);
-    } catch (error: any) {
-      console.error("Error cargando contrato desde acceso:", error);
-      console.error("status:", error?.response?.status);
-      console.error("data:", error?.response?.data);
+        setGeneratedContract(data);
+      } catch (error: any) {
+        console.error("Error cargando contrato desde acceso:", error);
+        console.error("status:", error?.response?.status);
+        console.error("data:", error?.response?.data);
 
-      sileo.error({
-        title: "No se pudo abrir el contrato",
-        description:
-          error?.response?.data?.details ||
-          error?.response?.data?.error ||
-          "Error desconocido",
-      });
+        if (error?.response?.data?.alreadySigned) {
+          const goHome = () => {
+            sessionStorage.removeItem("proposal_resume_token");
+            navigate("/");
+          };
 
-      navigate("/");
-    } finally {
-      setLoading(false);
-    }
-  };
+          sileo.action({
+            title: "Pre-contrato ya firmado",
+            description:
+              error?.response?.data?.message ||
+              "Este pre-contrato ya fue firmado anteriormente.",
+            actionLabel: "Volver al inicio",
+            onAction: goHome,
+            duration: 3500,
+            icon: (
+              <Icon
+                icon="solar:check-circle-bold-duotone"
+                className="h-5 w-5 text-emerald-600"
+              />
+            ),
+          } as any);
 
-  void loadContract();
-}, [resumeToken, navigate]);
+          window.setTimeout(() => {
+            goHome();
+          }, 2200);
+
+          return;
+        }
+
+        sileo.error({
+          title: "No se pudo abrir el contrato",
+          description:
+            error?.response?.data?.details ||
+            error?.response?.data?.error ||
+            "Error desconocido",
+        });
+
+        navigate("/");
+
+        navigate("/");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadContract();
+  }, [resumeToken, navigate]);
 
   const clearSignature = () => {
     const canvas = signatureCanvasRef.current;
@@ -350,14 +381,27 @@ useEffect(() => {
         formData,
       );
 
-      setSignedContractResult(response.data);
+      const goHome = () => {
+        sessionStorage.removeItem("proposal_resume_token");
+        navigate("/");
+      };
 
-      if (response.data.email?.status === "sent") {
-        sileo.success({
-          title: "Contrato enviado al cliente",
-          description: `Se ha enviado una copia firmada a ${response.data.email.to ?? "su correo"}.`,
-        });
-      } else if (response.data.email?.status === "failed") {
+      sileo.action({
+        title: "Pre-contrato firmado correctamente",
+        description: `Se han reservado ${response.data.reservationSummary.reservedKwp} kWp en ${response.data.reservationSummary.installationName}.`,
+        actionLabel: "Ir al inicio",
+        onAction: goHome,
+        duration: 3500,
+        // si tu versión de sileo soporta icon, déjalo
+        icon: (
+          <Icon
+            icon="solar:shield-check-bold-duotone"
+            className="h-5 w-5 text-emerald-600"
+          />
+        ),
+      } as any);
+
+      if (response.data.email?.status === "failed") {
         sileo.warning({
           title: "Contrato firmado, pero el email falló",
           description:
@@ -366,15 +410,48 @@ useEffect(() => {
         });
       }
 
-      sileo.success({
-        title: "Contrato firmado correctamente",
-        description: `Se han reservado ${response.data.reservationSummary.reservedKwp} kWp en ${response.data.reservationSummary.installationName}.`,
-      });
+      window.setTimeout(() => {
+        goHome();
+      }, 2200);
     } catch (error: any) {
+      console.error("Error firmando contrato:", error);
+      console.error("status:", error?.response?.status);
+      console.error("data:", error?.response?.data);
+
+      if (error?.response?.data?.alreadySigned) {
+        const goHome = () => {
+          sessionStorage.removeItem("proposal_resume_token");
+          navigate("/");
+        };
+
+        sileo.action({
+          title: "Pre-contrato ya firmado",
+          description:
+            error?.response?.data?.message ||
+            "Este pre-contrato ya fue firmado anteriormente.",
+          actionLabel: "Volver al inicio",
+          onAction: goHome,
+          duration: 3500,
+          icon: (
+            <Icon
+              icon="solar:check-circle-bold-duotone"
+              className="h-5 w-5 text-emerald-600"
+            />
+          ),
+        } as any);
+
+        window.setTimeout(() => {
+          goHome();
+        }, 2200);
+
+        return;
+      }
+
       sileo.error({
         title: "No se pudo firmar el contrato",
         description:
           error?.response?.data?.details ||
+          error?.response?.data?.error ||
           error?.message ||
           "Ha ocurrido un error inesperado.",
       });
