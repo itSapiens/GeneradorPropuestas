@@ -2400,214 +2400,421 @@ async function startServer() {
 
   //Ruta acceso contrato desde mail
   app.post("/api/contracts/proposal-access/validate", async (req, res) => {
-  try {
-    const token = String(req.body?.token || "").trim();
-    const dni = String(req.body?.dni || "").trim();
-    const nombre = String(req.body?.nombre || "").trim();
-    const apellidos = String(req.body?.apellidos || "").trim();
+    try {
+      const token = String(req.body?.token || "").trim();
+      const dni = String(req.body?.dni || "").trim();
+      const nombre = String(req.body?.nombre || "").trim();
+      const apellidos = String(req.body?.apellidos || "").trim();
 
-    if (!token || !dni || !nombre || !apellidos) {
-      return res.status(400).json({
-        error: "Faltan token, DNI, nombre o apellidos",
-      });
-    }
+      if (!token || !dni || !nombre || !apellidos) {
+        return res.status(400).json({
+          error: "Faltan token, DNI, nombre o apellidos",
+        });
+      }
 
-    const tokenHash = sha256(token);
+      const tokenHash = sha256(token);
 
-    const { data: accessToken, error: accessError } = await supabase
-      .from("contract_access_tokens")
-      .select("*")
-      .eq("token_hash", tokenHash)
-      .eq("purpose", "proposal_continue")
-      .is("revoked_at", null)
-      .maybeSingle();
-
-    if (accessError) {
-      console.error(
-        "Error consultando contract_access_tokens en proposal-access/validate:",
-        accessError,
-      );
-
-      return res.status(500).json({
-        error: "No se pudo validar el acceso",
-        details: accessError.message,
-      });
-    }
-
-    if (!accessToken) {
-      return res.status(404).json({
-        error: "Enlace no válido",
-      });
-    }
-
-    if (
-      accessToken.expires_at &&
-      new Date(accessToken.expires_at).getTime() < Date.now()
-    ) {
-      return res.status(410).json({
-        error: "El enlace ha caducado",
-      });
-    }
-
-    const { data: client, error: clientError } = await supabase
-      .from("clients")
-      .select("*")
-      .eq("id", accessToken.client_id)
-      .single();
-
-    if (clientError || !client) {
-      console.error(
-        "Error obteniendo cliente en proposal-access/validate:",
-        clientError,
-      );
-
-      return res.status(404).json({
-        error: "No se encontró el cliente asociado al acceso",
-        details: clientError?.message ?? "Cliente no encontrado",
-      });
-    }
-
-    const sameDni = normalizeDni(client.dni) === normalizeDni(dni);
-    const sameNombre =
-      normalizeIdentityText(client.nombre) === normalizeIdentityText(nombre);
-    const sameApellidos =
-      normalizeIdentityText(client.apellidos) ===
-      normalizeIdentityText(apellidos);
-
-    if (!sameDni || !sameNombre || !sameApellidos) {
-      return res.status(401).json({
-        error: "Los datos introducidos no coinciden con la propuesta",
-      });
-    }
-
-    const { data: study, error: studyError } = await supabase
-      .from("studies")
-      .select("*")
-      .eq("id", accessToken.study_id)
-      .single();
-
-    if (studyError || !study) {
-      console.error(
-        "Error obteniendo estudio en proposal-access/validate:",
-        studyError,
-      );
-
-      return res.status(404).json({
-        error: "No se encontró el estudio asociado",
-        details: studyError?.message ?? "Estudio no encontrado",
-      });
-    }
-
-    if (!study.selected_installation_id) {
-      return res.status(400).json({
-        error: "El estudio no tiene instalación asociada",
-      });
-    }
-
-    const { data: installation, error: installationError } = await supabase
-      .from("installations")
-      .select("*")
-      .eq("id", study.selected_installation_id)
-      .single();
-
-    if (installationError || !installation) {
-      console.error(
-        "Error obteniendo instalación en proposal-access/validate:",
-        installationError,
-      );
-
-      return res.status(404).json({
-        error: "No se encontró la instalación asociada al estudio",
-        details: installationError?.message ?? "Instalación no encontrada",
-      });
-    }
-
-    const { data: existingContract, error: existingContractError } =
-      await supabase
-        .from("contracts")
+      const { data: accessToken, error: accessError } = await supabase
+        .from("contract_access_tokens")
         .select("*")
-        .eq("study_id", study.id)
+        .eq("token_hash", tokenHash)
+        .eq("purpose", "proposal_continue")
+        .is("revoked_at", null)
         .maybeSingle();
 
-    if (existingContractError) {
-      console.error(
-        "Error consultando contrato existente en proposal-access/validate:",
-        existingContractError,
-      );
+      if (accessError) {
+        console.error(
+          "Error consultando contract_access_tokens en proposal-access/validate:",
+          accessError,
+        );
 
-      return res.status(500).json({
-        error: "No se pudo comprobar si ya existe un contrato",
-        details: existingContractError.message,
-      });
-    }
+        return res.status(500).json({
+          error: "No se pudo validar el acceso",
+          details: accessError.message,
+        });
+      }
 
-    const resumeToken = signContractResumeToken({
-      studyId: study.id,
-      clientId: client.id,
-      installationId: installation.id,
-    });
+      if (!accessToken) {
+        return res.status(404).json({
+          error: "Enlace no válido",
+        });
+      }
 
-    return res.json({
-      success: true,
-      resumeToken,
-      access: {
+      if (
+        accessToken.expires_at &&
+        new Date(accessToken.expires_at).getTime() < Date.now()
+      ) {
+        return res.status(410).json({
+          error: "El enlace ha caducado",
+        });
+      }
+
+      const { data: client, error: clientError } = await supabase
+        .from("clients")
+        .select("*")
+        .eq("id", accessToken.client_id)
+        .single();
+
+      if (clientError || !client) {
+        console.error(
+          "Error obteniendo cliente en proposal-access/validate:",
+          clientError,
+        );
+
+        return res.status(404).json({
+          error: "No se encontró el cliente asociado al acceso",
+          details: clientError?.message ?? "Cliente no encontrado",
+        });
+      }
+
+      const sameDni = normalizeDni(client.dni) === normalizeDni(dni);
+      const sameNombre =
+        normalizeIdentityText(client.nombre) === normalizeIdentityText(nombre);
+      const sameApellidos =
+        normalizeIdentityText(client.apellidos) ===
+        normalizeIdentityText(apellidos);
+
+      if (!sameDni || !sameNombre || !sameApellidos) {
+        return res.status(401).json({
+          error: "Los datos introducidos no coinciden con la propuesta",
+        });
+      }
+
+      const { data: study, error: studyError } = await supabase
+        .from("studies")
+        .select("*")
+        .eq("id", accessToken.study_id)
+        .single();
+
+      if (studyError || !study) {
+        console.error(
+          "Error obteniendo estudio en proposal-access/validate:",
+          studyError,
+        );
+
+        return res.status(404).json({
+          error: "No se encontró el estudio asociado",
+          details: studyError?.message ?? "Estudio no encontrado",
+        });
+      }
+
+      if (!study.selected_installation_id) {
+        return res.status(400).json({
+          error: "El estudio no tiene instalación asociada",
+        });
+      }
+
+      const { data: installation, error: installationError } = await supabase
+        .from("installations")
+        .select("*")
+        .eq("id", study.selected_installation_id)
+        .single();
+
+      if (installationError || !installation) {
+        console.error(
+          "Error obteniendo instalación en proposal-access/validate:",
+          installationError,
+        );
+
+        return res.status(404).json({
+          error: "No se encontró la instalación asociada al estudio",
+          details: installationError?.message ?? "Instalación no encontrada",
+        });
+      }
+
+      const { data: existingContract, error: existingContractError } =
+        await supabase
+          .from("contracts")
+          .select("*")
+          .eq("study_id", study.id)
+          .maybeSingle();
+
+      if (existingContractError) {
+        console.error(
+          "Error consultando contrato existente en proposal-access/validate:",
+          existingContractError,
+        );
+
+        return res.status(500).json({
+          error: "No se pudo comprobar si ya existe un contrato",
+          details: existingContractError.message,
+        });
+      }
+
+      const resumeToken = signContractResumeToken({
         studyId: study.id,
         clientId: client.id,
         installationId: installation.id,
-        expiresAt: accessToken.expires_at ?? null,
-        usedAt: accessToken.used_at ?? null,
-      },
-      client: {
-        id: client.id,
-        nombre: client.nombre,
-        apellidos: client.apellidos,
-        dni: client.dni,
-        email: client.email ?? null,
-        telefono: client.telefono ?? null,
-        cups: client.cups ?? null,
-        direccion_completa: client.direccion_completa ?? null,
-        propuesta_drive_url: client.propuesta_drive_url ?? null,
-        factura_drive_url: client.factura_drive_url ?? null,
-      },
-      study: {
-        id: study.id,
-        status: study.status ?? null,
-        email_status: study.email_status ?? null,
-        assigned_kwp: study.assigned_kwp ?? null,
-        calculation: study.calculation ?? null,
-        selected_installation_id: study.selected_installation_id ?? null,
-        selected_installation_snapshot:
-          study.selected_installation_snapshot ?? null,
-      },
-      installation: {
-        id: installation.id,
-        nombre_instalacion: installation.nombre_instalacion,
-        direccion: installation.direccion,
-        modalidad: installation.modalidad,
-        contractable_kwp_total: installation.contractable_kwp_total ?? null,
-        contractable_kwp_reserved:
-          installation.contractable_kwp_reserved ?? null,
-        contractable_kwp_confirmed:
-          installation.contractable_kwp_confirmed ?? null,
-      },
-      existingContract: existingContract
-        ? {
-            id: existingContract.id,
-            status: existingContract.status,
-            proposal_mode: existingContract.proposal_mode,
-            contract_number: existingContract.contract_number,
-          }
-        : null,
-    });
-  } catch (error: any) {
-    console.error("Error en /api/contracts/proposal-access/validate:", error);
+      });
 
-    return res.status(500).json({
-      error: "No se pudo validar el acceso a la propuesta",
-      details: error?.message || "Error desconocido",
-    });
-  }
-});
+      return res.json({
+        success: true,
+        resumeToken,
+        access: {
+          studyId: study.id,
+          clientId: client.id,
+          installationId: installation.id,
+          expiresAt: accessToken.expires_at ?? null,
+          usedAt: accessToken.used_at ?? null,
+        },
+        client: {
+          id: client.id,
+          nombre: client.nombre,
+          apellidos: client.apellidos,
+          dni: client.dni,
+          email: client.email ?? null,
+          telefono: client.telefono ?? null,
+          cups: client.cups ?? null,
+          direccion_completa: client.direccion_completa ?? null,
+          propuesta_drive_url: client.propuesta_drive_url ?? null,
+          factura_drive_url: client.factura_drive_url ?? null,
+        },
+        study: {
+          id: study.id,
+          status: study.status ?? null,
+          email_status: study.email_status ?? null,
+          assigned_kwp: study.assigned_kwp ?? null,
+          calculation: study.calculation ?? null,
+          selected_installation_id: study.selected_installation_id ?? null,
+          selected_installation_snapshot:
+            study.selected_installation_snapshot ?? null,
+        },
+        installation: {
+          id: installation.id,
+          nombre_instalacion: installation.nombre_instalacion,
+          direccion: installation.direccion,
+          modalidad: installation.modalidad,
+          contractable_kwp_total: installation.contractable_kwp_total ?? null,
+          contractable_kwp_reserved:
+            installation.contractable_kwp_reserved ?? null,
+          contractable_kwp_confirmed:
+            installation.contractable_kwp_confirmed ?? null,
+        },
+        existingContract: existingContract
+          ? {
+              id: existingContract.id,
+              status: existingContract.status,
+              proposal_mode: existingContract.proposal_mode,
+              contract_number: existingContract.contract_number,
+            }
+          : null,
+      });
+    } catch (error: any) {
+      console.error("Error en /api/contracts/proposal-access/validate:", error);
+
+      return res.status(500).json({
+        error: "No se pudo validar el acceso a la propuesta",
+        details: error?.message || "Error desconocido",
+      });
+    }
+  });
+
+  //Pre contract Valdiation
+  app.post("/api/contracts/generate-from-access", async (req, res) => {
+    try {
+      const resumeToken = String(req.body?.resumeToken || "").trim();
+
+      if (!resumeToken) {
+        return res.status(400).json({
+          error: "Falta resumeToken",
+        });
+      }
+
+      let decoded: {
+        studyId: string;
+        clientId: string;
+        installationId: string;
+        iat: number;
+        exp: number;
+      };
+
+      try {
+        decoded = verifyContractResumeToken(resumeToken);
+      } catch (error) {
+        return res.status(401).json({
+          error: "El acceso ha caducado o no es válido",
+        });
+      }
+
+      const { studyId, clientId, installationId } = decoded;
+
+      const { data: study, error: studyError } = await supabase
+        .from("studies")
+        .select("*")
+        .eq("id", studyId)
+        .single();
+
+      if (studyError || !study) {
+        return res.status(404).json({
+          error: "No se encontró el estudio",
+          details: studyError?.message ?? "Estudio no encontrado",
+        });
+      }
+
+      const { data: client, error: clientError } = await supabase
+        .from("clients")
+        .select("*")
+        .eq("id", clientId)
+        .single();
+
+      if (clientError || !client) {
+        return res.status(404).json({
+          error: "No se encontró el cliente",
+          details: clientError?.message ?? "Cliente no encontrado",
+        });
+      }
+
+      const { data: installation, error: installationError } = await supabase
+        .from("installations")
+        .select("*")
+        .eq("id", installationId)
+        .single();
+
+      if (installationError || !installation) {
+        return res.status(404).json({
+          error: "No se encontró la instalación",
+          details: installationError?.message ?? "Instalación no encontrada",
+        });
+      }
+
+      const assignedKwp =
+        toPositiveNumber(study.assigned_kwp) ??
+        toPositiveNumber(study?.calculation?.recommendedPowerKwp) ??
+        toPositiveNumber(study?.selected_installation_snapshot?.assigned_kwp);
+
+      if (assignedKwp === null) {
+        return res.status(400).json({
+          error: "El estudio no tiene assigned_kwp válido",
+        });
+      }
+
+      const proposalMode =
+        req.body?.proposalMode === "service" ? "service" : "investment";
+
+      const { data: existingContract, error: existingContractError } =
+        await supabase
+          .from("contracts")
+          .select("*")
+          .eq("study_id", studyId)
+          .maybeSingle();
+
+      if (existingContractError) {
+        return res.status(500).json({
+          error: "No se pudo consultar el contrato existente",
+          details: existingContractError.message,
+        });
+      }
+
+      let contract = existingContract;
+
+      if (!contract) {
+        const insertPayload = {
+          study_id: study.id,
+          client_id: client.id,
+          installation_id: installation.id,
+          proposal_mode: proposalMode,
+          status: "generated",
+          contract_number: buildContractNumber(study.id),
+          signature_type: "simple",
+          metadata: {
+            assigned_kwp: assignedKwp,
+            study_created_at: study.created_at,
+            created_from_resume_access: true,
+          },
+        };
+
+        const { data: createdContract, error: contractError } = await supabase
+          .from("contracts")
+          .insert([insertPayload])
+          .select()
+          .single();
+
+        if (contractError) {
+          const isDuplicateStudy =
+            contractError.code === "23505" ||
+            String(contractError.message || "")
+              .toLowerCase()
+              .includes("duplicate") ||
+            String(contractError.message || "").includes(
+              "contracts_study_id_unique",
+            );
+
+          if (isDuplicateStudy) {
+            const { data: existingAfterDuplicate, error: refetchError } =
+              await supabase
+                .from("contracts")
+                .select("*")
+                .eq("study_id", study.id)
+                .single();
+
+            if (refetchError || !existingAfterDuplicate) {
+              return res.status(500).json({
+                error:
+                  "Se detectó un contrato duplicado pero no se pudo recuperar",
+                details: refetchError?.message ?? contractError.message,
+              });
+            }
+
+            contract = existingAfterDuplicate;
+          } else {
+            return res.status(500).json({
+              error: "No se pudo generar el contrato desde el acceso",
+              details: contractError.message,
+            });
+          }
+        } else if (!createdContract) {
+          return res.status(500).json({
+            error: "No se pudo generar el contrato desde el acceso",
+            details: "Contrato no devuelto tras inserción",
+          });
+        } else {
+          contract = createdContract;
+        }
+      }
+
+      const previewHtml = buildBasicContractHtml({
+        contractId: contract.id,
+        contractNumber: contract.contract_number,
+        proposalMode: contract.proposal_mode,
+        client,
+        study,
+        installation,
+        assignedKwp,
+      });
+
+      return res.json({
+        success: true,
+        contract,
+        previewHtml,
+        preview: {
+          contractId: contract.id,
+          contractNumber: contract.contract_number,
+          proposalMode: contract.proposal_mode,
+          assignedKwp,
+          client: {
+            id: client.id,
+            nombre: client.nombre,
+            apellidos: client.apellidos,
+            dni: client.dni,
+            email: client.email,
+            telefono: client.telefono,
+          },
+          installation: {
+            id: installation.id,
+            nombre_instalacion: installation.nombre_instalacion,
+            direccion: installation.direccion,
+          },
+        },
+      });
+    } catch (error: any) {
+      console.error("Error en /api/contracts/generate-from-access:", error);
+
+      return res.status(500).json({
+        error: "No se pudo preparar el contrato desde el acceso",
+        details: error?.message || "Error desconocido",
+      });
+    }
+  });
 
   app.post("/api/contracts/generate-from-study/:studyId", async (req, res) => {
     try {

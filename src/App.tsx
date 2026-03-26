@@ -61,6 +61,9 @@ import {
   CartesianGrid,
 } from "recharts";
 
+// import {ContratacionDesdePropuestaPage} from "./pages/ContratacionDesdePropuestaPage"
+import ContratacionDesdePropuestaPage from "./pages/ContratacionDesdePropuestaPage";
+
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 
 L.Icon.Default.mergeOptions({
@@ -1744,6 +1747,8 @@ function MainAppContent() {
       });
     } catch (error: any) {
       console.error("Error firmando contrato:", error);
+      console.error("status:", error?.response?.status);
+      console.error("data:", error?.response?.data);
 
       sileo.error({
         title: "No se pudo firmar el contrato",
@@ -3675,6 +3680,10 @@ export default function App() {
       <Route
         path="/continue-contract"
         element={<ContinuarContratacionPage />}
+      />
+      <Route
+        path="/contratacion-desde-propuesta"
+        element={<ContratacionDesdePropuestaPage />}
       />
 
       <Route path="*" element={<MainAppContent />} />
