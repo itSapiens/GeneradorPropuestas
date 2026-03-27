@@ -20,16 +20,16 @@ import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
 import jsPDF from "jspdf";
 const PORT = Number(process.env.PORT || 3000);
-const SAPIENS_CONTACT_PHONE = process.env.SAPIENS_CONTACT_PHONE || "960000000";
+const SAPIENS_CONTACT_PHONE = process.env.SAPIENS_CONTACT_PHONE || "960 99 27 77";
 const SAPIENS_CONTACT_EMAIL =
-  process.env.SAPIENS_CONTACT_EMAIL || "info@sapiensenergia.com";
+  process.env.SAPIENS_CONTACT_EMAIL || "info@sapiensenergia.es";
 
 //Strine
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
 const DEFAULT_SIGNAL_AMOUNT_EUR = Number(
-  process.env.DEFAULT_SIGNAL_AMOUNT_EUR || 0.5,
+  process.env.DEFAULT_SIGNAL_AMOUNT_EUR || 0.5, //Cambiar a 500
 );
 
 if (!STRIPE_SECRET_KEY) {

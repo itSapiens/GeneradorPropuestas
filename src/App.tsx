@@ -890,10 +890,10 @@ function buildProposalCardData(
     description:
       "Modelo pensado para reducir la barrera de entrada y facilitar la contratación.",
     valuePoints: [
-      "Menor desembolso inicial",
-      "Cuota mensual estimada más clara",
-      "Ideal si priorizas liquidez inmediata",
-      "Entrada más cómoda para el cliente",
+      "Sin desembolso inicial",
+      "Cuota mensual fija",
+      "Ideal si priorizas no desembolsar directamente",
+      // "Entrada más cómoda para el cliente",
     ],
   };
 }

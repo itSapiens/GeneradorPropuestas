@@ -181,17 +181,15 @@ function resolveSavingsRate(
     return cleanExplicit;
   }
 
-  if (typeof weightedEnergyPrice === "number" && weightedEnergyPrice > 0) {
-    return weightedEnergyPrice;
-  }
-
-  // Solo usar el campo original como tarifa energética si es razonable
   const fallback = normalizePositive(fallbackField, 0);
   if (fallback > 0 && fallback <= 5) {
     return fallback;
   }
 
-  // Fallback conservador realista
+  if (typeof weightedEnergyPrice === "number" && weightedEnergyPrice > 0) {
+    return weightedEnergyPrice;
+  }
+
   return 0.18;
 }
 
