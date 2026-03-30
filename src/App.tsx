@@ -63,7 +63,7 @@ import {
 
 // import {ContratacionDesdePropuestaPage} from "./pages/ContratacionDesdePropuestaPage"
 import ContratacionDesdePropuestaPage from "./pages/ContratacionDesdePropuestaPage";
-import ReservationConfirmedPage from "./pages/ReservationconfirmedPage";
+import ReservationConfirmedPage from "./pages/ReservationConfirmedPage";
 import ReservationCancelledPage from "./pages/ReservationCancelledPage";
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 
