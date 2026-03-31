@@ -723,7 +723,7 @@ function drawEconomicSummary(
       y,
       cardW,
       cardH,
-      "Ahorro total",
+      "Ahorro 25 años",
       formatCurrency(proposal.totalSavings25Years),
     );
 
@@ -1407,7 +1407,7 @@ function drawRecommendationSummaryCard(
       topY + 21,
       w - 8,
       18,
-      "Ahorro total",
+      "Ahorro 25 años",
       formatCurrency(proposal.totalSavings25Years),
     );
   } else {
@@ -1417,7 +1417,7 @@ function drawRecommendationSummaryCard(
       topY + 21,
       miniW,
       18,
-      "Ahorro total",
+      "Ahorro 25 años",
       formatCurrency(proposal.totalSavings25Years),
     );
 

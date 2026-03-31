@@ -131,6 +131,49 @@ function pickFirstString(...values: unknown[]): string | null {
   }
   return null;
 }
+type ProposalMode = "investment" | "service";
+
+function normalizeInstallationModalidad(
+  modalidad: unknown,
+): "inversion" | "servicio" | "ambas" {
+  const value = String(modalidad || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  if (value === "inversion") return "inversion";
+  if (value === "servicio" || value === "service") return "servicio";
+  if (value === "ambas") return "ambas";
+
+  return "ambas";
+}
+
+function getAllowedProposalModes(modalidad: unknown): ProposalMode[] {
+  const normalized = normalizeInstallationModalidad(modalidad);
+
+  if (normalized === "inversion") return ["investment"];
+  if (normalized === "servicio") return ["service"];
+  return ["investment", "service"];
+}
+
+function resolveProposalMode(
+  requestedMode: unknown,
+  installationModalidad: unknown,
+): ProposalMode {
+  const requested: ProposalMode =
+    requestedMode === "service" ? "service" : "investment";
+
+  const allowedModes = getAllowedProposalModes(installationModalidad);
+
+  return allowedModes.includes(requested)
+    ? requested
+    : (allowedModes[0] ?? "investment");
+}
+
+function getProposalModeLabel(mode: ProposalMode): string {
+  return mode === "investment" ? "Inversión" : "Servicio";
+}
 
 function getStudyCoordinates(study: any): { lat: number; lng: number } | null {
   const lat =
@@ -1448,8 +1491,7 @@ function buildBasicContractHtml(params: {
             params.installation.nombre_instalacion
           }</p>
           <p><strong>Dirección:</strong> ${params.installation.direccion}</p>
-          <p><strong>Modalidad:</strong> ${params.proposalMode}</p>
-          <p><strong>kWp asignados:</strong> ${params.assignedKwp}</p>
+<p><strong>Modalidad:</strong> ${getProposalModeLabel(params.proposalMode)}</p>          <p><strong>kWp asignados:</strong> ${params.assignedKwp}</p>
         </div>
 
         <div class="box">
@@ -3449,16 +3491,19 @@ async function startServer() {
             study.selected_installation_snapshot ?? null,
         },
         installation: {
-          id: installation.id,
-          nombre_instalacion: installation.nombre_instalacion,
-          direccion: installation.direccion,
-          modalidad: installation.modalidad,
-          contractable_kwp_total: installation.contractable_kwp_total ?? null,
-          contractable_kwp_reserved:
-            installation.contractable_kwp_reserved ?? null,
-          contractable_kwp_confirmed:
-            installation.contractable_kwp_confirmed ?? null,
-        },
+  id: installation.id,
+  nombre_instalacion: installation.nombre_instalacion,
+  direccion: installation.direccion,
+  modalidad: installation.modalidad,
+  availableProposalModes: getAllowedProposalModes(installation.modalidad),
+  defaultProposalMode:
+    getAllowedProposalModes(installation.modalidad)[0] ?? "investment",
+  contractable_kwp_total: installation.contractable_kwp_total ?? null,
+  contractable_kwp_reserved:
+    installation.contractable_kwp_reserved ?? null,
+  contractable_kwp_confirmed:
+    installation.contractable_kwp_confirmed ?? null,
+},
         existingContract: existingContract
           ? {
               id: existingContract.id,
@@ -3557,8 +3602,11 @@ async function startServer() {
         });
       }
 
-      const proposalMode =
-        req.body?.proposalMode === "service" ? "service" : "investment";
+   const requestedProposalMode = req.body?.proposalMode;
+const proposalMode = resolveProposalMode(
+  requestedProposalMode,
+  installation.modalidad,
+);
 
       const { data: existingContract, error: existingContractError } =
         await supabase
@@ -3575,6 +3623,40 @@ async function startServer() {
       }
 
       let contract = existingContract;
+      if (
+  contract &&
+  contract.status === "generated" &&
+  !contract.signed_at &&
+  !contract.uploaded_at &&
+  contract.proposal_mode !== proposalMode
+) {
+  const { data: updatedExistingContract, error: updateExistingContractError } =
+    await supabase
+      .from("contracts")
+      .update({
+        proposal_mode: proposalMode,
+        metadata: {
+          ...(contract.metadata ?? {}),
+          assigned_kwp: assignedKwp,
+          created_from_resume_access: true,
+          proposal_mode_updated_from_access: true,
+          proposal_mode_updated_at: new Date().toISOString(),
+        },
+      })
+      .eq("id", contract.id)
+      .select()
+      .single();
+
+  if (updateExistingContractError || !updatedExistingContract) {
+    return res.status(500).json({
+      error: "No se pudo actualizar la modalidad del contrato existente",
+      details:
+        updateExistingContractError?.message ?? "Error desconocido",
+    });
+  }
+
+  contract = updatedExistingContract;
+}
 
       if (!contract) {
         const insertPayload = {
@@ -3735,10 +3817,14 @@ async function startServer() {
     try {
       const { studyId } = req.params;
 
-      const proposalMode =
-        req.body?.proposalMode === "service" ? "service" : "investment";
+  
 
       const ctx = await getContractContextFromStudy(studyId);
+      const requestedProposalMode = req.body?.proposalMode;
+const proposalMode = resolveProposalMode(
+  requestedProposalMode,
+  ctx.installation.modalidad,
+);
 
       const { data: existingContract } = await supabase
         .from("contracts")
@@ -3747,6 +3833,39 @@ async function startServer() {
         .maybeSingle();
 
       let contract = existingContract;
+      if (
+  contract &&
+  contract.status === "generated" &&
+  !contract.signed_at &&
+  !contract.uploaded_at &&
+  contract.proposal_mode !== proposalMode
+) {
+  const { data: updatedExistingContract, error: updateExistingContractError } =
+    await supabase
+      .from("contracts")
+      .update({
+        proposal_mode: proposalMode,
+        metadata: {
+          ...(contract.metadata ?? {}),
+          assigned_kwp: ctx.assignedKwp,
+          proposal_mode_updated_from_study: true,
+          proposal_mode_updated_at: new Date().toISOString(),
+        },
+      })
+      .eq("id", contract.id)
+      .select()
+      .single();
+
+  if (updateExistingContractError || !updatedExistingContract) {
+    return res.status(500).json({
+      error: "No se pudo actualizar la modalidad del contrato existente",
+      details:
+        updateExistingContractError?.message ?? "Error desconocido",
+    });
+  }
+
+  contract = updatedExistingContract;
+}
 
       if (!contract) {
         const insertPayload = {

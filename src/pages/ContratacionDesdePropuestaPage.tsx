@@ -1,15 +1,27 @@
 import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  FileSignature,
+  Loader2,
+  PenLine,
+  ShieldCheck,
+  Wallet,
+  Zap,
+} from "lucide-react";
 import { Icon } from "@iconify/react";
 import { jsPDF } from "jspdf";
 import { sileo } from "sileo";
+import { cn, formatNumber } from "../lib/utils";
+
+type ProposalMode = "investment" | "service";
 
 type ContractPreviewData = {
   contractId: string;
   contractNumber: string;
-  proposalMode: "investment" | "service";
+  proposalMode: ProposalMode;
   assignedKwp: number;
   client: {
     id: string;
@@ -31,7 +43,7 @@ type GeneratedContractResponse = {
   contract: {
     id: string;
     status: string;
-    proposal_mode: "investment" | "service";
+    proposal_mode: ProposalMode;
     contract_number: string;
   };
   previewHtml: string;
@@ -62,13 +74,20 @@ type SignedContractResponse = {
 };
 
 export default function ContratacionDesdePropuestaPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const resumeToken =
     searchParams.get("resume") ||
     sessionStorage.getItem("proposal_resume_token") ||
     "";
+
+  const modeFromUrl = searchParams.get("mode");
+  const initialMode: ProposalMode =
+    modeFromUrl === "service" ? "service" : "investment";
+
+  const [selectedMode, setSelectedMode] =
+    useState<ProposalMode>(initialMode);
 
   const [generatedContract, setGeneratedContract] =
     useState<GeneratedContractResponse | null>(null);
@@ -81,12 +100,13 @@ export default function ContratacionDesdePropuestaPage() {
 
   const signatureCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const signatureDrawingRef = useRef(false);
-  const hasLoadedContractRef = useRef(false);
 
   useEffect(() => {
-    if (hasLoadedContractRef.current) return;
-    hasLoadedContractRef.current = true;
+    const nextMode = searchParams.get("mode") === "service" ? "service" : "investment";
+    setSelectedMode(nextMode);
+  }, [searchParams]);
 
+  useEffect(() => {
     const loadContract = async () => {
       if (!resumeToken) {
         sileo.error({
@@ -97,11 +117,17 @@ export default function ContratacionDesdePropuestaPage() {
         return;
       }
 
+      setLoading(true);
+      setGeneratedContract(null);
+      setSignedContractResult(null);
+      clearSignature();
+
       try {
         const { data } = await axios.post<GeneratedContractResponse>(
           "/api/contracts/generate-from-access",
           {
             resumeToken,
+            proposalMode: selectedMode,
           },
         );
 
@@ -149,15 +175,21 @@ export default function ContratacionDesdePropuestaPage() {
         });
 
         navigate("/");
-
-        navigate("/");
       } finally {
         setLoading(false);
       }
     };
 
     void loadContract();
-  }, [resumeToken, navigate]);
+  }, [resumeToken, selectedMode, navigate]);
+
+  const handleChangeMode = (mode: ProposalMode) => {
+    setSelectedMode(mode);
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("mode", mode);
+    setSearchParams(nextParams, { replace: true });
+  };
 
   const clearSignature = () => {
     const canvas = signatureCanvasRef.current;
@@ -381,6 +413,8 @@ export default function ContratacionDesdePropuestaPage() {
         formData,
       );
 
+      setSignedContractResult(response.data);
+
       const goHome = () => {
         sessionStorage.removeItem("proposal_resume_token");
         navigate("/");
@@ -392,7 +426,6 @@ export default function ContratacionDesdePropuestaPage() {
         actionLabel: "Ir al inicio",
         onAction: goHome,
         duration: 3500,
-        // si tu versión de sileo soporta icon, déjalo
         icon: (
           <Icon
             icon="solar:shield-check-bold-duotone"
@@ -462,12 +495,18 @@ export default function ContratacionDesdePropuestaPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 text-slate-700" />
-          <p className="text-slate-600 font-semibold">
-            Preparando tu contrato...
-          </p>
+      <div className="min-h-screen bg-slate-50 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(87,217,211,0.16),transparent_28%),radial-gradient(circle_at_top_right,rgba(148,194,255,0.16),transparent_24%)]" />
+        <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
+          <div className="rounded-[2rem] border border-brand-navy/5 bg-white px-8 py-10 shadow-2xl shadow-brand-navy/5 text-center">
+            <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 text-brand-navy" />
+            <p className="font-bold text-brand-navy">
+              Preparando tu contrato...
+            </p>
+            <p className="mt-2 text-sm text-brand-gray">
+              Estamos cargando la modalidad seleccionada.
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -477,126 +516,285 @@ export default function ContratacionDesdePropuestaPage() {
     return null;
   }
 
+  const modeLabel =
+    selectedMode === "investment" ? "Inversión" : "Servicio";
+
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-8">
-      <div className="mx-auto max-w-6xl">
-        {signedContractResult?.reservationSummary ? (
-          <div className="mb-6 rounded-[1.5rem] bg-emerald-50 border border-emerald-200 p-5">
-            <p className="text-sm font-bold uppercase tracking-widest text-emerald-700 mb-2">
-              Contrato firmado
-            </p>
-            <p className="text-sm text-emerald-900 leading-relaxed">
-              Se han reservado{" "}
-              <strong>
-                {signedContractResult.reservationSummary.reservedKwp} kWp
-              </strong>{" "}
-              en{" "}
-              <strong>
-                {signedContractResult.reservationSummary.installationName}
-              </strong>
-              .
-            </p>
-          </div>
-        ) : null}
+    <div className="min-h-screen bg-slate-50 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(87,217,211,0.16),transparent_30%),radial-gradient(circle_at_top_right,rgba(148,194,255,0.18),transparent_28%),linear-gradient(to_bottom,rgba(7,0,95,0.02),rgba(7,0,95,0.01))]" />
 
-        <div className="rounded-[2rem] md:rounded-[2.5rem] bg-white border border-slate-200 shadow-2xl overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px]">
-            <div className="p-4 md:p-8 border-b lg:border-b-0 lg:border-r border-slate-200">
-              <div className="rounded-[1.5rem] overflow-hidden border border-slate-200 bg-slate-50">
-                <iframe
-                  title="Vista previa del contrato"
-                  srcDoc={generatedContract.previewHtml}
-                  className="w-full h-[320px] sm:h-[420px] md:h-[560px] bg-white"
-                />
-              </div>
+      <div className="relative z-10 px-4 py-6 md:px-8 md:py-8">
+        <div className="mx-auto max-w-7xl space-y-6">
+          {signedContractResult?.reservationSummary ? (
+            <div className="rounded-[1.6rem] bg-emerald-50 border border-emerald-200 p-5">
+              <p className="text-sm font-bold uppercase tracking-widest text-emerald-700 mb-2">
+                Contrato firmado
+              </p>
+              <p className="text-sm text-emerald-900 leading-relaxed">
+                Se han reservado{" "}
+                <strong>
+                  {signedContractResult.reservationSummary.reservedKwp} kWp
+                </strong>{" "}
+                en{" "}
+                <strong>
+                  {signedContractResult.reservationSummary.installationName}
+                </strong>
+                .
+              </p>
             </div>
+          ) : null}
 
-            <div className="p-4 md:p-6 space-y-5 bg-slate-50">
-              <div className="rounded-[1.4rem] bg-white border border-slate-200 p-4">
-                <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-slate-400 mb-2">
-                  Contrato
-                </p>
-                <p className="font-bold text-slate-900">
-                  {generatedContract.preview.contractNumber}
-                </p>
-                <p className="text-sm text-slate-500 mt-2">
-                  {generatedContract.preview.client.nombre}{" "}
-                  {generatedContract.preview.client.apellidos}
-                </p>
-                <p className="text-sm text-slate-500">
-                  DNI: {generatedContract.preview.client.dni}
-                </p>
-              </div>
+          <div className="grid grid-cols-1 xl:grid-cols-[380px_minmax(0,1fr)] gap-6">
+            <div className="rounded-[2.4rem] bg-brand-navy text-white p-6 md:p-7 shadow-2xl shadow-brand-navy/15 overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-44 h-44 bg-brand-mint/20 blur-3xl rounded-full -mr-14 -mt-14" />
 
-              <div className="rounded-[1.4rem] bg-white border border-slate-200 p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-slate-400">
-                    Firma
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={clearSignature}
-                    className="text-sm font-semibold text-slate-700 hover:text-slate-900 transition"
-                  >
-                    Limpiar
-                  </button>
+              <div className="relative z-10">
+                <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/90">
+                  <FileSignature className="h-4 w-4" />
+                  Continuar contratación
                 </div>
 
-                <canvas
-                  ref={signatureCanvasRef}
-                  width={600}
-                  height={180}
-                  className="w-full h-40 rounded-[1.2rem] border border-dashed border-slate-300 bg-white touch-none"
-                  onMouseDown={startSignatureDraw}
-                  onMouseMove={moveSignatureDraw}
-                  onMouseUp={endSignatureDraw}
-                  onMouseLeave={endSignatureDraw}
-                  onTouchStart={startSignatureDraw}
-                  onTouchMove={moveSignatureDraw}
-                  onTouchEnd={endSignatureDraw}
-                />
+                <h1 className="mt-5 text-3xl md:text-4xl font-black leading-tight">
+                  Revisa y firma
+                  <br />
+                  tu contrato
+                </h1>
 
-                <p className="text-xs text-slate-500 mt-3 leading-relaxed">
-                  Firma dentro del recuadro. Al confirmar, se generará el PDF
-                  firmado y se enviará al backend para crear la reserva.
+                <p className="mt-4 text-sm leading-6 text-white/75">
+                  Has accedido desde una propuesta enviada previamente. Revisa
+                  la modalidad seleccionada, comprueba el contrato y firma para
+                  continuar con la reserva.
                 </p>
-              </div>
 
-              <div className="rounded-[1.4rem] bg-indigo-50 border border-indigo-100 p-4 text-slate-900">
-                <div className="flex items-center gap-2 mb-2">
-                  <Icon icon="solar:bolt-bold-duotone" className="h-5 w-5" />
-                  <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-slate-500">
-                    Reserva provisional
-                  </p>
+                <div className="mt-7 space-y-4">
+                  <div className="rounded-[1.5rem] bg-white/10 border border-white/10 p-4">
+                    <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/55">
+                      Titular
+                    </p>
+                    <p className="mt-2 text-base font-bold">
+                      {generatedContract.preview.client.nombre}{" "}
+                      {generatedContract.preview.client.apellidos}
+                    </p>
+                    <p className="mt-1 text-sm text-white/70">
+                      DNI: {generatedContract.preview.client.dni}
+                    </p>
+                  </div>
+
+                  <div className="rounded-[1.5rem] bg-white/10 border border-white/10 p-4">
+                    <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/55">
+                      Instalación
+                    </p>
+                    <p className="mt-2 text-base font-bold">
+                      {generatedContract.preview.installation.nombre_instalacion}
+                    </p>
+                    <p className="mt-1 text-sm text-white/70 leading-6">
+                      {generatedContract.preview.installation.direccion}
+                    </p>
+                  </div>
+
+                  <div className="rounded-[1.5rem] bg-white/10 border border-white/10 p-4">
+                    <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/55">
+                      Potencia asignada
+                    </p>
+                    <p className="mt-2 text-base font-bold">
+                      {formatNumber(generatedContract.preview.assignedKwp)} kWp
+                    </p>
+                  </div>
                 </div>
-
-                <p className="text-sm leading-relaxed">
-                  Al firmar, se reservarán{" "}
-                  <span className="font-bold">
-                    {generatedContract.preview.assignedKwp} kWp
-                  </span>{" "}
-                  en la instalación seleccionada.
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <button
-                  type="button"
-                  onClick={handleSubmitSignedContract}
-                  disabled={isSigningContract}
-                  className="w-full rounded-[1.2rem] bg-slate-900 px-4 py-4 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isSigningContract ? "Firmando..." : "Firmar y reservar"}
-                </button>
 
                 <button
                   type="button"
                   onClick={() => navigate("/")}
-                  className="w-full rounded-[1.2rem] border border-slate-300 bg-white px-4 py-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                  className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white/85 hover:text-white transition"
                 >
-                  Cancelar
+                  <ArrowLeft className="h-4 w-4" />
+                  Volver al inicio
                 </button>
+              </div>
+            </div>
+
+            <div className="rounded-[2rem] md:rounded-[2.5rem] bg-white border border-brand-navy/5 shadow-2xl shadow-brand-navy/5 overflow-hidden">
+              <div className="border-b border-brand-navy/5 px-5 py-5 md:px-8 md:py-6 bg-white/95 backdrop-blur-md">
+                <div className="flex flex-col gap-5">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40 mb-2">
+                      Modalidad
+                    </p>
+
+                    <div className="inline-flex w-full rounded-[1.25rem] bg-brand-navy/[0.04] p-1.5 border border-brand-navy/5">
+                      <button
+                        type="button"
+                        onClick={() => handleChangeMode("investment")}
+                        disabled={loading || isSigningContract}
+                        className={cn(
+                          "flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-[1rem] text-sm font-semibold transition-all",
+                          selectedMode === "investment"
+                            ? "bg-brand-navy text-white shadow-md"
+                            : "text-brand-navy/70 hover:text-brand-navy",
+                        )}
+                      >
+                        <Wallet className="h-5 w-5" />
+                        Inversión
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleChangeMode("service")}
+                        disabled={loading || isSigningContract}
+                        className={cn(
+                          "flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-[1rem] text-sm font-semibold transition-all",
+                          selectedMode === "service"
+                            ? "bg-brand-navy text-white shadow-md"
+                            : "text-brand-navy/70 hover:text-brand-navy",
+                        )}
+                      >
+                        <Zap className="h-5 w-5" />
+                        Servicio
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[1.3rem] bg-brand-mint/10 border border-brand-mint/20 p-4 flex items-start gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-brand-navy text-white flex items-center justify-center shrink-0">
+                      {selectedMode === "investment" ? (
+                        <Wallet className="h-5 w-5" />
+                      ) : (
+                        <Zap className="h-5 w-5" />
+                      )}
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-bold text-brand-navy">
+                        Modalidad seleccionada: {modeLabel}
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-brand-gray">
+                        Al cambiar la modalidad se regenera la vista previa del
+                        contrato con la opción elegida.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px]">
+                <div className="p-4 md:p-8 border-b lg:border-b-0 lg:border-r border-brand-navy/5">
+                  <div className="rounded-[1.5rem] overflow-hidden border border-brand-navy/5 bg-brand-sky/5">
+                    <iframe
+                      title="Vista previa del contrato"
+                      srcDoc={generatedContract.previewHtml}
+                      className="w-full h-[360px] sm:h-[460px] md:h-[620px] bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-4 md:p-6 space-y-5 bg-brand-navy/[0.02]">
+                  <div className="rounded-[1.4rem] bg-white border border-brand-navy/5 p-4">
+                    <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40 mb-2">
+                      Contrato
+                    </p>
+                    <p className="font-bold text-brand-navy">
+                      {generatedContract.preview.contractNumber}
+                    </p>
+                    <p className="text-sm text-brand-gray mt-2">
+                      {generatedContract.preview.client.nombre}{" "}
+                      {generatedContract.preview.client.apellidos}
+                    </p>
+                    <p className="text-sm text-brand-gray">
+                      DNI: {generatedContract.preview.client.dni}
+                    </p>
+                  </div>
+
+                  <div className="rounded-[1.4rem] bg-white border border-brand-navy/5 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40">
+                        Firma
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={clearSignature}
+                        className="text-sm font-semibold text-brand-navy hover:text-brand-mint transition"
+                      >
+                        Limpiar
+                      </button>
+                    </div>
+
+                    <canvas
+                      ref={signatureCanvasRef}
+                      width={600}
+                      height={180}
+                      className="w-full h-40 rounded-[1.2rem] border border-dashed border-brand-navy/20 bg-white touch-none"
+                      onMouseDown={startSignatureDraw}
+                      onMouseMove={moveSignatureDraw}
+                      onMouseUp={endSignatureDraw}
+                      onMouseLeave={endSignatureDraw}
+                      onTouchStart={startSignatureDraw}
+                      onTouchMove={moveSignatureDraw}
+                      onTouchEnd={endSignatureDraw}
+                    />
+
+                    <p className="text-xs text-brand-gray mt-3 leading-relaxed">
+                      Firma dentro del recuadro. Al confirmar, se generará el
+                      PDF firmado y se enviará al backend para crear la reserva.
+                    </p>
+                  </div>
+
+                  <div className="rounded-[1.4rem] bg-brand-mint/10 border border-brand-mint/20 p-4 text-brand-navy">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ShieldCheck className="h-5 w-5" />
+                      <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/60">
+                        Reserva provisional
+                      </p>
+                    </div>
+
+                    <p className="text-sm leading-relaxed">
+                      Al firmar, se reservarán{" "}
+                      <span className="font-bold">
+                        {formatNumber(generatedContract.preview.assignedKwp)} kWp
+                      </span>{" "}
+                      en la instalación seleccionada bajo modalidad de{" "}
+                      <span className="font-bold">{modeLabel.toLowerCase()}</span>.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <button
+                      type="button"
+                      onClick={handleSubmitSignedContract}
+                      disabled={isSigningContract}
+                      className="w-full rounded-[1.2rem] brand-gradient px-4 py-4 text-sm font-bold text-brand-navy transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60 shadow-lg shadow-brand-mint/15"
+                    >
+                      {isSigningContract ? (
+                        <span className="inline-flex items-center justify-center">
+                          <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                          Firmando...
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center justify-center">
+                          <PenLine className="mr-3 h-5 w-5" />
+                          Firmar y reservar
+                        </span>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => navigate("/")}
+                      className="w-full rounded-[1.2rem] border border-brand-navy/10 bg-white px-4 py-4 text-sm font-bold text-brand-navy transition hover:bg-brand-navy/[0.02]"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+
+                  {signatureHasContent ? (
+                    <div className="rounded-[1.2rem] bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800">
+                      <div className="flex items-center gap-2">
+                        <Check className="h-4 w-4" />
+                        Firma detectada correctamente.
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>
