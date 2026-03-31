@@ -107,6 +107,8 @@ interface ApiInstallation {
   unavailable_kwp?: number;
   available_kwp?: number;
   occupancy_percent?: number;
+
+  required_kwp?: number;
 }
 
 const BILL_TYPES = ["2TD", "3TD"] as const;
@@ -1160,6 +1162,46 @@ async function geocodeAddress(address: string): Promise<{
   };
 }
 
+function calculateRequiredKwpForInstallation(
+  validatedData: ValidationBillData,
+  installation: ApiInstallation,
+): number {
+  const result = calculateEnergyStudy({
+    monthlyConsumptionKwh:
+      validatedData.averageMonthlyConsumptionKwh ??
+      validatedData.monthlyConsumption ??
+      0,
+    invoiceConsumptionKwh:
+      validatedData.currentInvoiceConsumptionKwh ??
+      validatedData.averageMonthlyConsumptionKwh ??
+      validatedData.monthlyConsumption ??
+      0,
+    billType:
+      (validatedData.billType as BillData["billType"] | undefined) || "2TD",
+    effectiveHours: installation.horas_efectivas,
+    investmentCostKwh: installation.coste_kwh_inversion,
+    serviceCostKwh: installation.coste_kwh_servicio,
+    selfConsumptionRatio: normalizeSelfConsumption(
+      installation.porcentaje_autoconsumo,
+    ),
+    periodPrices: {
+      P1: validatedData.periodPriceP1,
+      P2: validatedData.periodPriceP2,
+      P3: validatedData.periodPriceP3,
+      P4: validatedData.periodPriceP4,
+      P5: validatedData.periodPriceP5,
+      P6: validatedData.periodPriceP6,
+    },
+    surplusCompensationPriceKwh: installation.precio_excedentes_eur_kwh ?? 0,
+    maintenanceAnnualPerKwp:
+      installation.coste_anual_mantenimiento_por_kwp ??
+      INVESTMENT_MAINTENANCE_EUR_PER_KWP_YEAR,
+    vatRate: 0.21,
+  });
+
+  return getFirstNumericField(result, ["recommendedPowerKwp"], 0);
+}
+
 const chartPalette = {
   navy: "#07005f",
   mint: "#57d9d3",
@@ -1176,6 +1218,10 @@ function MainAppContent() {
   const [rawExtraction, setRawExtraction] = useState<ExtractedBillData | null>(
     null,
   );
+  const [installationAvailabilityError, setInstallationAvailabilityError] =
+    useState<"no_installations_in_radius" | "insufficient_capacity" | null>(
+      null,
+    );
   const [proposalResults, setProposalResults] =
     useState<StudyComparisonResult | null>(null);
 
@@ -2001,161 +2047,164 @@ function MainAppContent() {
       setIsGeneratingContract(false);
     }
   };
-const currentContractId =
-  signedContractResult?.contract?.id ?? generatedContract?.contract?.id ?? null;
-const handleSubmitSignedContract = async () => {
-  if (!generatedContract?.contract?.id || !generatedContract?.preview) {
-    sileo.error({
-      title: "Precontrato no disponible",
-      description: "No se ha podido preparar el precontrato para firmar.",
-    });
-    return;
-  }
-
-  if (!signatureHasContent || !signatureCanvasRef.current) {
-    sileo.warning({
-      title: "Falta la firma",
-      description: "Debes firmar en el recuadro antes de continuar.",
-    });
-    return;
-  }
-
-  setIsSigningContract(true);
-
-  try {
-    const signatureDataUrl = signatureCanvasRef.current.toDataURL("image/png");
-
-    const signedPdfFile = await buildSignedContractPdfFile(
-      generatedContract.preview,
-      signatureDataUrl,
-    );
-
-    const formData = new FormData();
-    formData.append("signed_contract", signedPdfFile);
-
-    const response = await axios.post<SignedContractResponse>(
-      `/api/contracts/${generatedContract.contract.id}/sign`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      },
-    );
-
-    console.log("RESPUESTA /sign:", response.data);
-
-    setSignedContractResult(response.data);
-    setIsContractModalOpen(false);
-    setIsPaymentMethodModalOpen(true);
-
-    sileo.success({
-      title: "Precontrato firmado correctamente",
-      description: `Se han reservado ${response.data.reservation.reservedKwp} kWp en ${response.data.reservation.installationName}. Ahora debes seleccionar la forma de pago para continuar.`,
-    });
-  } catch (error: any) {
-    console.error("Error firmando precontrato:", error);
-    console.error("status:", error?.response?.status);
-    console.error("data:", error?.response?.data);
-
-    sileo.error({
-      title: "No se pudo iniciar la reserva",
-      description:
-        error?.response?.data?.details ||
-        error?.response?.data?.error ||
-        error?.message ||
-        "Ha ocurrido un error inesperado.",
-    });
-  } finally {
-    setIsSigningContract(false);
-  }
-};
-
-const handleSelectStripePayment = async () => {
-  if (!currentContractId) {
-    sileo.error({
-      title: "Contrato no disponible",
-      description: "No se ha encontrado el contrato para iniciar el pago.",
-    });
-    return;
-  }
-
-  setIsSelectingPaymentMethod(true);
-
-  try {
-    const response = await axios.post<StripePaymentResponse>(
-      `/api/contracts/${currentContractId}/payments/stripe`,
-    );
-
-    const checkoutUrl = response.data?.stripe?.checkoutUrl;
-
-    if (!checkoutUrl) {
+  const currentContractId =
+    signedContractResult?.contract?.id ??
+    generatedContract?.contract?.id ??
+    null;
+  const handleSubmitSignedContract = async () => {
+    if (!generatedContract?.contract?.id || !generatedContract?.preview) {
       sileo.error({
-        title: "Pago no disponible",
-        description: "No se pudo obtener la URL de Stripe.",
+        title: "Precontrato no disponible",
+        description: "No se ha podido preparar el precontrato para firmar.",
       });
       return;
     }
 
-    sileo.success({
-      title: "Redirigiendo a Stripe",
-      description: "Te llevamos al pago seguro con tarjeta.",
-    });
+    if (!signatureHasContent || !signatureCanvasRef.current) {
+      sileo.warning({
+        title: "Falta la firma",
+        description: "Debes firmar en el recuadro antes de continuar.",
+      });
+      return;
+    }
 
-    window.location.href = checkoutUrl;
-  } catch (error: any) {
-    console.error("Error iniciando pago con Stripe:", error);
+    setIsSigningContract(true);
 
-    sileo.error({
-      title: "No se pudo iniciar el pago con tarjeta",
-      description:
-        error?.response?.data?.details ||
-        error?.response?.data?.error ||
-        error?.message ||
-        "Ha ocurrido un error inesperado.",
-    });
-  } finally {
-    setIsSelectingPaymentMethod(false);
-  }
-};
+    try {
+      const signatureDataUrl =
+        signatureCanvasRef.current.toDataURL("image/png");
 
-const handleSelectBankTransferPayment = async () => {
-  if (!currentContractId) {
-    sileo.error({
-      title: "Contrato no disponible",
-      description: "No se ha encontrado el contrato para iniciar el pago.",
-    });
-    return;
-  }
+      const signedPdfFile = await buildSignedContractPdfFile(
+        generatedContract.preview,
+        signatureDataUrl,
+      );
 
-  setIsSelectingPaymentMethod(true);
+      const formData = new FormData();
+      formData.append("signed_contract", signedPdfFile);
 
-  try {
-    const response = await axios.post<BankTransferPaymentResponse>(
-      `/api/contracts/${currentContractId}/payments/bank-transfer`,
-    );
+      const response = await axios.post<SignedContractResponse>(
+        `/api/contracts/${generatedContract.contract.id}/sign`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
 
-    setIsPaymentMethodModalOpen(false);
+      console.log("RESPUESTA /sign:", response.data);
 
-    sileo.success({
-      title: "Instrucciones enviadas",
-      description: `Hemos enviado el email con las instrucciones de transferencia a ${response.data.bankTransfer.emailSentTo}.`,
-    });
-  } catch (error: any) {
-    console.error("Error seleccionando transferencia bancaria:", error);
+      setSignedContractResult(response.data);
+      setIsContractModalOpen(false);
+      setIsPaymentMethodModalOpen(true);
 
-    sileo.error({
-      title: "No se pudo preparar el pago por transferencia",
-      description:
-        error?.response?.data?.details ||
-        error?.response?.data?.error ||
-        error?.message ||
-        "Ha ocurrido un error inesperado.",
-    });
-  } finally {
-    setIsSelectingPaymentMethod(false);
-  }
-};
+      sileo.success({
+        title: "Precontrato firmado correctamente",
+        description: `Se han reservado ${response.data.reservation.reservedKwp} kWp en ${response.data.reservation.installationName}. Ahora debes seleccionar la forma de pago para continuar.`,
+      });
+    } catch (error: any) {
+      console.error("Error firmando precontrato:", error);
+      console.error("status:", error?.response?.status);
+      console.error("data:", error?.response?.data);
+
+      sileo.error({
+        title: "No se pudo iniciar la reserva",
+        description:
+          error?.response?.data?.details ||
+          error?.response?.data?.error ||
+          error?.message ||
+          "Ha ocurrido un error inesperado.",
+      });
+    } finally {
+      setIsSigningContract(false);
+    }
+  };
+
+  const handleSelectStripePayment = async () => {
+    if (!currentContractId) {
+      sileo.error({
+        title: "Contrato no disponible",
+        description: "No se ha encontrado el contrato para iniciar el pago.",
+      });
+      return;
+    }
+
+    setIsSelectingPaymentMethod(true);
+
+    try {
+      const response = await axios.post<StripePaymentResponse>(
+        `/api/contracts/${currentContractId}/payments/stripe`,
+      );
+
+      const checkoutUrl = response.data?.stripe?.checkoutUrl;
+
+      if (!checkoutUrl) {
+        sileo.error({
+          title: "Pago no disponible",
+          description: "No se pudo obtener la URL de Stripe.",
+        });
+        return;
+      }
+
+      sileo.success({
+        title: "Redirigiendo a Stripe",
+        description: "Te llevamos al pago seguro con tarjeta.",
+      });
+
+      window.location.href = checkoutUrl;
+    } catch (error: any) {
+      console.error("Error iniciando pago con Stripe:", error);
+
+      sileo.error({
+        title: "No se pudo iniciar el pago con tarjeta",
+        description:
+          error?.response?.data?.details ||
+          error?.response?.data?.error ||
+          error?.message ||
+          "Ha ocurrido un error inesperado.",
+      });
+    } finally {
+      setIsSelectingPaymentMethod(false);
+    }
+  };
+
+  const handleSelectBankTransferPayment = async () => {
+    if (!currentContractId) {
+      sileo.error({
+        title: "Contrato no disponible",
+        description: "No se ha encontrado el contrato para iniciar el pago.",
+      });
+      return;
+    }
+
+    setIsSelectingPaymentMethod(true);
+
+    try {
+      const response = await axios.post<BankTransferPaymentResponse>(
+        `/api/contracts/${currentContractId}/payments/bank-transfer`,
+      );
+
+      setIsPaymentMethodModalOpen(false);
+
+      sileo.success({
+        title: "Instrucciones enviadas",
+        description: `Hemos enviado el email con las instrucciones de transferencia a ${response.data.bankTransfer.emailSentTo}.`,
+      });
+    } catch (error: any) {
+      console.error("Error seleccionando transferencia bancaria:", error);
+
+      sileo.error({
+        title: "No se pudo preparar el pago por transferencia",
+        description:
+          error?.response?.data?.details ||
+          error?.response?.data?.error ||
+          error?.message ||
+          "Ha ocurrido un error inesperado.",
+      });
+    } finally {
+      setIsSelectingPaymentMethod(false);
+    }
+  };
 
   const handleFileSelect = async (file: File) => {
     if (!privacyAccepted) {
@@ -2277,6 +2326,7 @@ const handleSelectBankTransferPayment = async () => {
         setProposalResults(null);
         setSelectedProposalView("investment");
         setSelectedInstallation(null);
+        setInstallationAvailabilityError(null);
 
         const coords = await geocodeAddress(normalizedData.address);
 
@@ -2296,7 +2346,7 @@ const handleSelectBankTransferPayment = async () => {
 
         setClientCoordinates(coords);
         setCurrentStep("map");
-        await fetchInstallations(coords);
+        await fetchInstallations(coords, normalizedData);
 
         sileo.success({ title: "Datos validados correctamente" });
       })(),
@@ -2310,11 +2360,15 @@ const handleSelectBankTransferPayment = async () => {
 
   const fetchInstallations = async (
     coordsParam?: { lat: number; lng: number } | null,
+    validatedDataParam?: ValidationBillData | null,
   ) => {
     const coords = coordsParam ?? clientCoordinates;
+    const validatedData =
+      validatedDataParam ?? (extractedData as ValidationBillData | null);
 
     if (!coords) {
       setInstallations([]);
+      setInstallationAvailabilityError("no_installations_in_radius");
       sileo.error({
         title: "Ubicación no disponible",
         description:
@@ -2323,7 +2377,18 @@ const handleSelectBankTransferPayment = async () => {
       return;
     }
 
+    if (!validatedData) {
+      setInstallations([]);
+      sileo.error({
+        title: "Datos insuficientes",
+        description:
+          "No se han encontrado los datos validados del cliente para calcular la potencia necesaria.",
+      });
+      return;
+    }
+
     setIsLoadingInstallations(true);
+    setInstallationAvailabilityError(null);
 
     try {
       const response = await axios.get<
@@ -2343,14 +2408,49 @@ const handleSelectBankTransferPayment = async () => {
           ? responseData.data
           : [];
 
-      setInstallations(
-        parsedInstallations
-          .filter((item) => item.active !== false)
-          .map((item) => ({
+      const installationsInRadius = parsedInstallations
+        .filter((item) => item.active !== false)
+        .map((item) => ({
+          ...item,
+          modalidad: normalizeInstallationModalidad(item.modalidad),
+        }));
+
+      if (installationsInRadius.length === 0) {
+        setInstallations([]);
+        setInstallationAvailabilityError("no_installations_in_radius");
+        return;
+      }
+
+      const eligibleInstallations = installationsInRadius
+        .map((item) => {
+          const requiredKwp = calculateRequiredKwpForInstallation(
+            validatedData,
+            item,
+          );
+
+          return {
             ...item,
-            modalidad: normalizeInstallationModalidad(item.modalidad),
-          })),
-      );
+            required_kwp: requiredKwp,
+          };
+        })
+        .filter((item) => {
+          const availableKwp = Number(item.available_kwp ?? 0);
+          const requiredKwp = Number(item.required_kwp ?? 0);
+
+          return (
+            Number.isFinite(requiredKwp) &&
+            requiredKwp > 0 &&
+            availableKwp >= requiredKwp
+          );
+        });
+
+      if (eligibleInstallations.length === 0) {
+        setInstallations([]);
+        setInstallationAvailabilityError("insufficient_capacity");
+        return;
+      }
+
+      setInstallations(eligibleInstallations);
     } catch (error) {
       console.error("Error fetching installations:", error);
       sileo.error({
@@ -2358,6 +2458,7 @@ const handleSelectBankTransferPayment = async () => {
         description: "Inténtalo de nuevo más tarde",
       });
       setInstallations([]);
+      setInstallationAvailabilityError(null);
     } finally {
       setIsLoadingInstallations(false);
     }
@@ -2367,6 +2468,18 @@ const handleSelectBankTransferPayment = async () => {
       ...inst,
       modalidad: normalizeInstallationModalidad(inst.modalidad),
     };
+
+    const availableKwp = Number(normalizedInst.available_kwp ?? 0);
+    const requiredKwp = Number(normalizedInst.required_kwp ?? 0);
+
+    if (requiredKwp > 0 && availableKwp < requiredKwp) {
+      sileo.error({
+        title: "Capacidad insuficiente",
+        description:
+          "Esta instalación no dispone de potencia suficiente para cubrir la recomendación del estudio.",
+      });
+      return;
+    }
 
     setSelectedInstallation(normalizedInst);
     setSelectedProposalView(getDefaultProposalMode(normalizedInst.modalidad));
@@ -2939,7 +3052,7 @@ const handleSelectBankTransferPayment = async () => {
                     </h2>
                     <p className="text-brand-gray">
                       Estas son las instalaciones activas disponibles dentro del
-                      radio legal de 2 km de tu ubicación.
+                      radio de 5 km de tu ubicación.
                     </p>
                   </div>
 
@@ -3037,13 +3150,17 @@ const handleSelectBankTransferPayment = async () => {
                       ) : installations.length === 0 ? (
                         <div className="rounded-[2rem] border border-amber-200 bg-amber-50 px-6 py-6 text-left">
                           <p className="text-sm font-bold uppercase tracking-widest text-amber-700">
-                            No hay instalaciones disponibles
+                            {installationAvailabilityError ===
+                            "insufficient_capacity"
+                              ? "No hay capacidad suficiente disponible"
+                              : "No hay instalaciones disponibles"}
                           </p>
 
                           <p className="text-sm text-amber-700/80 mt-3 leading-relaxed">
-                            No hemos encontrado instalaciones activas dentro de
-                            un radio de 2 km para esta dirección. Contacta con
-                            Sapiens para revisar tu caso.
+                            {installationAvailabilityError ===
+                            "insufficient_capacity"
+                              ? "Hemos encontrado instalaciones cercanas, pero ninguna dispone ahora mismo de la potencia necesaria para cubrir la recomendación de tu estudio. Contacta con Sapiens para revisar tu caso."
+                              : "No hemos encontrado instalaciones activas dentro del radio configurado para esta dirección. Contacta con Sapiens para revisar tu caso."}
                           </p>
 
                           <div className="mt-4 space-y-1 text-sm font-semibold text-brand-navy">
@@ -3972,9 +4089,9 @@ const handleSelectBankTransferPayment = async () => {
                         />
 
                         <p className="text-xs text-brand-gray mt-3 leading-relaxed">
-                         Firma dentro del recuadro. Al confirmar, se generará
-el PDF firmado, se creará tu reserva provisional y
-podrás elegir la forma de pago.
+                          Firma dentro del recuadro. Al confirmar, se generará
+                          el PDF firmado, se creará tu reserva provisional y
+                          podrás elegir la forma de pago.
                         </p>
                       </div>
 
@@ -4015,7 +4132,8 @@ podrás elegir la forma de pago.
                                 className="mr-3 h-5 w-5"
                               />
                             )}
-Firmar y continuar                          </Button>
+                            Firmar y continuar{" "}
+                          </Button>
 
                           <Button
                             variant="outline"
@@ -4035,138 +4153,148 @@ Firmar y continuar                          </Button>
         ) : null}
       </AnimatePresence>
       <AnimatePresence>
-  {isPaymentMethodModalOpen && signedContractResult ? (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[210] bg-brand-navy/50 backdrop-blur-sm overflow-y-auto"
-    >
-      <div className="min-h-full px-4 py-4 md:px-8 md:py-8 flex items-start md:items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, y: 24, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 12, scale: 0.98 }}
-          className="w-full max-w-3xl rounded-[2rem] md:rounded-[2.5rem] bg-white border border-brand-navy/5 shadow-2xl overflow-hidden"
-        >
-          <div className="p-5 md:p-8 border-b border-brand-navy/5 flex items-center justify-between gap-4">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40 mb-1">
-                Contratación
-              </p>
-              <h3 className="text-xl md:text-2xl font-bold text-brand-navy">
-                Selecciona la forma de pago
-              </h3>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIsPaymentMethodModalOpen(false)}
-              className="w-11 h-11 rounded-2xl bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy transition shrink-0"
-              disabled={isSelectingPaymentMethod}
-            >
-              ✕
-            </button>
-          </div>
-
-          <div className="p-5 md:p-8 space-y-6 bg-brand-navy/[0.02]">
-            <div className="rounded-[1.4rem] bg-white border border-brand-navy/5 p-5">
-              <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40 mb-3">
-                Resumen de la reserva
-              </p>
-
-              <div className="space-y-2 text-sm text-brand-navy/80">
-                <p>
-                  <span className="font-bold text-brand-navy">Instalación:</span>{" "}
-                  {signedContractResult.reservation.installationName}
-                </p>
-                <p>
-                  <span className="font-bold text-brand-navy">Potencia reservada:</span>{" "}
-                  {signedContractResult.reservation.reservedKwp} kWp
-                </p>
-                <p>
-                  <span className="font-bold text-brand-navy">Señal:</span>{" "}
-                  {formatCurrency(signedContractResult.reservation.signalAmount)}
-                </p>
-                <p>
-                  <span className="font-bold text-brand-navy">Fecha límite:</span>{" "}
-                  {new Date(
-                    signedContractResult.reservation.paymentDeadlineAt,
-                  ).toLocaleDateString("es-ES")}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button
-                type="button"
-                onClick={handleSelectBankTransferPayment}
-                disabled={isSelectingPaymentMethod}
-                className="rounded-[1.5rem] border border-brand-navy/10 bg-white p-6 text-left shadow-sm hover:shadow-md transition disabled:opacity-60"
+        {isPaymentMethodModalOpen && signedContractResult ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[210] bg-brand-navy/50 backdrop-blur-sm overflow-y-auto"
+          >
+            <div className="min-h-full px-4 py-4 md:px-8 md:py-8 flex items-start md:items-center justify-center">
+              <motion.div
+                initial={{ opacity: 0, y: 24, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 12, scale: 0.98 }}
+                className="w-full max-w-3xl rounded-[2rem] md:rounded-[2.5rem] bg-white border border-brand-navy/5 shadow-2xl overflow-hidden"
               >
-                <div className="w-12 h-12 rounded-2xl bg-brand-navy/5 flex items-center justify-center mb-4">
-                  <Icon
-                    icon="solar:card-transfer-bold-duotone"
-                    className="h-6 w-6 text-brand-navy"
-                  />
+                <div className="p-5 md:p-8 border-b border-brand-navy/5 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40 mb-1">
+                      Contratación
+                    </p>
+                    <h3 className="text-xl md:text-2xl font-bold text-brand-navy">
+                      Selecciona la forma de pago
+                    </h3>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsPaymentMethodModalOpen(false)}
+                    className="w-11 h-11 rounded-2xl bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy transition shrink-0"
+                    disabled={isSelectingPaymentMethod}
+                  >
+                    ✕
+                  </button>
                 </div>
 
-                <p className="text-lg font-bold text-brand-navy">
-                  Transferencia bancaria
-                </p>
-                <p className="mt-2 text-sm text-brand-gray leading-relaxed">
-                  Recibirás un correo con el IBAN, el concepto y el PDF del
-                  precontrato firmado. Tendrás 15 días para realizar la
-                  transferencia.
-                </p>
-              </button>
+                <div className="p-5 md:p-8 space-y-6 bg-brand-navy/[0.02]">
+                  <div className="rounded-[1.4rem] bg-white border border-brand-navy/5 p-5">
+                    <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40 mb-3">
+                      Resumen de la reserva
+                    </p>
 
-              <button
-                type="button"
-                onClick={handleSelectStripePayment}
-                disabled={isSelectingPaymentMethod}
-                className="rounded-[1.5rem] border border-brand-mint/20 bg-brand-mint/10 p-6 text-left shadow-sm hover:shadow-md transition disabled:opacity-60"
-              >
-                <div className="w-12 h-12 rounded-2xl bg-brand-navy text-white flex items-center justify-center mb-4">
-                  <Icon
-                    icon="solar:card-send-bold-duotone"
-                    className="h-6 w-6"
-                  />
+                    <div className="space-y-2 text-sm text-brand-navy/80">
+                      <p>
+                        <span className="font-bold text-brand-navy">
+                          Instalación:
+                        </span>{" "}
+                        {signedContractResult.reservation.installationName}
+                      </p>
+                      <p>
+                        <span className="font-bold text-brand-navy">
+                          Potencia reservada:
+                        </span>{" "}
+                        {signedContractResult.reservation.reservedKwp} kWp
+                      </p>
+                      <p>
+                        <span className="font-bold text-brand-navy">
+                          Señal:
+                        </span>{" "}
+                        {formatCurrency(
+                          signedContractResult.reservation.signalAmount,
+                        )}
+                      </p>
+                      <p>
+                        <span className="font-bold text-brand-navy">
+                          Fecha límite:
+                        </span>{" "}
+                        {new Date(
+                          signedContractResult.reservation.paymentDeadlineAt,
+                        ).toLocaleDateString("es-ES")}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={handleSelectBankTransferPayment}
+                      disabled={isSelectingPaymentMethod}
+                      className="rounded-[1.5rem] border border-brand-navy/10 bg-white p-6 text-left shadow-sm hover:shadow-md transition disabled:opacity-60"
+                    >
+                      <div className="w-12 h-12 rounded-2xl bg-brand-navy/5 flex items-center justify-center mb-4">
+                        <Icon
+                          icon="solar:card-transfer-bold-duotone"
+                          className="h-6 w-6 text-brand-navy"
+                        />
+                      </div>
+
+                      <p className="text-lg font-bold text-brand-navy">
+                        Transferencia bancaria
+                      </p>
+                      <p className="mt-2 text-sm text-brand-gray leading-relaxed">
+                        Recibirás un correo con el IBAN, el concepto y el PDF
+                        del precontrato firmado. Tendrás 15 días para realizar
+                        la transferencia.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleSelectStripePayment}
+                      disabled={isSelectingPaymentMethod}
+                      className="rounded-[1.5rem] border border-brand-mint/20 bg-brand-mint/10 p-6 text-left shadow-sm hover:shadow-md transition disabled:opacity-60"
+                    >
+                      <div className="w-12 h-12 rounded-2xl bg-brand-navy text-white flex items-center justify-center mb-4">
+                        <Icon
+                          icon="solar:card-send-bold-duotone"
+                          className="h-6 w-6"
+                        />
+                      </div>
+
+                      <p className="text-lg font-bold text-brand-navy">
+                        Tarjeta bancaria
+                      </p>
+                      <p className="mt-2 text-sm text-brand-gray leading-relaxed">
+                        Te redirigiremos a Stripe para completar el pago seguro
+                        de la señal con tarjeta.
+                      </p>
+                    </button>
+                  </div>
+
+                  <div className="pt-2">
+                    <Button
+                      variant="outline"
+                      className="w-full py-5 rounded-[1.2rem] border-brand-navy/10 text-brand-navy"
+                      onClick={() => setIsPaymentMethodModalOpen(false)}
+                      disabled={isSelectingPaymentMethod}
+                    >
+                      {isSelectingPaymentMethod ? (
+                        <>
+                          <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                          Procesando...
+                        </>
+                      ) : (
+                        "Cerrar"
+                      )}
+                    </Button>
+                  </div>
                 </div>
-
-                <p className="text-lg font-bold text-brand-navy">
-                  Tarjeta bancaria
-                </p>
-                <p className="mt-2 text-sm text-brand-gray leading-relaxed">
-                  Te redirigiremos a Stripe para completar el pago seguro de la
-                  señal con tarjeta.
-                </p>
-              </button>
+              </motion.div>
             </div>
-
-            <div className="pt-2">
-              <Button
-                variant="outline"
-                className="w-full py-5 rounded-[1.2rem] border-brand-navy/10 text-brand-navy"
-                onClick={() => setIsPaymentMethodModalOpen(false)}
-                disabled={isSelectingPaymentMethod}
-              >
-                {isSelectingPaymentMethod ? (
-                  <>
-                    <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                    Procesando...
-                  </>
-                ) : (
-                  "Cerrar"
-                )}
-              </Button>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    </motion.div>
-  ) : null}
-</AnimatePresence>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </Layout>
   );
 }
