@@ -1497,6 +1497,20 @@ function MainAppContent() {
 
   const activeProposal =
     activeProposalMode === "service" ? serviceProposal : investmentProposal;
+  const activeModeLabel = activeProposal.title;
+  const activeModeLabelLower = activeModeLabel.toLowerCase();
+
+  const reserveCardTitle = contractAlreadySigned
+    ? "Reserva iniciada"
+    : `Reservar ${activeModeLabelLower}`;
+
+  const reserveCardDescription = contractAlreadySigned
+    ? `La reserva ya ha sido iniciada en modalidad de ${activeModeLabelLower}.`
+    : `Inicia la reserva en modalidad de ${activeModeLabelLower} y continúa con el pago de la señal.`;
+
+  const reserveButtonText = contractAlreadySigned
+    ? "Reservado"
+    : `Reservar ${activeModeLabelLower}`;
   const investmentMetrics = getProposalMetrics(investmentProposal);
   const serviceMetrics = getProposalMetrics(serviceProposal);
   const activeMetrics = getProposalMetrics(activeProposal);
@@ -3844,18 +3858,16 @@ function MainAppContent() {
                             </motion.div>
 
                             <p className="text-3xl md:text-[2rem] font-bold text-[#000054]">
-                              {contractAlreadySigned ? "Reservado" : "Reservar"}
+                              {reserveCardTitle}
                             </p>
 
                             <p className="mt-3 max-w-sm text-base leading-relaxed text-[#000054]/78">
-                              {contractAlreadySigned
-                                ? "La reserva ya ha sido iniciada para esta propuesta."
-                                : "Inicia la reserva de esta modalidad y continúa con el pago de la señal."}
+                              {reserveCardDescription}
                             </p>
 
                             {!contractAlreadySigned ? (
-                              <div className="mt-12  inline-flex items-center gap-2 rounded-full border border-[#000054]/10 bg-white/28 px-5 py-2 text-sm font-semibold text-[#000054]">
-                                Continuar
+                              <div className="mt-12 inline-flex items-center gap-2 rounded-full border border-[#000054]/10 bg-white/28 px-5 py-2 text-sm font-semibold text-[#000054]">
+                                {`Continuar con ${activeModeLabelLower}`}
                                 <motion.span
                                   animate={{ x: [0, 2, 0] }}
                                   transition={{
@@ -4096,7 +4108,7 @@ function MainAppContent() {
 
                       <div className="rounded-[1.4rem] bg-brand-navy text-white p-4 border border-brand-navy">
                         <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/50">
-                          Resumen modalidad seleccionada
+                          Vas a contratar
                         </p>
 
                         <p className="mt-3 text-2xl font-bold">
@@ -4104,6 +4116,13 @@ function MainAppContent() {
                         </p>
 
                         <div className="mt-4 space-y-2 text-sm text-white/75">
+                          <p>
+                            Modalidad:{" "}
+                            <span className="font-bold text-white">
+                              {activeProposal.title}
+                            </span>
+                          </p>
+
                           <p>
                             Ahorro anual:{" "}
                             <span className="font-bold text-white">
@@ -4214,9 +4233,7 @@ function MainAppContent() {
                                 />
                               )}
                             </span>
-                            <span>
-                              {contractAlreadySigned ? "Reservado" : "Reservar"}
-                            </span>
+                            <span>{reserveButtonText}</span>
                           </span>
                         </Button>
 

@@ -1,9 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import Layout from "../components/shared/Layout";
 import Button from "../components/ui/Button";
-import { Loader2, CheckCircle2, AlertTriangle, CreditCard } from "lucide-react";
+import {
+  Loader2,
+  CheckCircle2,
+  AlertTriangle,
+  CreditCard,
+} from "lucide-react";
 import { formatCurrency } from "../lib/utils";
 
 type CheckoutStatusResponse = {
@@ -36,6 +41,8 @@ type CheckoutStatusResponse = {
 
 export default function ReservationConfirmedPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
   const sessionId = searchParams.get("session_id") || "";
   const contractIdFromUrl = searchParams.get("contractId") || "";
 
@@ -104,6 +111,23 @@ export default function ReservationConfirmedPage() {
     };
   }, [sessionId, contractIdFromUrl]);
 
+  const isPaid = data?.reservation?.paymentStatus === "paid";
+  const isPending =
+    data?.session?.status === "complete" &&
+    data?.reservation?.paymentStatus !== "paid";
+
+  useEffect(() => {
+    if (!isPaid) return;
+
+    sessionStorage.removeItem("proposal_resume_token");
+
+    const redirectTimer = window.setTimeout(() => {
+      navigate("/");
+    }, 2500);
+
+    return () => window.clearTimeout(redirectTimer);
+  }, [isPaid, navigate]);
+
   const handleRetryPayment = async () => {
     const contractId = data?.contract?.id;
 
@@ -112,7 +136,10 @@ export default function ReservationConfirmedPage() {
     setRetryingPayment(true);
 
     try {
-      const response = await axios.post(`/api/contracts/${contractId}/retry-payment`);
+      const response = await axios.post(
+        `/api/contracts/${contractId}/retry-payment`,
+      );
+
       const checkoutUrl = response.data?.stripe?.checkoutUrl;
 
       if (!checkoutUrl) {
@@ -131,11 +158,6 @@ export default function ReservationConfirmedPage() {
       setRetryingPayment(false);
     }
   };
-
-  const isPaid = data?.reservation?.paymentStatus === "paid";
-  const isPending =
-    data?.session?.status === "complete" &&
-    data?.reservation?.paymentStatus !== "paid";
 
   return (
     <Layout>
@@ -167,6 +189,10 @@ export default function ReservationConfirmedPage() {
               </h1>
               <p className="text-brand-gray mt-3 max-w-xl mx-auto">
                 Tu señal ha sido registrada y la reserva ha quedado confirmada.
+              </p>
+
+              <p className="text-sm text-brand-gray mt-2">
+                Serás redirigido al inicio en unos segundos...
               </p>
 
               <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
@@ -209,8 +235,8 @@ export default function ReservationConfirmedPage() {
                 </div>
               </div>
 
-              {data?.contract?.contractUrl ? (
-                <div className="mt-8">
+              <div className="mt-8 flex justify-center gap-3 flex-wrap">
+                {data?.contract?.contractUrl ? (
                   <a
                     href={data.contract.contractUrl}
                     target="_blank"
@@ -220,8 +246,15 @@ export default function ReservationConfirmedPage() {
                       Ver precontrato
                     </Button>
                   </a>
-                </div>
-              ) : null}
+                ) : null}
+
+                <Button
+                  onClick={() => navigate("/")}
+                  className="px-8 py-5 rounded-2xl bg-brand-navy text-white border-none"
+                >
+                  Ir al inicio
+                </Button>
+              </div>
             </div>
           ) : isPending ? (
             <div className="text-center py-6">
@@ -245,7 +278,7 @@ export default function ReservationConfirmedPage() {
                 Puedes reintentar el pago ahora.
               </p>
 
-              <div className="mt-8">
+              <div className="mt-8 flex justify-center gap-3 flex-wrap">
                 <Button
                   onClick={handleRetryPayment}
                   disabled={retryingPayment || !data?.contract?.id}
@@ -255,6 +288,13 @@ export default function ReservationConfirmedPage() {
                     <Loader2 className="mr-3 h-5 w-5 animate-spin" />
                   ) : null}
                   Reintentar pago
+                </Button>
+
+                <Button
+                  onClick={() => navigate("/")}
+                  className="px-8 py-5 rounded-2xl bg-brand-navy text-white border-none"
+                >
+                  Volver al inicio
                 </Button>
               </div>
             </div>
