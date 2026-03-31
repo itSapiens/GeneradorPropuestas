@@ -3428,10 +3428,7 @@ function MainAppContent() {
 
                               <div className="rounded-2xl bg-brand-navy/[0.03] p-4">
                                 <div className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-brand-navy/40 font-bold leading-none">
-                                  <Icon
-                                    icon="bi:battery-charging"
-                                    className="w-3.5 h-3.5 shrink-0"
-                                  />
+         <Icon icon="mdi:battery-charging-medium" className="w-3.5 h-3.5 shrink-0" />
                                   <span>Almacenamiento</span>
                                 </div>
 
