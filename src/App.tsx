@@ -253,7 +253,9 @@ function buildPeriodConsumptionsFromValidatedData(
 function getInvoiceVariableEnergyAmountFromExtraction(
   extraction: ExtractedBillData | null,
 ): number | undefined {
-  const invoiceData = extraction?.invoice_data as Record<string, unknown> | undefined;
+  const invoiceData = extraction?.invoice_data as
+    | Record<string, unknown>
+    | undefined;
 
   if (!invoiceData) return undefined;
 
@@ -848,7 +850,6 @@ function getInvestmentCostFromFormula(
   const effectiveHours = Number(installation.horas_efectivas ?? 0);
   const investmentCostPerKwh = Number(installation.coste_kwh_inversion ?? 0);
 
-
   if (
     !Number.isFinite(recommendedPowerKwp) ||
     recommendedPowerKwp <= 0 ||
@@ -1089,7 +1090,6 @@ function formatPaybackYears(value: number) {
   return `${value.toFixed(1).replace(".", ",")} años`;
 }
 
-
 const getMonthlySavings = (proposal: ProposalCardData) => {
   return proposal.annualSavings > 0 ? proposal.annualSavings / 12 : 0;
 };
@@ -1270,8 +1270,7 @@ function calculateRequiredKwpForInstallation(
     periodConsumptions,
     invoiceVariableEnergyAmountEur,
 
-    surplusCompensationPriceKwh:
-      installation.precio_excedentes_eur_kwh ?? 0,
+    surplusCompensationPriceKwh: installation.precio_excedentes_eur_kwh ?? 0,
 
     maintenanceAnnualPerKwp:
       installation.coste_anual_mantenimiento_por_kwp ??
@@ -2504,11 +2503,11 @@ function MainAppContent() {
 
       const eligibleInstallations = installationsInRadius
         .map((item) => {
-const requiredKwp = calculateRequiredKwpForInstallation(
-  validatedData,
-  item,
-  rawExtraction,
-);
+          const requiredKwp = calculateRequiredKwpForInstallation(
+            validatedData,
+            item,
+            rawExtraction,
+          );
 
           return {
             ...item,
@@ -3837,12 +3836,19 @@ const requiredKwp = calculateRequiredKwpForInstallation(
                                     : "Cuota mensual"}
                                 </p>
                                 <p className="mt-2 text-lg font-bold">
-                                  {isInvestment
-                                    ? formatCurrency(proposal.upfrontCost)
-                                    : proposal.monthlyFee &&
-                                        proposal.monthlyFee > 0
-                                      ? `${formatCurrency(proposal.monthlyFee)} / mes`
-                                      : "Sin cuota"}
+                                  {isInvestment ? (
+                                    formatCurrency(proposal.upfrontCost)
+                                  ) : proposal.monthlyFee &&
+                                    proposal.monthlyFee > 0 ? (
+                                    <>
+                                      {formatCurrency(proposal.monthlyFee)}
+                                      <span className="ml-1 text-xs font-semibold opacity-70">
+                                        / mes
+                                      </span>
+                                    </>
+                                  ) : (
+                                    "Sin cuota"
+                                  )}
                                 </p>
                               </div>
 
@@ -3961,12 +3967,23 @@ const requiredKwp = calculateRequiredKwpForInstallation(
                           </p>
 
                           <p>
-                            {activeProposal.id === "investment"
-                              ? `Coste inicial: ${formatCurrency(activeProposal.upfrontCost)}`
-                              : activeProposal.monthlyFee &&
-                                  activeProposal.monthlyFee > 0
-                                ? `Cuota mensual: ${formatCurrency(activeProposal.monthlyFee)} / mes`
-                                : "Sin cuota mensual"}
+                            {activeProposal.id === "investment" ? (
+                              <>
+                                Coste inicial:{" "}
+                                {formatCurrency(activeProposal.upfrontCost)}
+                              </>
+                            ) : activeProposal.monthlyFee &&
+                              activeProposal.monthlyFee > 0 ? (
+                              <>
+                                Cuota mensual:{" "}
+                                {formatNumber(activeProposal.monthlyFee)}
+                                <span className="ml-1 text-xs font-semibold opacity-70">
+                                  € / mes
+                                </span>
+                              </>
+                            ) : (
+                              "Sin cuota mensual"
+                            )}
                           </p>
 
                           <p>
