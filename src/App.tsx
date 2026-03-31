@@ -773,7 +773,10 @@ type SignedContractResponse = {
   };
   payment: {
     step: "select_method";
-    availableMethods: PaymentMethodOption[];
+    availableMethods: {
+      id: "stripe" | "bank_transfer";
+      label: string;
+    }[];
   };
   drive: {
     contractsRootFolderUrl: string;

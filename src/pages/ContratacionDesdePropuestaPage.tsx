@@ -54,22 +54,27 @@ type SignedContractResponse = {
   success: boolean;
   message: string;
   contract: any;
-  reservation: any;
-  reservationSummary: {
+  reservation: {
+    id: string;
+    reservationStatus: string;
+    paymentStatus: string;
+    paymentDeadlineAt: string;
+    signalAmount: number;
+    currency: string;
     installationName: string;
     reservedKwp: number;
-    paymentDeadlineAt: string;
-    deadlineEnforced: boolean;
+  };
+  payment?: {
+    step: "select_method";
+    availableMethods: {
+      id: "stripe" | "bank_transfer";
+      label: string;
+    }[];
   };
   drive: {
     contractsRootFolderUrl: string;
     contractFolderUrl: string;
     contractFileUrl: string;
-  };
-  email?: {
-    to: string | null;
-    status: "pending" | "sent" | "failed";
-    error: string | null;
   };
 };
 
@@ -420,28 +425,28 @@ export default function ContratacionDesdePropuestaPage() {
         navigate("/");
       };
 
-      sileo.action({
-        title: "Pre-contrato firmado correctamente",
-        description: `Se han reservado ${response.data.reservationSummary.reservedKwp} kWp en ${response.data.reservationSummary.installationName}.`,
-        actionLabel: "Ir al inicio",
-        onAction: goHome,
-        duration: 3500,
-        icon: (
-          <Icon
-            icon="solar:shield-check-bold-duotone"
-            className="h-5 w-5 text-emerald-600"
-          />
-        ),
-      } as any);
+sileo.action({
+  title: "Pre-contrato firmado correctamente",
+  description: `Se han reservado ${response.data.reservation.reservedKwp} kWp en ${response.data.reservation.installationName}.`,
+  actionLabel: "Ir al inicio",
+  onAction: goHome,
+  duration: 3500,
+  icon: (
+    <Icon
+      icon="solar:shield-check-bold-duotone"
+      className="h-5 w-5 text-emerald-600"
+    />
+  ),
+} as any);
 
-      if (response.data.email?.status === "failed") {
-        sileo.warning({
-          title: "Contrato firmado, pero el email falló",
-          description:
-            response.data.email.error ??
-            "No se pudo enviar la copia del contrato por correo.",
-        });
-      }
+      // if (response.data.email?.status === "failed") {
+      //   sileo.warning({
+      //     title: "Contrato firmado, pero el email falló",
+      //     description:
+      //       response.data.email.error ??
+      //       "No se pudo enviar la copia del contrato por correo.",
+      //   });
+      // }
 
       window.setTimeout(() => {
         goHome();
@@ -525,24 +530,24 @@ export default function ContratacionDesdePropuestaPage() {
 
       <div className="relative z-10 px-4 py-6 md:px-8 md:py-8">
         <div className="mx-auto max-w-7xl space-y-6">
-          {signedContractResult?.reservationSummary ? (
-            <div className="rounded-[1.6rem] bg-emerald-50 border border-emerald-200 p-5">
-              <p className="text-sm font-bold uppercase tracking-widest text-emerald-700 mb-2">
-                Contrato firmado
-              </p>
-              <p className="text-sm text-emerald-900 leading-relaxed">
-                Se han reservado{" "}
-                <strong>
-                  {signedContractResult.reservationSummary.reservedKwp} kWp
-                </strong>{" "}
-                en{" "}
-                <strong>
-                  {signedContractResult.reservationSummary.installationName}
-                </strong>
-                .
-              </p>
-            </div>
-          ) : null}
+   {signedContractResult?.reservation ? (
+  <div className="rounded-[1.6rem] bg-emerald-50 border border-emerald-200 p-5">
+    <p className="text-sm font-bold uppercase tracking-widest text-emerald-700 mb-2">
+      Contrato firmado
+    </p>
+    <p className="text-sm text-emerald-900 leading-relaxed">
+      Se han reservado{" "}
+      <strong>
+        {signedContractResult.reservation.reservedKwp} kWp
+      </strong>{" "}
+      en{" "}
+      <strong>
+        {signedContractResult.reservation.installationName}
+      </strong>
+      .
+    </p>
+  </div>
+) : null}
 
           <div className="grid grid-cols-1 xl:grid-cols-[380px_minmax(0,1fr)] gap-6">
             <div className="rounded-[2.4rem] bg-brand-navy text-white p-6 md:p-7 shadow-2xl shadow-brand-navy/15 overflow-hidden relative">
