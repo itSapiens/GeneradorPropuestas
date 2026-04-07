@@ -1445,19 +1445,71 @@ function generatePlainAccessToken(size = 32): string {
   return crypto.randomBytes(size).toString("base64url");
 }
 
-function buildContinueContractUrl(plainToken: string): string {
+function buildContinueContractUrl(plainToken: string, language: AppLanguage = "es") {
   return `${FRONTEND_URL.replace(
     /\/$/,
     "",
-  )}/continuar-contratacion?token=${encodeURIComponent(plainToken)}`;
+  )}/continuar-contratacion?token=${encodeURIComponent(plainToken)}&lang=${encodeURIComponent(language)}`;
 }
+
+// async function createProposalContinueAccessToken(params: {
+//   studyId: string;
+//   clientId: string;
+//   expiresInDays?: number;
+// }) {
+//   const { studyId, clientId, expiresInDays = 15 } = params;
+
+//   const plainToken = generatePlainAccessToken(32);
+//   const tokenHash = sha256(plainToken);
+//   const expiresAt = new Date(
+//     Date.now() + expiresInDays * 24 * 60 * 60 * 1000,
+//   ).toISOString();
+
+//   // Revocamos tokens anteriores vivos para este mismo flujo
+//   await supabase
+//     .from("contract_access_tokens")
+//     .update({
+//       revoked_at: new Date().toISOString(),
+//     })
+//     .eq("study_id", studyId)
+//     .eq("client_id", clientId)
+//     .eq("purpose", "proposal_continue")
+//     .is("used_at", null)
+//     .is("revoked_at", null);
+
+//   const { error } = await supabase.from("contract_access_tokens").insert({
+//     study_id: studyId,
+//     contract_id: null,
+//     client_id: clientId,
+//     token_hash: tokenHash,
+//     purpose: "proposal_continue",
+//     expires_at: expiresAt,
+//     used_at: null,
+//     revoked_at: null,
+//   });
+
+//   if (error) {
+//     throw new Error(
+//       `No se pudo crear el token de acceso al contrato: ${error.message}`,
+//     );
+//   }
+
+// return {
+//   plainToken,
+//   expiresAt,
+//   continueUrl: buildContinueContractUrl(plainToken, appLanguage),
+// };
+// }
 
 async function createProposalContinueAccessToken(params: {
   studyId: string;
   clientId: string;
+  language?: unknown;
   expiresInDays?: number;
 }) {
-  const { studyId, clientId, expiresInDays = 15 } = params;
+  const { studyId, clientId, language, expiresInDays = 15 } = params;
+
+  const appLanguage = normalizeAppLanguage(language);
 
   const plainToken = generatePlainAccessToken(32);
   const tokenHash = sha256(plainToken);
@@ -1465,7 +1517,6 @@ async function createProposalContinueAccessToken(params: {
     Date.now() + expiresInDays * 24 * 60 * 60 * 1000,
   ).toISOString();
 
-  // Revocamos tokens anteriores vivos para este mismo flujo
   await supabase
     .from("contract_access_tokens")
     .update({
@@ -1497,9 +1548,10 @@ async function createProposalContinueAccessToken(params: {
   return {
     plainToken,
     expiresAt,
-    continueUrl: buildContinueContractUrl(plainToken),
+    continueUrl: buildContinueContractUrl(plainToken, appLanguage),
   };
 }
+
 
 function signContractResumeToken(payload: {
   studyId: string;
@@ -2201,11 +2253,12 @@ async function startServer() {
         let continueContractTokenExpiresAt: string | null = null;
 
         try {
-          const access = await createProposalContinueAccessToken({
-            studyId: studyData.id,
-            clientId: clientData.id,
-            expiresInDays: 15,
-          });
+       const access = await createProposalContinueAccessToken({
+  studyId: studyData.id,
+  clientId: clientData.id,
+  language: appLanguage,
+  expiresInDays: 15,
+});
 
           continueContractUrl = access.continueUrl;
           continueContractTokenExpiresAt = access.expiresAt;
@@ -2506,12 +2559,13 @@ async function startServer() {
         });
       }
 
+      const language = normalizeAppLanguage(study.language);
       const access = await createProposalContinueAccessToken({
         studyId: study.id,
         clientId: client.id,
+        language,
         expiresInDays: 15,
       });
-      const language = normalizeAppLanguage(study.language);
       await sendProposalEmail({
         to: email,
         clientName: `${nombre} ${apellidos}`.trim(),
@@ -3272,63 +3326,62 @@ async function startServer() {
         installationId: installation.id,
       });
 
-      return res.json({
-        success: true,
-        resumeToken,
-        access: {
-          studyId: study.id,
-          clientId: client.id,
-          installationId: installation.id,
-          expiresAt: accessToken.expires_at ?? null,
-          usedAt: accessToken.used_at ?? null,
-        },
-        client: {
-          id: client.id,
-          nombre: client.nombre,
-          apellidos: client.apellidos,
-          dni: client.dni,
-          email: client.email ?? null,
-          telefono: client.telefono ?? null,
-          cups: client.cups ?? null,
-          direccion_completa: client.direccion_completa ?? null,
-          propuesta_drive_url: client.propuesta_drive_url ?? null,
-          factura_drive_url: client.factura_drive_url ?? null,
-        },
-        study: {
-          id: study.id,
-          status: study.status ?? null,
-          email_status: study.email_status ?? null,
-          assigned_kwp: study.assigned_kwp ?? null,
-          calculation: study.calculation ?? null,
-          selected_installation_id: study.selected_installation_id ?? null,
-          selected_installation_snapshot:
-            study.selected_installation_snapshot ?? null,
-        },
-        installation: {
-          id: installation.id,
-          nombre_instalacion: installation.nombre_instalacion,
-          direccion: installation.direccion,
-          modalidad: installation.modalidad,
-          availableProposalModes: getAllowedProposalModes(
-            installation.modalidad,
-          ),
-          defaultProposalMode:
-            getAllowedProposalModes(installation.modalidad)[0] ?? "investment",
-          contractable_kwp_total: installation.contractable_kwp_total ?? null,
-          contractable_kwp_reserved:
-            installation.contractable_kwp_reserved ?? null,
-          contractable_kwp_confirmed:
-            installation.contractable_kwp_confirmed ?? null,
-        },
-        existingContract: existingContract
-          ? {
-              id: existingContract.id,
-              status: existingContract.status,
-              proposal_mode: existingContract.proposal_mode,
-              contract_number: existingContract.contract_number,
-            }
-          : null,
-      });
+const language = normalizeAppLanguage(study.language);
+
+return res.json({
+  success: true,
+  resumeToken,
+  language,
+  access: {
+    studyId: study.id,
+    clientId: client.id,
+    installationId: installation.id,
+    expiresAt: accessToken.expires_at ?? null,
+    usedAt: accessToken.used_at ?? null,
+  },
+  client: {
+    id: client.id,
+    nombre: client.nombre,
+    apellidos: client.apellidos,
+    dni: client.dni,
+    email: client.email ?? null,
+    telefono: client.telefono ?? null,
+    cups: client.cups ?? null,
+    direccion_completa: client.direccion_completa ?? null,
+    propuesta_drive_url: client.propuesta_drive_url ?? null,
+    factura_drive_url: client.factura_drive_url ?? null,
+  },
+  study: {
+    id: study.id,
+    language,
+    status: study.status ?? null,
+    email_status: study.email_status ?? null,
+    assigned_kwp: study.assigned_kwp ?? null,
+    calculation: study.calculation ?? null,
+    selected_installation_id: study.selected_installation_id ?? null,
+    selected_installation_snapshot:
+      study.selected_installation_snapshot ?? null,
+  },
+  installation: {
+    id: installation.id,
+    nombre_instalacion: installation.nombre_instalacion,
+    direccion: installation.direccion,
+    modalidad: installation.modalidad,
+    availableProposalModes: getAllowedProposalModes(
+      installation.modalidad,
+    ),
+    defaultProposalMode:
+      getAllowedProposalModes(installation.modalidad)[0] ?? "investment",
+  },
+  existingContract: existingContract
+    ? {
+        id: existingContract.id,
+        status: existingContract.status,
+        proposal_mode: existingContract.proposal_mode,
+        contract_number: existingContract.contract_number,
+      }
+    : null,
+});
     } catch (error: any) {
       console.error("Error en /api/contracts/proposal-access/validate:", error);
 

@@ -95,6 +95,20 @@ function translate(
   });
 }
 
+function tPdf(
+  language: AppLanguage,
+  key: string,
+  fallback: string,
+  replacements?: Record<string, string | number>,
+): string {
+  return translate(
+    language,
+    `emails.proposalPdf.${key}`,
+    fallback,
+    replacements,
+  );
+}
+
 function formatCurrency(value: number, language: AppLanguage): string {
   return new Intl.NumberFormat(getLanguageLocale(language), {
     style: "currency",
@@ -513,14 +527,14 @@ function getModeAccent(mode: ProposalPdfMode) {
 
 function getHeroSubtitle(mode: ProposalPdfMode, language: AppLanguage) {
   return mode === "service"
-    ? translate(
+    ? tPdf(
         language,
-        "proposalPdf.hero.serviceSubtitle",
+        "hero.serviceSubtitle",
         "Modelo pensado para reducir la entrada inicial, simplificar la contratación y ofrecer una cuota más predecible.",
       )
-    : translate(
+    : tPdf(
         language,
-        "proposalPdf.hero.investmentSubtitle",
+        "hero.investmentSubtitle",
         "Modelo orientado a maximizar el ahorro acumulado, acelerar la amortización y reforzar la rentabilidad a largo plazo.",
       );
 }
@@ -529,26 +543,26 @@ function getRecommendationItems(mode: ProposalPdfMode, language: AppLanguage) {
   if (mode === "service") {
     return [
       {
-        title: translate(
+        title: tPdf(
           language,
-          "proposalPdf.recommendations.service.0.title",
+          "recommendations.service.0.title",
           "Reducir la barrera de entrada",
         ),
-        description: translate(
+        description: tPdf(
           language,
-          "proposalPdf.recommendations.service.0.description",
+          "recommendations.service.0.description",
           "La modalidad de servicio permite empezar sin un desembolso inicial elevado y con una cuota más previsible.",
         ),
       },
       {
-        title: translate(
+        title: tPdf(
           language,
-          "proposalPdf.recommendations.service.1.title",
+          "recommendations.service.1.title",
           "Equilibrar cuota y ahorro",
         ),
-        description: translate(
+        description: tPdf(
           language,
-          "proposalPdf.recommendations.service.1.description",
+          "recommendations.service.1.description",
           "Conviene revisar la relación entre cuota mensual, ahorro anual y horizonte esperado para validar la propuesta.",
         ),
       },
@@ -557,26 +571,26 @@ function getRecommendationItems(mode: ProposalPdfMode, language: AppLanguage) {
 
   return [
     {
-      title: translate(
+      title: tPdf(
         language,
-        "proposalPdf.recommendations.investment.0.title",
+        "recommendations.investment.0.title",
         "Maximizar el retorno de la inversión",
       ),
-      description: translate(
+      description: tPdf(
         language,
-        "proposalPdf.recommendations.investment.0.description",
+        "recommendations.investment.0.description",
         "El nivel de consumo detectado hace atractiva una solución fotovoltaica orientada a capturar más ahorro acumulado.",
       ),
     },
     {
-      title: translate(
+      title: tPdf(
         language,
-        "proposalPdf.recommendations.investment.1.title",
+        "recommendations.investment.1.title",
         "Priorizar rentabilidad a largo plazo",
       ),
-      description: translate(
+      description: tPdf(
         language,
-        "proposalPdf.recommendations.investment.1.description",
+        "recommendations.investment.1.description",
         "La inversión directa gana valor cuando se busca mayor ahorro total, control del activo y amortización sostenida.",
       ),
     },
@@ -588,14 +602,14 @@ function getConclusionText(
   language: AppLanguage,
 ) {
   return proposal.mode === "service"
-    ? translate(
+    ? tPdf(
         language,
-        "proposalPdf.conclusion.service",
+        "conclusion.service",
         "La modalidad de servicio encaja bien cuando se busca una entrada más cómoda, una cuota mensual clara y una decisión de contratación más flexible.",
       )
-    : translate(
+    : tPdf(
         language,
-        "proposalPdf.conclusion.investment",
+        "conclusion.investment",
         "La modalidad de inversión encaja mejor cuando se prioriza el ahorro acumulado, la amortización de la instalación y la rentabilidad a medio y largo plazo.",
       );
 }
@@ -624,7 +638,7 @@ function getCustomerFullName(data: BillData, language: AppLanguage): string {
       .replace(/\s+/g, " ")
       .trim();
 
-  const fallback = translate(language, "proposalPdf.labels.client", "Cliente");
+  const fallback = tPdf(language, "labels.client", "Cliente");
   const finalName = fullName || fallback;
 
   return finalName.length > 42 ? `${finalName.slice(0, 40)}…` : finalName;
@@ -741,28 +755,16 @@ function getSupplyRows(
   );
 
   return [
+    [tPdf(language, "supply.holder", "Titular"), getCustomerFullName(data, language)],
+    [tPdf(language, "supply.cups", "CUPS"), data.cups || "-"],
+    [tPdf(language, "supply.tariff", "Tarifa"), data.billType || "-"],
+    [tPdf(language, "supply.address", "Dirección"), data.address || "-"],
+    [tPdf(language, "supply.email", "Email"), data.email || "-"],
+    [tPdf(language, "supply.iban", "IBAN"), getMaskedIbanText(data)],
     [
-      translate(language, "proposalPdf.supply.holder", "Titular"),
-      getCustomerFullName(data, language),
-    ],
-    [translate(language, "proposalPdf.supply.cups", "CUPS"), data.cups || "-"],
-    [
-      translate(language, "proposalPdf.supply.tariff", "Tarifa"),
-      data.billType || "-",
-    ],
-    [
-      translate(language, "proposalPdf.supply.address", "Dirección"),
-      data.address || "-",
-    ],
-    [translate(language, "proposalPdf.supply.email", "Email"), data.email || "-"],
-    [
-      translate(language, "proposalPdf.supply.iban", "IBAN"),
-      getMaskedIbanText(data),
-    ],
-    [
-      translate(
+      tPdf(
         language,
-        "proposalPdf.supply.annualInvoiceConsumption",
+        "supply.annualInvoiceConsumption",
         "Consumo anual factura",
       ),
       annualConsumptionFromInvoice > 0
@@ -770,11 +772,7 @@ function getSupplyRows(
         : "-",
     ],
     [
-      translate(
-        language,
-        "proposalPdf.supply.contractedPower",
-        "Potencia contratada",
-      ),
+      tPdf(language, "supply.contractedPower", "Potencia contratada"),
       getContractedPowerText(data, language),
     ],
   ];
@@ -812,7 +810,7 @@ function drawEconomicSummary(
       translate(language, "result.summary.monthlyFee", "Cuota mensual"),
       proposal.monthlyFee && proposal.monthlyFee > 0
         ? `${formatCurrency(proposal.monthlyFee, language)} / ${translate(language, "result.units.month", "mes")}`
-        : translate(language, "proposalPdf.common.consult", "Consultar"),
+        : tPdf(language, "common.consult", "Consultar"),
     );
     drawEconomicMiniCard(
       doc,
@@ -829,9 +827,9 @@ function drawEconomicSummary(
       x,
       y + 24,
       w,
-      translate(
+      tPdf(
         language,
-        "proposalPdf.highlights.service.0",
+        "highlights.service.0",
         "Sin desembolso inicial elevado",
       ),
       COLORS.cyan,
@@ -841,9 +839,9 @@ function drawEconomicSummary(
       x,
       y + 36,
       w,
-      translate(
+      tPdf(
         language,
-        "proposalPdf.highlights.service.1",
+        "highlights.service.1",
         "Cuota mensual fija y predecible",
       ),
       COLORS.sky,
@@ -883,9 +881,9 @@ function drawEconomicSummary(
       x,
       y + 24,
       w,
-      translate(
+      tPdf(
         language,
-        "proposalPdf.highlights.investment.0",
+        "highlights.investment.0",
         "Mayor ahorro acumulado a largo plazo",
       ),
       COLORS.cyan,
@@ -895,9 +893,9 @@ function drawEconomicSummary(
       x,
       y + 36,
       w,
-      translate(
+      tPdf(
         language,
-        "proposalPdf.highlights.investment.1",
+        "highlights.investment.1",
         "Más control sobre la rentabilidad del proyecto",
       ),
       COLORS.sky,
@@ -935,18 +933,12 @@ function renderPageChrome(
   });
 
   drawCard(doc, 163, 8, 37, 12, COLORS.white, COLORS.border, 4);
-  writeText(
-    doc,
-    translate(language, "proposalPdf.header.date", "FECHA"),
-    181.5,
-    12.5,
-    {
-      size: 5.5,
-      color: COLORS.muted,
-      fontStyle: "bold",
-      align: "center",
-    },
-  );
+  writeText(doc, tPdf(language, "header.date", "FECHA"), 181.5, 12.5, {
+    size: 5.5,
+    color: COLORS.muted,
+    fontStyle: "bold",
+    align: "center",
+  });
   writeText(doc, formatDate(language), 181.5, 17.5, {
     size: 7.5,
     color: COLORS.navy,
@@ -977,9 +969,9 @@ function renderPageChrome(
 
   writeText(
     doc,
-    translate(
+    tPdf(
       language,
-      "proposalPdf.footer.note",
+      "footer.note",
       "Propuesta generada automáticamente por Sapiens Energía a partir del análisis documental de la factura del cliente.",
     ),
     PW / 2,
@@ -1008,16 +1000,16 @@ function renderStudyPdfPage(
 
   const viabilityLabel =
     result.viabilityScore >= 75
-      ? translate(language, "proposalPdf.viability.high", "Alta")
+      ? tPdf(language, "viability.high", "Alta")
       : result.viabilityScore >= 50
-        ? translate(language, "proposalPdf.viability.medium", "Media")
-        : translate(language, "proposalPdf.viability.low", "Baja");
+        ? tPdf(language, "viability.medium", "Media")
+        : tPdf(language, "viability.low", "Baja");
 
   const modeAccent = getModeAccent(proposal.mode);
 
   renderPageChrome(
     doc,
-    translate(language, "proposalPdf.pageTitle", "PROPUESTA ENERGÉTICA"),
+    tPdf(language, "pageTitle", "PROPUESTA ENERGÉTICA"),
     pageIndex,
     totalPages,
     language,
@@ -1033,32 +1025,22 @@ function renderStudyPdfPage(
   doc.roundedRect(margin, heroY, 76, heroH, 7, 7, "F");
   doc.rect(margin + 70, heroY, 6, heroH, "F");
 
-  writeText(
-    doc,
-    translate(
-      language,
-      "proposalPdf.hero.executiveReport",
-      "INFORME EJECUTIVO",
-    ),
-    margin + 5,
-    heroY + 7.5,
-    {
-      size: 6.5,
-      color: COLORS.sky,
-      fontStyle: "bold",
-    },
-  );
+  writeText(doc, tPdf(language, "hero.executiveReport", "INFORME EJECUTIVO"), margin + 5, heroY + 7.5, {
+    size: 6.5,
+    color: COLORS.sky,
+    fontStyle: "bold",
+  });
 
   const heroTitle =
     proposal.mode === "service"
-      ? translate(
+      ? tPdf(
           language,
-          "proposalPdf.hero.serviceTitle",
+          "hero.serviceTitle",
           "Propuesta energética\nmodalidad servicio",
         )
-      : translate(
+      : tPdf(
           language,
-          "proposalPdf.hero.investmentTitle",
+          "hero.investmentTitle",
           "Propuesta energética\nmodalidad inversión",
         );
 
@@ -1081,18 +1063,12 @@ function renderStudyPdfPage(
   drawChip(doc, 151, chipY, proposal.badge || "Ahorro", 29, COLORS.mintSoft);
 
   drawCard(doc, 150, heroY + 16, 40, 16, COLORS.mintSoft, COLORS.border, 5);
-  writeText(
-    doc,
-    translate(language, "proposalPdf.labels.solarViability", "VIABILIDAD SOLAR"),
-    170,
-    heroY + 21,
-    {
-      size: 5.5,
-      color: COLORS.muted,
-      fontStyle: "bold",
-      align: "center",
-    },
-  );
+  writeText(doc, tPdf(language, "labels.solarViability", "VIABILIDAD SOLAR"), 170, heroY + 21, {
+    size: 5.5,
+    color: COLORS.muted,
+    fontStyle: "bold",
+    align: "center",
+  });
   writeText(doc, String(result.viabilityScore), 170, heroY + 28, {
     size: 13,
     color: COLORS.navy,
@@ -1132,7 +1108,7 @@ function renderStudyPdfPage(
       translate(language, "result.summary.return", "Retorno"),
       proposal.paybackYears > 0
         ? `${formatNumber(proposal.paybackYears, language, 1)} ${translate(language, "result.units.years", "años")}`
-        : translate(language, "proposalPdf.common.notAvailable", "N/D"),
+        : tPdf(language, "common.notAvailable", "N/D"),
       modeAccent,
     );
 
@@ -1167,7 +1143,7 @@ function renderStudyPdfPage(
       translate(language, "result.summary.monthlyFee", "Cuota mensual"),
       proposal.monthlyFee && proposal.monthlyFee > 0
         ? `${formatCurrency(proposal.monthlyFee, language)} / ${translate(language, "result.units.month", "mes")}`
-        : translate(language, "proposalPdf.common.consult", "Consultar"),
+        : tPdf(language, "common.consult", "Consultar"),
       modeAccent,
     );
 
@@ -1225,7 +1201,7 @@ function renderStudyPdfPage(
     doc,
     margin + 4,
     gridY + 8,
-    translate(language, "proposalPdf.sections.supplyData", "DATOS DEL SUMINISTRO"),
+    tPdf(language, "sections.supplyData", "DATOS DEL SUMINISTRO"),
   );
 
   drawInfoRows(
@@ -1260,9 +1236,9 @@ function renderStudyPdfPage(
     doc,
     rightX + 4,
     gridY + 8,
-    translate(
+    tPdf(
       language,
-      "proposalPdf.sections.priorityRecommendations",
+      "sections.priorityRecommendations",
       "RECOMENDACIONES PRIORITARIAS",
     ),
   );
@@ -1305,7 +1281,7 @@ function renderStudyPdfPage(
     doc,
     margin + 4,
     bottomY + 8,
-    translate(language, "proposalPdf.sections.economicSummary", "RESUMEN ECONÓMICO"),
+    tPdf(language, "sections.economicSummary", "RESUMEN ECONÓMICO"),
   );
   drawEconomicSummary(doc, margin + 4, bottomY + 16, gridCardW - 8, proposal, language);
 
@@ -1324,14 +1300,14 @@ function renderStudyPdfPage(
     doc,
     rightX + 4,
     bottomY + 8,
-    translate(language, "proposalPdf.sections.technicalProfile", "PERFIL TÉCNICO"),
+    tPdf(language, "sections.technicalProfile", "PERFIL TÉCNICO"),
   );
 
   writeText(
     doc,
-    translate(
+    tPdf(
       language,
-      "proposalPdf.labels.consumptionDistribution",
+      "labels.consumptionDistribution",
       "Distribución del consumo",
     ),
     rightX + 4,
@@ -1359,7 +1335,7 @@ function renderStudyPdfPage(
 
   writeText(
     doc,
-    translate(language, "proposalPdf.labels.powerAndProduction", "Potencia y producción"),
+    tPdf(language, "labels.powerAndProduction", "Potencia y producción"),
     rightX + 48,
     bottomY + 16,
     {
@@ -1383,11 +1359,11 @@ function renderStudyPdfPage(
         `${formatNumber(proposal.annualConsumptionKwh, language, 0)} kWh`,
       ],
       [
-        translate(language, "proposalPdf.labels.annualProduction", "Prod. anual"),
+        tPdf(language, "labels.annualProduction", "Prod. anual"),
         `${formatNumber(result.estimatedAnnualProductionKwh, language, 0)} kWh`,
       ],
       [
-        translate(language, "proposalPdf.labels.selfConsumption", "Autocons."),
+        tPdf(language, "labels.selfConsumption", "Autocons."),
         `${formatNumber(result.selfConsumptionRatio * 100, language, 0)} %`,
       ],
     ],
@@ -1411,25 +1387,19 @@ function renderStudyPdfPage(
     doc,
     margin + 4,
     concY + 8,
-    translate(
+    tPdf(
       language,
-      "proposalPdf.sections.executiveConclusion",
+      "sections.executiveConclusion",
       "CONCLUSIÓN EJECUTIVA",
     ),
   );
 
   drawCard(doc, margin + 4, concY + 14, 85, 22, COLORS.soft, COLORS.border, 5);
-  writeText(
-    doc,
-    translate(language, "proposalPdf.labels.summary", "Resumen"),
-    margin + 8,
-    concY + 19.5,
-    {
-      size: 7,
-      color: COLORS.navy,
-      fontStyle: "bold",
-    },
-  );
+  writeText(doc, tPdf(language, "labels.summary", "Resumen"), margin + 8, concY + 19.5, {
+    size: 7,
+    color: COLORS.navy,
+    fontStyle: "bold",
+  });
   writeText(doc, getConclusionText(proposal, language), margin + 8, concY + 25.2, {
     size: 5.8,
     color: COLORS.text,
@@ -1465,7 +1435,7 @@ function renderStudyPdfPage(
     proposal.mode === "service"
       ? proposal.monthlyFee && proposal.monthlyFee > 0
         ? `${formatCurrency(proposal.monthlyFee, language)} / ${translate(language, "result.units.month", "mes")}`
-        : translate(language, "proposalPdf.common.consult", "Consultar")
+        : tPdf(language, "common.consult", "Consultar")
       : formatCurrency(proposal.annualSavings, language),
     margin + 116.5,
     concY + 28.2,
@@ -1477,17 +1447,11 @@ function renderStudyPdfPage(
       maxWidth: 39,
     },
   );
-  writeText(
-    doc,
-    translate(language, "proposalPdf.labels.estimated", "estimado"),
-    margin + 116.5,
-    concY + 32.8,
-    {
-      size: 5.5,
-      color: COLORS.muted,
-      align: "center",
-    },
-  );
+  writeText(doc, tPdf(language, "labels.estimated", "estimado"), margin + 116.5, concY + 32.8, {
+    size: 5.5,
+    color: COLORS.muted,
+    align: "center",
+  });
 
   drawCard(
     doc,
@@ -1499,18 +1463,12 @@ function renderStudyPdfPage(
     COLORS.border,
     5,
   );
-  writeText(
-    doc,
-    translate(language, "proposalPdf.labels.modality", "Modalidad"),
-    margin + 166.5,
-    concY + 20,
-    {
-      size: 5.8,
-      color: COLORS.muted,
-      fontStyle: "bold",
-      align: "center",
-    },
-  );
+  writeText(doc, tPdf(language, "labels.modality", "Modalidad"), margin + 166.5, concY + 20, {
+    size: 5.8,
+    color: COLORS.muted,
+    fontStyle: "bold",
+    align: "center",
+  });
   writeText(doc, proposal.title, margin + 166.5, concY + 28.2, {
     size: 8.7,
     color: COLORS.navy,
@@ -1560,14 +1518,14 @@ function getRecommendationReason(
 ): { title: string; description: string } {
   if (!recommended) {
     return {
-      title: translate(
+      title: tPdf(
         language,
-        "proposalPdf.recommendation.pendingTitle",
+        "recommendation.pendingTitle",
         "Recomendación pendiente",
       ),
-      description: translate(
+      description: tPdf(
         language,
-        "proposalPdf.recommendation.pendingDescription",
+        "recommendation.pendingDescription",
         "No se ha podido determinar una recomendación final con la información disponible.",
       ),
     };
@@ -1583,14 +1541,14 @@ function getRecommendationReason(
 
     if (recommended.mode === "investment") {
       return {
-        title: translate(
+        title: tPdf(
           language,
-          "proposalPdf.recommendation.investmentTitle",
+          "recommendation.investmentTitle",
           "Recomendamos la modalidad de inversión",
         ),
-        description: translate(
+        description: tPdf(
           language,
-          "proposalPdf.recommendation.investmentDescription",
+          "recommendation.investmentDescription",
           "La inversión ofrece un ahorro acumulado superior a largo plazo ({{totalSavings}}) y un retorno estimado de {{paybackYears}} años. La recomendamos cuando se prioriza la rentabilidad global del proyecto y la amortización de la instalación.",
           {
             totalSavings: formatCurrency(
@@ -1604,21 +1562,21 @@ function getRecommendationReason(
     }
 
     return {
-      title: translate(
+      title: tPdf(
         language,
-        "proposalPdf.recommendation.serviceTitle",
+        "recommendation.serviceTitle",
         "Recomendamos la modalidad de servicio",
       ),
-      description: translate(
+      description: tPdf(
         language,
-        "proposalPdf.recommendation.serviceDescription",
+        "recommendation.serviceDescription",
         "La diferencia de ahorro acumulado frente a la inversión es reducida ({{savingsGap}}), pero la modalidad de servicio evita un desembolso inicial elevado y mantiene una cuota mensual estimada de {{monthlyFee}}. La recomendamos cuando se prioriza una entrada más cómoda, mayor flexibilidad y una decisión de contratación más sencilla.",
         {
           savingsGap: formatCurrency(savingsGap, language),
           monthlyFee:
             service.monthlyFee && service.monthlyFee > 0
               ? `${formatCurrency(service.monthlyFee, language)} / ${translate(language, "result.units.month", "mes")}`
-              : translate(language, "proposalPdf.common.consult", "importe a consultar"),
+              : tPdf(language, "common.consult", "importe a consultar"),
         },
       ),
     };
@@ -1627,14 +1585,14 @@ function getRecommendationReason(
   return {
     title:
       recommended.mode === "investment"
-        ? translate(
+        ? tPdf(
             language,
-            "proposalPdf.recommendation.genericInvestmentTitle",
+            "recommendation.genericInvestmentTitle",
             "Recomendación: modalidad de inversión",
           )
-        : translate(
+        : tPdf(
             language,
-            "proposalPdf.recommendation.genericServiceTitle",
+            "recommendation.genericServiceTitle",
             "Recomendación: modalidad de servicio",
           ),
     description: getConclusionText(recommended, language),
@@ -1660,7 +1618,7 @@ function drawRecommendationSummaryCard(
 
   writeText(
     doc,
-    `${translate(language, "proposalPdf.labels.modalityUpper", "MODALIDAD")} ${proposal.title.toUpperCase()}`,
+    `${tPdf(language, "labels.modalityUpper", "MODALIDAD")} ${proposal.title.toUpperCase()}`,
     x + 4,
     y + 7.5,
     {
@@ -1687,7 +1645,7 @@ function drawRecommendationSummaryCard(
     proposal.mode === "service"
       ? proposal.monthlyFee && proposal.monthlyFee > 0
         ? `${formatCurrency(proposal.monthlyFee, language)} / ${translate(language, "result.units.month", "mes")}`
-        : translate(language, "proposalPdf.common.consult", "Consultar")
+        : tPdf(language, "common.consult", "Consultar")
       : formatCurrency(proposal.upfrontCost, language),
     COLORS.mintSoft,
   );
@@ -1732,33 +1690,27 @@ function drawRecommendationSummaryCard(
       translate(language, "result.summary.return", "Retorno"),
       proposal.paybackYears > 0
         ? `${formatNumber(proposal.paybackYears, language, 1)} ${translate(language, "result.units.years", "años")}`
-        : translate(language, "proposalPdf.common.notAvailable", "N/D"),
+        : tPdf(language, "common.notAvailable", "N/D"),
     );
   }
 
-  writeText(
-    doc,
-    translate(language, "proposalPdf.labels.observation", "Observación"),
-    x + 4,
-    y + h - 12,
-    {
-      size: 6,
-      color: COLORS.muted,
-      fontStyle: "bold",
-    },
-  );
+  writeText(doc, tPdf(language, "labels.observation", "Observación"), x + 4, y + h - 12, {
+    size: 6,
+    color: COLORS.muted,
+    fontStyle: "bold",
+  });
 
   writeText(
     doc,
     proposal.mode === "service"
-      ? translate(
+      ? tPdf(
           language,
-          "proposalPdf.observation.service",
+          "observation.service",
           "Pensada para facilitar la entrada y mantener una cuota estable.",
         )
-      : translate(
+      : tPdf(
           language,
-          "proposalPdf.observation.investment",
+          "observation.investment",
           "Pensada para maximizar el ahorro acumulado y la rentabilidad a largo plazo.",
         ),
     x + 4,
@@ -1784,7 +1736,7 @@ function renderRecommendationPage(
 
   renderPageChrome(
     doc,
-    translate(language, "proposalPdf.recommendation.pageTitle", "RECOMENDACIÓN FINAL"),
+    tPdf(language, "recommendation.pageTitle", "RECOMENDACIÓN FINAL"),
     pageIndex,
     totalPages,
     language,
@@ -1803,7 +1755,7 @@ function renderRecommendationPage(
 
   writeText(
     doc,
-    translate(language, "proposalPdf.recommendation.header", "RECOMENDACIÓN SAPIENS"),
+    tPdf(language, "recommendation.header", "RECOMENDACIÓN SAPIENS"),
     margin + 6,
     heroY + 9,
     {
@@ -1827,18 +1779,12 @@ function renderRecommendationPage(
   });
 
   drawCard(doc, 150, heroY + 8, 40, 26, COLORS.mintSoft, COLORS.border, 6);
-  writeText(
-    doc,
-    translate(language, "proposalPdf.labels.modalityUpper", "MODALIDAD"),
-    170,
-    heroY + 15,
-    {
-      size: 6,
-      color: COLORS.muted,
-      fontStyle: "bold",
-      align: "center",
-    },
-  );
+  writeText(doc, tPdf(language, "labels.modalityUpper", "MODALIDAD"), 170, heroY + 15, {
+    size: 6,
+    color: COLORS.muted,
+    fontStyle: "bold",
+    align: "center",
+  });
   writeText(doc, recommended?.title || "N/D", 170, heroY + 24.5, {
     size: 11,
     color: COLORS.navy,
@@ -1903,9 +1849,9 @@ function renderRecommendationPage(
     doc,
     margin + 4,
     conclusionY + 8,
-    translate(
+    tPdf(
       language,
-      "proposalPdf.recommendation.conclusionAndNextStep",
+      "recommendation.conclusionAndNextStep",
       "CONCLUSIÓN Y SIGUIENTE PASO",
     ),
   );
@@ -1922,9 +1868,9 @@ function renderRecommendationPage(
   );
   writeText(
     doc,
-    translate(
+    tPdf(
       language,
-      "proposalPdf.recommendation.executiveConclusionTitle",
+      "recommendation.executiveConclusionTitle",
       "Conclusión ejecutiva",
     ),
     margin + 8,
@@ -1939,19 +1885,19 @@ function renderRecommendationPage(
     doc,
     recommended
       ? recommended.mode === "investment"
-        ? translate(
+        ? tPdf(
             language,
-            "proposalPdf.recommendation.executiveInvestment",
+            "recommendation.executiveInvestment",
             "Por perfil económico y ahorro acumulado, recomendamos avanzar con la modalidad de inversión. Es la opción que mejor capitaliza el consumo detectado y ofrece una rentabilidad más sólida en el horizonte analizado.",
           )
-        : translate(
+        : tPdf(
             language,
-            "proposalPdf.recommendation.executiveService",
+            "recommendation.executiveService",
             "Por flexibilidad de entrada y equilibrio entre ahorro y facilidad de contratación, recomendamos valorar la modalidad de servicio como la vía más cómoda para iniciar el proyecto.",
           )
-      : translate(
+      : tPdf(
           language,
-          "proposalPdf.recommendation.executivePending",
+          "recommendation.executivePending",
           "No se ha podido establecer una recomendación final automática.",
         ),
     margin + 8,
@@ -1975,9 +1921,9 @@ function renderRecommendationPage(
   );
   writeText(
     doc,
-    translate(
+    tPdf(
       language,
-      "proposalPdf.recommendation.nextStepTitle",
+      "recommendation.nextStepTitle",
       "Siguiente paso recomendado",
     ),
     margin + 8,
@@ -1990,9 +1936,9 @@ function renderRecommendationPage(
   );
   writeText(
     doc,
-    translate(
+    tPdf(
       language,
-      "proposalPdf.recommendation.nextStepDescription",
+      "recommendation.nextStepDescription",
       "Validar la propuesta seleccionada, revisar los datos del suministro y continuar con la reserva o contratación según la modalidad elegida.",
     ),
     margin + 8,
@@ -2031,7 +1977,13 @@ export const generateStudyPDF = (
   });
 
   doc.addPage();
-  renderRecommendationPage(doc, proposalList, proposalList.length, totalPages, lang);
+  renderRecommendationPage(
+    doc,
+    proposalList,
+    proposalList.length,
+    totalPages,
+    lang,
+  );
 
   return doc;
 };

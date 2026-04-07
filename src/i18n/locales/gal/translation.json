@@ -197,139 +197,88 @@
       "service": "Servizo"
     }
   },
-"paymentReceipt": {
-  "title": "Xustificante de pagamento",
-  "precontractLabel": "Precontrato",
-  "holderSection": "Titular",
-  "client": "Cliente",
-  "dni": "DNI",
-  "reservationSection": "Reserva",
-  "contractId": "ID do contrato",
-  "reservationId": "ID da reserva",
-  "installation": "Instalación",
-  "reservedPower": "Potencia reservada",
-  "paidAmount": "Importe aboado",
-  "currency": "Moeda",
-  "paymentDate": "Data de pagamento",
-  "stripeSection": "Referencia Stripe",
-  "checkoutSessionId": "Checkout Session ID",
-  "paymentIntentId": "Payment Intent ID",
-  "footer": "Este documento acredita a recepción do sinal asociado ao precontrato de reserva/participación."
-},
-"proposalPdf": {
-  "pageTitle": "PROPOSTA ENERXÉTICA",
-  "header": {
-    "date": "DATA"
+  "paymentReceipt": {
+    "title": "Xustificante de pagamento",
+    "precontractLabel": "Precontrato",
+    "holderSection": "Titular",
+    "client": "Cliente",
+    "dni": "DNI",
+    "reservationSection": "Reserva",
+    "contractId": "ID do contrato",
+    "reservationId": "ID da reserva",
+    "installation": "Instalación",
+    "reservedPower": "Potencia reservada",
+    "paidAmount": "Importe aboado",
+    "currency": "Moeda",
+    "paymentDate": "Data de pagamento",
+    "stripeSection": "Referencia Stripe",
+    "checkoutSessionId": "Checkout Session ID",
+    "paymentIntentId": "Payment Intent ID",
+    "footer": "Este documento acredita a recepción do sinal asociado ao precontrato de reserva/participación."
   },
-  "footer": {
-    "note": "Proposta xerada automaticamente por Sapiens Enerxía a partir da análise documental da factura do cliente."
-  },
-  "hero": {
-    "executiveReport": "INFORME EXECUTIVO",
-    "serviceTitle": "Proposta enerxética\nmodalidade servizo",
-    "investmentTitle": "Proposta enerxética\nmodalidade investimento",
-    "serviceSubtitle": "Modelo pensado para reducir a entrada inicial, simplificar a contratación e ofrecer unha cota máis previsible.",
-    "investmentSubtitle": "Modelo orientado a maximizar o aforro acumulado, acelerar a amortización e reforzar a rendibilidade a longo prazo."
-  },
-  "viability": {
-    "high": "Alta",
-    "medium": "Media",
-    "low": "Baixa"
-  },
-  "sections": {
-    "supplyData": "DATOS DA SUBMINISTRACIÓN",
-    "priorityRecommendations": "RECOMENDACIÓNS PRIORITARIAS",
-    "economicSummary": "RESUMO ECONÓMICO",
-    "technicalProfile": "PERFIL TÉCNICO",
-    "executiveConclusion": "CONCLUSIÓN EXECUTIVA"
-  },
-  "supply": {
-    "holder": "Titular",
-    "cups": "CUPS",
-    "tariff": "Tarifa",
-    "address": "Enderezo",
-    "email": "Email",
-    "iban": "IBAN",
-    "annualInvoiceConsumption": "Consumo anual da factura",
-    "contractedPower": "Potencia contratada"
-  },
-  "labels": {
-    "solarViability": "VIABILIDADE SOLAR",
-    "consumptionDistribution": "Distribución do consumo",
-    "powerAndProduction": "Potencia e produción",
-    "annualProduction": "Prod. anual",
-    "selfConsumption": "Autocons.",
-    "summary": "Resumo",
-    "estimated": "estimado",
-    "modality": "Modalidade",
-    "modalityUpper": "MODALIDADE",
-    "observation": "Observación",
-    "client": "Cliente"
-  },
-  "common": {
-    "consult": "Consultar",
-    "notAvailable": "N/D"
-  },
-  "highlights": {
-    "service": [
-      "Sen desembolso inicial elevado",
-      "Cota mensual fixa e previsible"
-    ],
-    "investment": [
-      "Maior aforro acumulado a longo prazo",
-      "Máis control sobre a rendibilidade do proxecto"
-    ]
-  },
-  "recommendations": {
-    "service": [
-      {
-        "title": "Reducir a barreira de entrada",
-        "description": "A modalidade de servizo permite empezar sen un desembolso inicial elevado e cunha cota máis previsible."
+  "continueContract": {
+    "badge": "Continuar contratación",
+    "accessBadge": "Acceso á proposta",
+    "hero": {
+      "titleLine1": "Retoma a túa proposta",
+      "titleLine2": "cando queiras",
+      "description": "Accede cos teus datos para continuar a contratación desde a proposta que che enviamos por correo e selecciona a modalidade coa que desexas seguir."
+    },
+    "cards": {
+      "secureAccess": {
+        "title": "Acceso seguro",
+        "description": "Validamos os teus datos antes de continuar coa contratación."
       },
-      {
-        "title": "Equilibrar cota e aforro",
-        "description": "Convén revisar a relación entre cota mensual, aforro anual e horizonte esperado para validar a proposta."
-      }
-    ],
-    "investment": [
-      {
-        "title": "Maximizar o retorno do investimento",
-        "description": "O nivel de consumo detectado fai atractiva unha solución fotovoltaica orientada a captar máis aforro acumulado."
+      "modeChoice": {
+        "title": "Modalidade a elixir",
+        "description": "Poderás continuar por investimento ou por servizo e xerar o contrato segundo a opción elixida."
       },
-      {
-        "title": "Priorizar a rendibilidade a longo prazo",
-        "description": "O investimento directo gaña valor cando se busca maior aforro total, control do activo e amortización sostida."
+      "fastProcess": {
+        "title": "Proceso rápido",
+        "description": "Tras validar o acceso irás directamente ao fluxo de contratación."
       }
-    ]
+    },
+    "linkStatus": {
+      "label": "Estado da ligazón",
+      "valid": "Token detectado correctamente",
+      "missing": "Falta token"
+    },
+    "form": {
+      "title": "Confirma os teus datos",
+      "description": "Introduce os datos do titular e selecciona a modalidade coa que desexas continuar a contratación.",
+      "modeLabel": "Modalidade a contratar",
+      "namePlaceholder": "O teu nome",
+      "lastNamePlaceholder": "Os teus apelidos"
+    },
+    "modes": {
+      "investment": {
+        "subtitle": "Maior rendibilidade a longo prazo",
+        "description": "Ideal se queres maximizar o aforro e asumir o investimento inicial."
+      },
+      "service": {
+        "subtitle": "Menor barreira de entrada",
+        "description": "Ideal se prefires unha cota mensual e evitar o desembolso inicial."
+      }
+    },
+    "selectedMode": {
+      "title": "Modalidade seleccionada:",
+      "description": "Continuarás o fluxo con esta modalidade para xerar o contrato correspondente."
+    },
+    "actions": {
+      "continue": "Continuar contratación",
+      "validating": "Validando acceso..."
+    },
+    "toasts": {
+      "invalidLinkTitle": "Ligazón non válida",
+      "invalidLinkDescription": "Non se atopou o token de acceso.",
+      "missingDataTitle": "Faltan datos",
+      "missingDataDescription": "Debes completar DNI, nome e apelidos.",
+      "accessValidatedTitle": "Acceso validado",
+      "accessValidatedDescription": "Imos continuar coa túa contratación.",
+      "couldNotContinueTitle": "Non se puido continuar",
+      "couldNotValidateDescription": "Non se puido validar o teu acceso."
+    }
   },
-  "conclusion": {
-    "service": "A modalidade de servizo encaixa ben cando se busca unha entrada máis cómoda, unha cota mensual clara e unha decisión de contratación máis flexible.",
-    "investment": "A modalidade de investimento encaixa mellor cando se prioriza o aforro acumulado, a amortización da instalación e a rendibilidade a medio e longo prazo."
-  },
-  "observation": {
-    "service": "Pensada para facilitar a entrada e manter unha cota estable.",
-    "investment": "Pensada para maximizar o aforro acumulado e a rendibilidade a longo prazo."
-  },
-  "recommendation": {
-    "pageTitle": "RECOMENDACIÓN FINAL",
-    "header": "RECOMENDACIÓN SAPIENS",
-    "pendingTitle": "Recomendación pendente",
-    "pendingDescription": "Non se puido determinar unha recomendación final coa información dispoñible.",
-    "investmentTitle": "Recomendamos a modalidade de investimento",
-    "investmentDescription": "O investimento ofrece un aforro acumulado superior a longo prazo ({{totalSavings}}) e un retorno estimado de {{paybackYears}} anos. Recomendámolo cando se prioriza a rendibilidade global do proxecto e a amortización da instalación.",
-    "serviceTitle": "Recomendamos a modalidade de servizo",
-    "serviceDescription": "A diferenza de aforro acumulado fronte ao investimento é reducida ({{savingsGap}}), pero a modalidade de servizo evita un desembolso inicial elevado e mantén unha cota mensual estimada de {{monthlyFee}}. Recomendámola cando se prioriza unha entrada máis cómoda, maior flexibilidade e unha decisión de contratación máis sinxela.",
-    "genericInvestmentTitle": "Recomendación: modalidade de investimento",
-    "genericServiceTitle": "Recomendación: modalidade de servizo",
-    "conclusionAndNextStep": "CONCLUSIÓN E SEGUINTE PASO",
-    "executiveConclusionTitle": "Conclusión executiva",
-    "executiveInvestment": "Polo perfil económico e aforro acumulado, recomendamos avanzar coa modalidade de investimento. É a opción que mellor capitaliza o consumo detectado e ofrece unha rendibilidade máis sólida no horizonte analizado.",
-    "executiveService": "Pola flexibilidade de entrada e equilibrio entre aforro e facilidade de contratación, recomendamos valorar a modalidade de servizo como a vía máis cómoda para iniciar o proxecto.",
-    "executivePending": "Non se puido establecer unha recomendación final automática.",
-    "nextStepTitle": "Seguinte paso recomendado",
-    "nextStepDescription": "Validar a proposta seleccionada, revisar os datos da subministración e continuar coa reserva ou contratación segundo a modalidade elixida."
-  }
-},
   "emails": {
     "proposal": {
       "subject": "A túa proposta enerxética xa está dispoñible",
@@ -377,9 +326,122 @@
       "body1": "Adxuntamos unha copia do teu contrato asinado.",
       "body2": "Realizamos unha reserva provisional de {{reservedKwp}} kWp na planta {{installationName}}.",
       "body3": "Dispós dun prazo orientativo de 15 días, ata o {{formattedDate}}, para realizar a transferencia e confirmar a reserva.",
-      "contractLink": "Tamén podes consultar o teu contrato aquí:",
+      "contractLink": "Podes consultar tamén o teu contrato aquí:",
       "farewell": "Grazas por confiar en nós."
+    },
+    "proposalPdf": {
+      "pageTitle": "PROPOSTA ENERXÉTICA",
+      "header": {
+        "date": "DATA"
+      },
+      "footer": {
+        "note": "Proposta xerada automaticamente por Sapiens Enerxía a partir da análise documental da factura do cliente."
+      },
+      "hero": {
+        "executiveReport": "INFORME EXECUTIVO",
+        "serviceTitle": "Proposta enerxética\nmodalidade servizo",
+        "investmentTitle": "Proposta enerxética\nmodalidade investimento",
+        "serviceSubtitle": "Modelo pensado para reducir a entrada inicial, simplificar a contratación e ofrecer unha cota máis previsible.",
+        "investmentSubtitle": "Modelo orientado a maximizar o aforro acumulado, acelerar a amortización e reforzar a rendibilidade a longo prazo."
+      },
+      "viability": {
+        "high": "Alta",
+        "medium": "Media",
+        "low": "Baixa"
+      },
+      "sections": {
+        "supplyData": "DATOS DA SUBMINISTRACIÓN",
+        "priorityRecommendations": "RECOMENDACIÓNS PRIORITARIAS",
+        "economicSummary": "RESUMO ECONÓMICO",
+        "technicalProfile": "PERFIL TÉCNICO",
+        "executiveConclusion": "CONCLUSIÓN EXECUTIVA"
+      },
+      "supply": {
+        "holder": "Titular",
+        "cups": "CUPS",
+        "tariff": "Tarifa",
+        "address": "Enderezo",
+        "email": "Email",
+        "iban": "IBAN",
+        "annualInvoiceConsumption": "Consumo anual da factura",
+        "contractedPower": "Potencia contratada"
+      },
+      "labels": {
+        "solarViability": "VIABILIDADE SOLAR",
+        "consumptionDistribution": "Distribución do consumo",
+        "powerAndProduction": "Potencia e produción",
+        "annualProduction": "Prod. anual",
+        "selfConsumption": "Autocons.",
+        "summary": "Resumo",
+        "estimated": "estimado",
+        "modality": "Modalidade",
+        "modalityUpper": "MODALIDADE",
+        "observation": "Observación",
+        "client": "Cliente"
+      },
+      "common": {
+        "consult": "Consultar",
+        "notAvailable": "N/D"
+      },
+      "highlights": {
+        "service": [
+          "Sen desembolso inicial elevado",
+          "Cota mensual fixa e previsible"
+        ],
+        "investment": [
+          "Maior aforro acumulado a longo prazo",
+          "Máis control sobre a rendibilidade do proxecto"
+        ]
+      },
+      "recommendations": {
+        "service": [
+          {
+            "title": "Reducir a barreira de entrada",
+            "description": "A modalidade de servizo permite empezar sen un desembolso inicial elevado e cunha cota máis previsible."
+          },
+          {
+            "title": "Equilibrar cota e aforro",
+            "description": "Convén revisar a relación entre cota mensual, aforro anual e horizonte esperado para validar a proposta."
+          }
+        ],
+        "investment": [
+          {
+            "title": "Maximizar o retorno do investimento",
+            "description": "O nivel de consumo detectado fai atractiva unha solución fotovoltaica orientada a captar máis aforro acumulado."
+          },
+          {
+            "title": "Priorizar a rendibilidade a longo prazo",
+            "description": "O investimento directo gaña valor cando se busca maior aforro total, control do activo e amortización sostida."
+          }
+        ]
+      },
+      "conclusion": {
+        "service": "A modalidade de servizo encaixa ben cando se busca unha entrada máis cómoda, unha cota mensual clara e unha decisión de contratación máis flexible.",
+        "investment": "A modalidade de investimento encaixa mellor cando se prioriza o aforro acumulado, a amortización da instalación e a rendibilidade a medio e longo prazo."
+      },
+      "observation": {
+        "service": "Pensada para facilitar a entrada e manter unha cota estable.",
+        "investment": "Pensada para maximizar o aforro acumulado e a rendibilidade a longo prazo."
+      },
+      "recommendation": {
+        "pageTitle": "RECOMENDACIÓN FINAL",
+        "header": "RECOMENDACIÓN SAPIENS",
+        "pendingTitle": "Recomendación pendente",
+        "pendingDescription": "Non se puido determinar unha recomendación final coa información dispoñible.",
+        "investmentTitle": "Recomendamos a modalidade de investimento",
+        "investmentDescription": "O investimento ofrece un aforro acumulado superior a longo prazo ({{totalSavings}}) e un retorno estimado de {{paybackYears}} anos. Recomendámolo cando se prioriza a rendibilidade global do proxecto e a amortización da instalación.",
+        "serviceTitle": "Recomendamos a modalidade de servizo",
+        "serviceDescription": "A diferenza de aforro acumulado fronte ao investimento é reducida ({{savingsGap}}), pero a modalidade de servizo evita un desembolso inicial elevado e mantén unha cota mensual estimada de {{monthlyFee}}. Recomendámola cando se prioriza unha entrada máis cómoda, maior flexibilidade e unha decisión de contratación máis sinxela.",
+        "genericInvestmentTitle": "Recomendación: modalidade de investimento",
+        "genericServiceTitle": "Recomendación: modalidade de servizo",
+        "conclusionAndNextStep": "CONCLUSIÓN E SEGUINTE PASO",
+        "executiveConclusionTitle": "Conclusión executiva",
+        "executiveInvestment": "Polo perfil económico e aforro acumulado, recomendamos avanzar coa modalidade de investimento. É a opción que mellor capitaliza o consumo detectado e ofrece unha rendibilidade máis sólida no horizonte analizado.",
+        "executiveService": "Pola flexibilidade de entrada e equilibrio entre aforro e facilidade de contratación, recomendamos valorar a modalidade de servizo como a vía máis cómoda para iniciar o proxecto.",
+        "executivePending": "Non se puido establecer unha recomendación final automática.",
+        "nextStepTitle": "Seguinte paso recomendado",
+        "nextStepDescription": "Validar a proposta seleccionada, revisar os datos da subministración e continuar coa reserva ou contratación segundo a modalidade elixida."
+      }
     }
-    
   }
 }

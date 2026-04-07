@@ -216,6 +216,69 @@
     "paymentIntentId": "Payment Intent ID",
     "footer": "Este documento acredita la recepción de la señal asociada al precontrato de reserva/participación."
   },
+  "continueContract": {
+  "badge": "Continuar contratación",
+  "accessBadge": "Acceso a propuesta",
+  "hero": {
+    "titleLine1": "Retoma tu propuesta",
+    "titleLine2": "cuando quieras",
+    "description": "Accede con tus datos para continuar la contratación desde la propuesta que te enviamos por correo y selecciona la modalidad con la que deseas seguir."
+  },
+  "cards": {
+    "secureAccess": {
+      "title": "Acceso seguro",
+      "description": "Validamos tus datos antes de continuar con la contratación."
+    },
+    "modeChoice": {
+      "title": "Modalidad a elegir",
+      "description": "Podrás continuar por inversión o por servicio y generar el contrato según la opción elegida."
+    },
+    "fastProcess": {
+      "title": "Proceso rápido",
+      "description": "Tras validar el acceso irás directamente al flujo de contratación."
+    }
+  },
+  "linkStatus": {
+    "label": "Estado del enlace",
+    "valid": "Token detectado correctamente",
+    "missing": "Falta token"
+  },
+  "form": {
+    "title": "Confirma tus datos",
+    "description": "Introduce los datos del titular y selecciona la modalidad con la que deseas continuar la contratación.",
+    "modeLabel": "Modalidad a contratar",
+    "namePlaceholder": "Tu nombre",
+    "lastNamePlaceholder": "Tus apellidos"
+  },
+  "modes": {
+    "investment": {
+      "subtitle": "Mayor rentabilidad a largo plazo",
+      "description": "Ideal si quieres maximizar el ahorro y asumir la inversión inicial."
+    },
+    "service": {
+      "subtitle": "Menor barrera de entrada",
+      "description": "Ideal si prefieres una cuota mensual y evitar el desembolso inicial."
+    }
+  },
+  "selectedMode": {
+    "title": "Modalidad seleccionada:",
+    "description": "Continuarás el flujo con esta modalidad para generar el contrato correspondiente."
+  },
+  "actions": {
+    "continue": "Continuar contratación",
+    "validating": "Validando acceso..."
+  },
+  "toasts": {
+    "invalidLinkTitle": "Enlace no válido",
+    "invalidLinkDescription": "No se ha encontrado el token de acceso.",
+    "missingDataTitle": "Faltan datos",
+    "missingDataDescription": "Debes completar DNI, nombre y apellidos.",
+    "accessValidatedTitle": "Acceso validado",
+    "accessValidatedDescription": "Vamos a continuar con tu contratación.",
+    "couldNotContinueTitle": "No se pudo continuar",
+    "couldNotValidateDescription": "No se pudo validar tu acceso."
+  }
+},
   "emails": {
     "proposal": {
       "subject": "Tu propuesta energética ya está disponible",
