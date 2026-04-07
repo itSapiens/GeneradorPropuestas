@@ -1,0 +1,95 @@
+{
+  "common": {
+    "confirmAndContinue": "Confirmar y continuar",
+    "downloadPdf": "Descargar PDF",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "processing": "Procesando..."
+  },
+  "steps": {
+    "upload": "Subida",
+    "validation": "Validación",
+    "location": "Ubicación",
+    "result": "Resultado"
+  },
+  "admin": {
+    "access": "Acceso Admin",
+    "backToSite": "Volver a la Web"
+  },
+  "fields": {
+    "name": "Nombre",
+    "lastName": "Apellidos",
+    "dni": "DNI / NIF",
+    "email": "Email",
+    "phone": "Teléfono",
+    "address": "Dirección completa"
+  },
+  "placeholders": {
+    "name": "Ej. Juan",
+    "lastName": "Ej. Pérez García",
+    "dni": "12345678X",
+    "email": "tu@email.com",
+    "phone": "600 000 000",
+    "address": "Calle, número, CP, ciudad, provincia"
+  },
+  "upload": {
+    "privacyConsent": "He leído y acepto la <privacyLink>Política de Privacidad</privacyLink> y el tratamiento de mis datos para gestionar la subida de mi factura y la elaboración de mi estudio energético.",
+    "disabledMessage": "Debes aceptar la política de privacidad y el tratamiento de datos antes de subir la factura."
+  },
+  "validation": {
+    "title": "Verifica tu información",
+    "description": "Hemos analizado tu factura. Por favor, confirma que los datos extraídos son correctos.",
+    "ownerSection": {
+      "title": "Datos del titular",
+      "subtitle": "Confirma la información personal detectada en la factura."
+    },
+    "supplySection": {
+      "title": "Datos del suministro",
+      "subtitle": "Revisa la dirección completa y el tipo de factura."
+    }
+  },
+  "map": {
+    "title": "Selecciona tu comunidad",
+    "description": "Estas son las instalaciones activas disponibles dentro del radio de 5 km de tu ubicación.",
+    "clientLocation": "Ubicación del cliente",
+    "yourLocation": "Tu ubicación",
+    "availableInstallations_one": "1 instalación disponible",
+    "availableInstallations_other": "{{count}} instalaciones disponibles",
+    "recommendedPlants": "Plantas recomendadas",
+    "searchingPlants": "Buscando plantas..."
+  },
+  "calculation": {
+    "titleLine1": "Generando tu estudio",
+    "titleLine2": "de alta precisión",
+    "tasks": {
+      "validateBill": "Validando datos de factura",
+      "analyzeSolar": "Analizando radiación solar local",
+      "calculateReturn": "Calculando retorno de inversión"
+    }
+  },
+  
+ "fileUploader": {
+    "disabledMessage": "Debes aceptar la política de privacidad y el tratamiento de datos antes de subir la factura.",
+    "titleDefault": "Sube tu factura eléctrica",
+    "titleDragging": "¡Suéltalo aquí!",
+    "titleDisabled": "Acepta la política antes de subir",
+    "description": "Arrastra tu archivo PDF o imagen aquí para que nuestra IA analice tu consumo automáticamente.",
+    "secureMessage": "Tus datos están seguros y encriptados",
+    "removeFile": "Eliminar archivo",
+    "toasts": {
+      "privacyRequiredTitle": "Debes aceptar la política de privacidad",
+      "privacyRequiredDescription": "Para subir la factura, primero tienes que aceptar el tratamiento de datos.",
+      "viewPolicy": "Ver política",
+      "invalidFileTypeTitle": "Tipo de archivo no permitido",
+      "invalidFileTypeDescription": "Solo se aceptan: {{formats}}",
+      "fileTooLargeTitle": "Archivo demasiado grande",
+      "fileTooLargeDescription": "El límite es de {{maxSize}}MB"
+    }
+
+
+
+
+ }
+
+
+}

@@ -3,6 +3,7 @@ import { Upload, FileText, X, ShieldCheck, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { sileo } from "sileo";
 import { cn } from "../../lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface FileUploaderProps {
   onFileSelect: (file: File) => void;
@@ -17,22 +18,26 @@ export default function FileUploader({
   accept = [".pdf", ".jpg", ".jpeg", ".png"],
   maxSize = 10,
   disabled = false,
-  disabledMessage = "Debes aceptar la política de privacidad antes de subir la factura.",
+  disabledMessage,
 }: FileUploaderProps) {
+  const { t } = useTranslation();
+
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
 
+  const resolvedDisabledMessage =
+    disabledMessage ?? t("fileUploader.disabledMessage");
+
   const showDisabledToast = useCallback(() => {
     sileo.action({
-      title: "Debes aceptar la política de privacidad",
-      description:
-        "Para subir la factura, primero tienes que aceptar el tratamiento de datos.",
+      title: t("fileUploader.toasts.privacyRequiredTitle"),
+      description: t("fileUploader.toasts.privacyRequiredDescription"),
       button: {
-        title: "Ver política",
+        title: t("fileUploader.toasts.viewPolicy"),
         onClick: () => window.open("/politica-privacidad.html", "_blank"),
       },
     });
-  }, []);
+  }, [t]);
 
   const handleDragOver = useCallback(
     (e: React.DragEvent) => {
@@ -51,27 +56,34 @@ export default function FileUploader({
     setIsDragging(false);
   }, []);
 
-  const validateFile = (file: File) => {
-    const extension = `.${file.name.split(".").pop()?.toLowerCase()}`;
+  const validateFile = useCallback(
+    (file: File) => {
+      const extension = `.${file.name.split(".").pop()?.toLowerCase()}`;
 
-    if (!accept.includes(extension)) {
-      sileo.error({
-        title: "Tipo de archivo no permitido",
-        description: `Solo se aceptan: ${accept.join(", ")}`,
-      });
-      return false;
-    }
+      if (!accept.includes(extension)) {
+        sileo.error({
+          title: t("fileUploader.toasts.invalidFileTypeTitle"),
+          description: t("fileUploader.toasts.invalidFileTypeDescription", {
+            formats: accept.join(", "),
+          }),
+        });
+        return false;
+      }
 
-    if (file.size > maxSize * 1024 * 1024) {
-      sileo.error({
-        title: "Archivo demasiado grande",
-        description: `El límite es de ${maxSize}MB`,
-      });
-      return false;
-    }
+      if (file.size > maxSize * 1024 * 1024) {
+        sileo.error({
+          title: t("fileUploader.toasts.fileTooLargeTitle"),
+          description: t("fileUploader.toasts.fileTooLargeDescription", {
+            maxSize,
+          }),
+        });
+        return false;
+      }
 
-    return true;
-  };
+      return true;
+    },
+    [accept, maxSize, t],
+  );
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -90,7 +102,7 @@ export default function FileUploader({
         onFileSelect(droppedFile);
       }
     },
-    [disabled, onFileSelect, showDisabledToast],
+    [disabled, onFileSelect, showDisabledToast, validateFile],
   );
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,6 +131,16 @@ export default function FileUploader({
   const removeFile = () => {
     setFile(null);
   };
+
+  const uploadTitle = disabled
+    ? t("fileUploader.titleDisabled")
+    : isDragging
+      ? t("fileUploader.titleDragging")
+      : t("fileUploader.titleDefault");
+
+  const uploadDescription = disabled
+    ? resolvedDisabledMessage
+    : t("fileUploader.description");
 
   return (
     <div className="w-full max-w-2xl mx-auto">
@@ -170,17 +192,11 @@ export default function FileUploader({
 
             <div className="text-center max-w-sm">
               <h3 className="text-2xl font-bold text-brand-navy leading-tight">
-                {disabled
-                  ? "Acepta la política antes de subir"
-                  : isDragging
-                    ? "¡Suéltalo aquí!"
-                    : "Sube tu factura eléctrica"}
+                {uploadTitle}
               </h3>
 
               <p className="text-brand-gray text-sm mt-3 font-medium leading-relaxed">
-                {disabled
-                  ? disabledMessage
-                  : "Arrastra tu archivo PDF o imagen aquí para que nuestra IA analice tu consumo automáticamente."}
+                {uploadDescription}
               </p>
             </div>
 
@@ -198,7 +214,7 @@ export default function FileUploader({
             <div className="mt-8 pt-8 border-t border-brand-navy/5 w-full flex items-center justify-center gap-2 text-brand-navy/30">
               <ShieldCheck className="w-4 h-4" />
               <span className="text-[10px] font-bold uppercase tracking-widest">
-                Tus datos están seguros y encriptados
+                {t("fileUploader.secureMessage")}
               </span>
             </div>
           </motion.div>
@@ -223,7 +239,10 @@ export default function FileUploader({
             </div>
 
             <button
+              type="button"
               onClick={removeFile}
+              title={t("fileUploader.removeFile")}
+              aria-label={t("fileUploader.removeFile")}
               className="w-10 h-10 rounded-xl hover:bg-red-50 flex items-center justify-center text-brand-navy/20 hover:text-red-500 transition-all duration-300"
             >
               <X className="w-5 h-5" />

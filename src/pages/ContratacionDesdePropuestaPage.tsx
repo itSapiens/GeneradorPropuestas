@@ -574,43 +574,48 @@ export default function ContratacionDesdePropuestaPage() {
   };
 
   const handleSelectBankTransferPayment = async () => {
-    if (!currentContractId) {
-      sileo.error({
-        title: "Contrato no disponible",
-        description: "No se ha encontrado el contrato para iniciar el pago.",
-      });
-      return;
-    }
+  if (!currentContractId) {
+    sileo.error({
+      title: "Contrato no disponible",
+      description: "No se ha encontrado el contrato para iniciar el pago.",
+    });
+    return;
+  }
 
-    setIsSelectingPaymentMethod(true);
+  setIsSelectingPaymentMethod(true);
 
-    try {
-      const response = await axios.post<BankTransferPaymentResponse>(
-        `/api/contracts/${currentContractId}/payments/bank-transfer`,
-      );
+  try {
+    const response = await axios.post<BankTransferPaymentResponse>(
+      `/api/contracts/${currentContractId}/payments/bank-transfer`,
+    );
 
-      setIsPaymentMethodModalOpen(false);
+    setIsPaymentMethodModalOpen(false);
 
-      sileo.success({
-        title: "Instrucciones enviadas",
-        description: `Hemos enviado el email con las instrucciones de transferencia a ${response.data.bankTransfer.emailSentTo}.`,
-      });
-    } catch (error: any) {
-      console.error("Error seleccionando transferencia bancaria:", error);
+    sileo.success({
+      title: "Instrucciones enviadas",
+      description: `Hemos enviado el email con las instrucciones de transferencia a ${response.data.bankTransfer.emailSentTo}.`,
+    });
 
-      sileo.error({
-        title: "No se pudo preparar el pago por transferencia",
-        description:
-          error?.response?.data?.details ||
-          error?.response?.data?.error ||
-          error?.message ||
-          "Ha ocurrido un error inesperado.",
-      });
-    } finally {
-      setIsSelectingPaymentMethod(false);
-    }
-  };
+    sessionStorage.removeItem("proposal_resume_token");
 
+    window.setTimeout(() => {
+      navigate("/");
+    }, 1200);
+  } catch (error: any) {
+    console.error("Error seleccionando transferencia bancaria:", error);
+
+    sileo.error({
+      title: "No se pudo preparar el pago por transferencia",
+      description:
+        error?.response?.data?.details ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Ha ocurrido un error inesperado.",
+    });
+  } finally {
+    setIsSelectingPaymentMethod(false);
+  }
+};
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 relative overflow-hidden">

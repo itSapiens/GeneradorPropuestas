@@ -76,6 +76,8 @@ L.Icon.Default.mergeOptions({
 });
 import { jsPDF } from "jspdf";
 import { log } from "console";
+
+import { Trans, useTranslation } from "react-i18next";
 type Step = "upload" | "validation" | "map" | "calculation" | "result";
 
 interface ApiInstallation {
@@ -1360,7 +1362,14 @@ const chartPalette = {
   grid: "rgba(7, 0, 95, 0.08)",
   hover: "rgba(7, 0, 95, 0.04)",
 };
+
+function getDateLocale(language: string) {
+  if (language === "val") return "ca-ES";
+  if (language === "ca") return "ca-ES";
+  return "es-ES";
+}
 function MainAppContent() {
+  const { t, i18n } = useTranslation();
   const [view, setView] = useState<"public" | "admin">("public");
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [currentStep, setCurrentStep] = useState<Step>("upload");
@@ -1691,7 +1700,7 @@ function MainAppContent() {
   );
   const [savedStudy, setSavedStudy] = useState<any | null>(null);
   const studyPersistLock = useRef(false);
-
+const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
   const {
     register,
     control,
@@ -2810,6 +2819,110 @@ function MainAppContent() {
 
   return (
     <Layout>
+      {/* Selector idioma */}
+<div className="fixed top-8 right-6 z-[101]">
+  <div className="relative">
+    <button
+      type="button"
+      onClick={() => setIsLanguageMenuOpen((prev) => !prev)}
+      className="group flex items-center justify-center w-14 h-14 rounded-2xl border border-white/40 bg-white/60 backdrop-blur-2xl shadow-[0_16px_40px_rgba(7,0,95,0.12)] hover:shadow-[0_20px_50px_rgba(7,0,95,0.16)] transition-all"
+      aria-label="Seleccionar idioma"
+      title="Seleccionar idioma"
+    >
+      <Icon
+        icon="solar:global-bold-duotone"
+        className="w-7 h-7 text-brand-navy group-hover:scale-110 transition-transform"
+      />
+    </button>
+
+    <AnimatePresence>
+      {isLanguageMenuOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: -8, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -8, scale: 0.96 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="absolute top-16 right-0 w-56 rounded-[1.8rem] border border-white/40 bg-white/70 backdrop-blur-2xl p-2 shadow-[0_20px_60px_rgba(7,0,95,0.15)]"
+        >
+          {[
+            {
+              code: "es",
+              short: "ES",
+              name: "Castellano",
+              flag: "/flags/es.png",
+            },
+            {
+              code: "ca",
+              short: "CA",
+              name: "Català",
+              flag: "/flags/ca.png",
+            },
+            {
+              code: "val",
+              short: "VAL",
+              name: "Valencià",
+              flag: "/flags/val.png",
+            },
+          ].map((lang) => {
+            const active = i18n.language === lang.code;
+
+            return (
+              <button
+                key={lang.code}
+                type="button"
+                onClick={() => {
+                  i18n.changeLanguage(lang.code);
+                  setIsLanguageMenuOpen(false);
+                }}
+                className={cn(
+                  "w-full flex items-center gap-3 rounded-[1.2rem] px-3 py-3 text-left transition-all",
+                  active
+                    ? "brand-gradient text-brand-navy shadow-md"
+                    : "text-brand-navy/75 hover:bg-white hover:text-brand-navy"
+                )}
+              >
+                <img
+                  src={lang.flag}
+                  alt={lang.name}
+                  className="w-9 h-9 rounded-full object-cover border border-black/5"
+                />
+
+                <div className="flex flex-col leading-none">
+                  <span className="text-sm font-extrabold tracking-[0.12em]">
+                    {lang.short}
+                  </span>
+                  <span className="mt-1 text-[11px] font-medium opacity-70">
+                    {lang.name}
+                  </span>
+                </div>
+
+                <div className="ml-auto">
+                  {active ? (
+                    <Icon
+                      icon="solar:check-circle-bold-duotone"
+                      className="w-5 h-5 text-brand-navy"
+                    />
+                  ) : null}
+                </div>
+              </button>
+            );
+          })}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+</div>
+
+    <div className="fixed bottom-8 right-8 z-[100]">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="glass-card rounded-full px-6 py-3 font-bold text-brand-navy/60 hover:text-brand-navy border-brand-navy/5 shadow-xl"
+        onClick={() => setView(view === "public" ? "admin" : "public")}
+      >
+        {view === "public" ? t("admin.access") : t("admin.backToSite")}
+      </Button>
+    </div>
       <div className="fixed bottom-8 right-8 z-[100]">
         <Button
           variant="ghost"
@@ -2817,8 +2930,7 @@ function MainAppContent() {
           className="glass-card rounded-full px-6 py-3 font-bold text-brand-navy/60 hover:text-brand-navy border-brand-navy/5 shadow-xl"
           onClick={() => setView(view === "public" ? "admin" : "public")}
         >
-          {view === "public" ? "Acceso Admin" : "Volver a la Web"}
-        </Button>
+{view === "public" ? t("admin.access") : t("admin.backToSite")}        </Button>
       </div>
 
       <div className="max-w-7xl mx-auto">
@@ -2840,10 +2952,10 @@ function MainAppContent() {
               <div className="absolute top-1/2 left-0 w-full h-1 bg-brand-navy/5 -translate-y-1/2 rounded-full" />
               <div className="relative flex justify-between items-center">
                 {[
-                  { label: "Subida", icon: Upload },
-                  { label: "Validación", icon: FileText },
-                  { label: "Ubicación", icon: MapPin },
-                  { label: "Resultado", icon: Zap },
+                  { label: t("steps.upload"), icon: Upload },
+                  { label: t("steps.validation"), icon: FileText },
+                  { label: t("steps.location"), icon: MapPin },
+                  { label: t("steps.result"), icon: Zap },
                 ].map((step, i) => {
                   const steps = [
                     "upload",
@@ -2932,27 +3044,28 @@ function MainAppContent() {
                         className="mt-1 h-5 w-5 rounded border-brand-navy/20 text-brand-mint focus:ring-brand-mint"
                       />
 
-                      <span className="text-sm text-brand-gray leading-relaxed">
-                        He leído y acepto la{" "}
-                        <a
-                          href="../public/politica-privacidad.html"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-brand-navy underline underline-offset-4 hover:text-brand-mint"
-                        >
-                          Política de Privacidad
-                        </a>{" "}
-                        y el tratamiento de mis datos para gestionar la subida
-                        de mi factura y la elaboración de mi estudio energético.
-                      </span>
+<span className="text-sm text-brand-gray leading-relaxed">
+  <Trans
+    i18nKey="upload.privacyConsent"
+    components={{
+      privacyLink: (
+        <a
+          href="../public/politica-privacidad.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-brand-navy underline underline-offset-4 hover:text-brand-mint"
+        />
+      ),
+    }}
+  />
+</span>
                     </label>
                   </div>
 
                   <FileUploader
                     onFileSelect={handleFileSelect}
                     disabled={!privacyAccepted}
-                    disabledMessage="Debes aceptar la política de privacidad y el tratamiento de datos antes de subir la factura."
-                  />
+disabledMessage={t("upload.disabledMessage")}                  />
                   {/* <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
                     {[
                       {
@@ -2999,13 +3112,12 @@ function MainAppContent() {
                   className="max-w-5xl mx-auto"
                 >
                   <div className="mb-12 text-center">
-                    <h2 className="text-4xl font-bold mb-4">
-                      Verifica tu información
-                    </h2>
-                    <p className="text-brand-gray">
-                      Hemos analizado tu factura. Por favor, confirma que los
-                      datos extraídos son correctos.
-                    </p>
+<h2 className="text-4xl font-bold mb-4">
+  {t("validation.title")}
+</h2>
+<p className="text-brand-gray">
+  {t("validation.description")}
+</p>
                   </div>
 
                   <div className="bg-white rounded-[2.5rem] p-10 border border-brand-navy/5 shadow-2xl shadow-brand-navy/5">
@@ -3013,52 +3125,59 @@ function MainAppContent() {
                       onSubmit={handleSubmit(onValidationSubmit)}
                       className="space-y-10"
                     >
-                      <FormSection
-                        title="Datos del titular"
-                        subtitle="Confirma la información personal detectada en la factura."
-                      >
+<FormSection
+  title={t("validation.ownerSection.title")}
+  subtitle={t("validation.ownerSection.subtitle")}
+>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                          <Input
-                            label="Nombre"
-                            {...register("name")}
-                            error={errors.name?.message}
-                            placeholder="Ej. Juan"
-                          />
+<Input
+  label={t("fields.name")}
+  {...register("name")}
+  error={errors.name?.message}
+  placeholder={t("placeholders.name")}
+/>
 
-                          <Input
-                            label="Apellidos"
-                            {...register("lastName")}
-                            error={errors.lastName?.message}
-                            placeholder="Ej. Pérez García"
-                          />
+<Input
+  label={t("fields.lastName")}
+  {...register("lastName")}
+  error={errors.lastName?.message}
+  placeholder={t("placeholders.lastName")}
+/>
 
-                          <Input
-                            label="DNI / NIF"
-                            {...register("dni")}
-                            error={errors.dni?.message}
-                            placeholder="12345678X"
-                          />
+<Input
+  label={t("fields.dni")}
+  {...register("dni")}
+  error={errors.dni?.message}
+  placeholder={t("placeholders.dni")}
+/>
 
-                          <Input
-                            label="Email"
-                            {...register("email")}
-                            error={errors.email?.message}
-                            placeholder="tu@email.com"
-                          />
+<Input
+  label={t("fields.email")}
+  {...register("email")}
+  error={errors.email?.message}
+  placeholder={t("placeholders.email")}
+/>
 
-                          <Input
-                            label="Teléfono"
-                            {...register("phone")}
-                            error={errors.phone?.message}
-                            placeholder="600 000 000"
-                          />
+<Input
+  label={t("fields.phone")}
+  {...register("phone")}
+  error={errors.phone?.message}
+  placeholder={t("placeholders.phone")}
+/>
+
+<Input
+  label={t("fields.address")}
+  {...register("address")}
+  error={errors.address?.message}
+  placeholder={t("placeholders.address")}
+/>
                         </div>
                       </FormSection>
 
-                      <FormSection
-                        title="Datos del suministro"
-                        subtitle="Revisa la dirección completa y el tipo de factura."
-                      >
+     <FormSection
+  title={t("validation.supplySection.title")}
+  subtitle={t("validation.supplySection.subtitle")}
+>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                           {/* <Controller
                             name="billType"
@@ -3088,185 +3207,17 @@ function MainAppContent() {
                       </FormSection>
 
                       <div className="flex justify-center pt-4">
-                        <Button
-                          type="submit"
-                          size="lg"
-                          className="w-full md:w-auto px-12 py-7 text-lg rounded-2xl"
-                        >
-                          Confirmar y Continuar
-                          <ArrowRight className="ml-3 w-5 h-5" />
-                        </Button>
+               <Button
+  type="submit"
+  size="lg"
+  className="w-full md:w-auto px-12 py-7 text-lg rounded-2xl"
+>
+  {t("common.confirmAndContinue")}
+  <ArrowRight className="ml-3 w-5 h-5" />
+</Button>
                       </div>
 
-                      {/* <FormSection
-                        title="Consumos detectados"
-                        subtitle="Aquí se muestran tanto el consumo real de esta factura como el consumo medio mensual estimado."
-                      >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                          <Input
-                            label="Consumo real de esta factura (kWh)"
-                            type="number"
-                            step="0.01"
-                            {...register("currentInvoiceConsumptionKwh")}
-                            onBlur={handleRoundUpBlur(
-                              "currentInvoiceConsumptionKwh",
-                              2,
-                            )}
-                            error={errors.currentInvoiceConsumptionKwh?.message}
-                            placeholder="Ej. 421"
-                          />
 
-                          <Input
-                            label="Consumo medio mensual estimado (kWh)"
-                            type="number"
-                            step="0.01"
-                            {...register("averageMonthlyConsumptionKwh")}
-                            onBlur={handleRoundUpBlur(
-                              "averageMonthlyConsumptionKwh",
-                              2,
-                            )}
-                            error={errors.averageMonthlyConsumptionKwh?.message}
-                            placeholder="Ej. 388.83"
-                          />
-                        </div>
-                      </FormSection>
-
-                      <FormSection
-                        title="Consumo por periodos (kWh)"
-                        subtitle="Confirma los kWh de cada periodo tarifario detectados en la factura."
-                      >
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                          <Input
-                            label="P1 (kWh)"
-                            type="number"
-                            step="0.01"
-                            {...register("periodConsumptionP1")}
-                            onBlur={handleRoundUpBlur("periodConsumptionP1", 2)}
-                            error={errors.periodConsumptionP1?.message}
-                            placeholder="Ej. 122"
-                          />
-                          <Input
-                            label="P2 (kWh)"
-                            type="number"
-                            step="0.01"
-                            {...register("periodConsumptionP2")}
-                            onBlur={handleRoundUpBlur("periodConsumptionP2", 2)}
-                            error={errors.periodConsumptionP2?.message}
-                            placeholder="Ej. 100"
-                          />
-                          <Input
-                            label="P3 (kWh)"
-                            type="number"
-                            step="0.01"
-                            {...register("periodConsumptionP3")}
-                            onBlur={handleRoundUpBlur("periodConsumptionP3", 2)}
-                            error={errors.periodConsumptionP3?.message}
-                            placeholder="Ej. 199"
-                          />
-
-                          <Input
-                            label="P4 (kWh)"
-                            type="number"
-                            step="0.01"
-                            disabled={watchedBillType !== "3TD"}
-                            {...register("periodConsumptionP4")}
-                            onBlur={handleRoundUpBlur("periodConsumptionP4", 2)}
-                            error={errors.periodConsumptionP4?.message}
-                            placeholder="Solo 3TD"
-                          />
-                          <Input
-                            label="P5 (kWh)"
-                            type="number"
-                            step="0.01"
-                            disabled={watchedBillType !== "3TD"}
-                            {...register("periodConsumptionP5")}
-                            onBlur={handleRoundUpBlur("periodConsumptionP5", 2)}
-                            error={errors.periodConsumptionP5?.message}
-                            placeholder="Solo 3TD"
-                          />
-                          <Input
-                            label="P6 (kWh)"
-                            type="number"
-                            step="0.01"
-                            disabled={watchedBillType !== "3TD"}
-                            {...register("periodConsumptionP6")}
-                            onBlur={handleRoundUpBlur("periodConsumptionP6", 2)}
-                            error={errors.periodConsumptionP6?.message}
-                            placeholder="Solo 3TD"
-                          />
-                        </div>
-                      </FormSection>
-
-                      <FormSection
-                        title="Precio por periodos (€/kWh)"
-                        subtitle="Si la factura no muestra estos importes explícitamente, pueden venir vacíos y podrás completarlos manualmente."
-                      >
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                          <Input
-                            label="P1 (€/kWh)"
-                            type="number"
-                            step="0.00001"
-                            {...register("periodPriceP1")}
-                            error={errors.periodPriceP1?.message}
-                            placeholder="Ej. 0.18508"
-                          />
-                          <Input
-                            label="P2 (€/kWh)"
-                            type="number"
-                            step="0.00001"
-                            {...register("periodPriceP2")}
-                            error={errors.periodPriceP2?.message}
-                            placeholder="Ej. 0.17790"
-                          />
-                          <Input
-                            label="P3 (€/kWh)"
-                            type="number"
-                            step="0.00001"
-                            {...register("periodPriceP3")}
-                            error={errors.periodPriceP3?.message}
-                            placeholder="Ej. 0.15000"
-                          />
-
-                          <Input
-                            label="P4 (€/kWh)"
-                            type="number"
-                            step="0.00001"
-                            disabled={watchedBillType !== "3TD"}
-                            {...register("periodPriceP4")}
-                            error={errors.periodPriceP4?.message}
-                            placeholder="Solo 3TD"
-                          />
-                          <Input
-                            label="P5 (€/kWh)"
-                            type="number"
-                            step="0.00001"
-                            disabled={watchedBillType !== "3TD"}
-                            {...register("periodPriceP5")}
-                            error={errors.periodPriceP5?.message}
-                            placeholder="Solo 3TD"
-                          />
-                          <Input
-                            label="P6 (€/kWh)"
-                            type="number"
-                            step="0.00001"
-                            disabled={watchedBillType !== "3TD"}
-                            {...register("periodPriceP6")}
-                            error={errors.periodPriceP6?.message}
-                            placeholder="Solo 3TD"
-                          />
-                        </div>
-                      </FormSection> */}
-                      {/* 
-                      <div className="flex justify-center pt-4">
-                        <Button
-                          type="submit"
-                          size="lg"
-                          className="w-full md:w-auto px-12 py-7 text-lg rounded-2xl"
-                        >
-                          Confirmar y Continuar
-                          <ArrowRight className="ml-3 w-5 h-5" />
-                        </Button>
-                      </div> */}
                     </form>
                   </div>
                 </motion.div>
@@ -3280,13 +3231,12 @@ function MainAppContent() {
                   className="space-y-8"
                 >
                   <div className="text-center mb-12">
-                    <h2 className="text-4xl font-bold mb-4">
-                      Selecciona tu comunidad
-                    </h2>
-                    <p className="text-brand-gray">
-                      Estas son las instalaciones activas disponibles dentro del
-                      radio de 5 km de tu ubicación.
-                    </p>
+       <h2 className="text-4xl font-bold mb-4">
+  {t("map.title")}
+</h2>
+<p className="text-brand-gray">
+  {t("map.description")}
+</p>
                   </div>
 
                   <div className="flex flex-col lg:flex-row gap-10 h-[700px]">
@@ -3306,8 +3256,7 @@ function MainAppContent() {
                           <Marker
                             position={[clientCoords.lat, clientCoords.lng]}
                           >
-                            <Popup>Ubicación del cliente</Popup>
-                          </Marker>
+<Popup>{t("map.clientLocation")}</Popup>                          </Marker>
 
                           <Circle
                             center={[clientCoords.lat, clientCoords.lng]}
@@ -3351,9 +3300,9 @@ function MainAppContent() {
                             <MapPin className="w-6 h-6" />
                           </div>
                           <div>
-                            <p className="text-xs font-bold uppercase tracking-widest text-brand-navy/40">
-                              Tu Ubicación
-                            </p>
+                          <p className="text-xs font-bold uppercase tracking-widest text-brand-navy/40">
+  {t("map.yourLocation")}
+</p>
                             <p className="font-bold text-brand-navy">
                               {extractedData?.address ||
                                 "Cargando dirección..."}
@@ -3361,24 +3310,24 @@ function MainAppContent() {
                           </div>
                         </div>
 
-                        <div className="hidden md:block px-4 py-2 bg-brand-mint/20 text-brand-navy text-[10px] font-bold rounded-full uppercase tracking-widest">
-                          {installations.length} Instalaciones Disponibles
-                        </div>
+                      <div className="hidden md:block px-4 py-2 bg-brand-mint/20 text-brand-navy text-[10px] font-bold rounded-full uppercase tracking-widest">
+  {t("map.availableInstallations", { count: installations.length })}
+</div>
                       </div>
                     </div>
 
                     <div className="w-full lg:w-96 flex flex-col gap-6 overflow-y-auto pr-4 custom-scrollbar">
-                      <h3 className="font-bold text-xl text-brand-navy flex items-center gap-2">
-                        <TrendingUp className="w-5 h-5 text-brand-mint" />
-                        Plantas Recomendadas
-                      </h3>
+                   <h3 className="font-bold text-xl text-brand-navy flex items-center gap-2">
+  <TrendingUp className="w-5 h-5 text-brand-mint" />
+  {t("map.recommendedPlants")}
+</h3>
 
                       {isLoadingInstallations ? (
                         <div className="flex flex-col items-center justify-center py-12 text-brand-navy/40">
                           <Loader2 className="w-8 h-8 animate-spin mb-4" />
-                          <p className="text-sm font-bold uppercase tracking-widest">
-                            Buscando plantas...
-                          </p>
+                       <p className="text-sm font-bold uppercase tracking-widest">
+  {t("map.searchingPlants")}
+</p>
                         </div>
                       ) : installations.length === 0 ? (
                         <div className="rounded-[2rem] border border-amber-200 bg-amber-50 px-6 py-6 text-left">
@@ -3502,12 +3451,12 @@ function MainAppContent() {
                     <div className="absolute -inset-4 border-4 border-brand-mint border-t-transparent rounded-[3rem] animate-spin" />
                   </div>
 
-                  <h2 className="text-4xl font-bold mb-6">
-                    Generando tu estudio <br />
-                    <span className="brand-gradient-text">
-                      de alta precisión
-                    </span>
-                  </h2>
+       <h2 className="text-4xl font-bold mb-6">
+  {t("calculation.titleLine1")} <br />
+  <span className="brand-gradient-text">
+    {t("calculation.titleLine2")}
+  </span>
+</h2>
 
                   <p className="text-brand-gray mb-12 max-w-sm mx-auto">
                     Nuestros algoritmos están procesando miles de variables para
@@ -3516,10 +3465,10 @@ function MainAppContent() {
 
                   <div className="space-y-4 max-w-xs w-full">
                     {[
-                      "Validando datos de factura",
-                      "Analizando radiación solar local",
-                      "Calculando retorno de inversión",
-                    ].map((text, i) => (
+  t("calculation.tasks.validateBill"),
+  t("calculation.tasks.analyzeSolar"),
+  t("calculation.tasks.calculateReturn"),
+].map((text, i) => (
                       <motion.div
                         key={i}
                         initial={{ opacity: 0, y: 10 }}
@@ -4557,11 +4506,13 @@ function MainAppContent() {
         ) : null}
       </AnimatePresence>
     </Layout>
+    
   );
 }
 
 export default function App() {
   return (
+    
     <Routes>
       <Route path="/contratacion" element={<ContinuarContratacionPage />} />
 
