@@ -204,8 +204,8 @@
     "client": "Cliente",
     "dni": "DNI",
     "reservationSection": "Reserva",
-    "contractId": "ID do contrato",
-    "reservationId": "ID da reserva",
+    "contractId": "Contrato ID",
+    "reservationId": "Reserva ID",
     "installation": "Instalación",
     "reservedPower": "Potencia reservada",
     "paidAmount": "Importe aboado",
@@ -277,6 +277,110 @@
       "accessValidatedDescription": "Imos continuar coa túa contratación.",
       "couldNotContinueTitle": "Non se puido continuar",
       "couldNotValidateDescription": "Non se puido validar o teu acceso."
+    }
+  },
+  "contractFlow": {
+    "loading": {
+      "title": "Preparando o teu contrato...",
+      "description": "Estamos cargando a modalidade seleccionada."
+    },
+    "toasts": {
+      "invalidAccessTitle": "Acceso non válido",
+      "invalidAccessDescription": "Non se atopou o token de continuación.",
+      "alreadySignedTitle": "Precontrato xa asinado",
+      "alreadySignedDescription": "Este precontrato xa foi asinado anteriormente.",
+      "couldNotOpenTitle": "Non se puido abrir o contrato",
+      "unknownError": "Erro descoñecido",
+      "contractUnavailableTitle": "Contrato non dispoñible",
+      "contractUnavailableDescription": "Non se puido preparar o contrato para asinar.",
+      "paymentContractUnavailableDescription": "Non se atopou o contrato para iniciar o pagamento.",
+      "missingSignatureTitle": "Falta a sinatura",
+      "missingSignatureDescription": "Debes asinar no recadro antes de continuar.",
+      "signedSuccessTitle": "Precontrato asinado correctamente",
+      "signedSuccessDescription": "Agora debes seleccionar a forma de pagamento para continuar coa reserva.",
+      "couldNotSignTitle": "Non se puido asinar o contrato",
+      "unexpectedError": "Produciuse un erro inesperado.",
+      "paymentUnavailableTitle": "Pagamento non dispoñible",
+      "paymentUnavailableDescription": "Non se puido obter a URL de Stripe.",
+      "redirectingStripeTitle": "Redirixindo a Stripe",
+      "redirectingStripeDescription": "Levámoste ao pagamento seguro con tarxeta.",
+      "couldNotStartStripeTitle": "Non se puido iniciar o pagamento con tarxeta",
+      "bankTransferSentTitle": "Instrucións enviadas",
+      "bankTransferSentDescription": "Enviamos o correo coas instrucións de transferencia a {{email}}.",
+      "couldNotPrepareBankTitle": "Non se puido preparar o pagamento por transferencia"
+    },
+    "banner": {
+      "title": "Contrato asinado",
+      "description": "Reserváronse {{reservedKwp}} kWp en {{installationName}}."
+    },
+    "leftPanel": {
+      "badge": "Continuar contratación",
+      "titleLine1": "Revisa e asina",
+      "titleLine2": "o teu contrato",
+      "description": "Accediches desde unha proposta enviada previamente. Revisa a modalidade seleccionada, comproba o contrato e asínao para continuar coa reserva.",
+      "holder": "Titular",
+      "installation": "Instalación",
+      "assignedPower": "Potencia asignada",
+      "backHome": "Volver ao inicio"
+    },
+    "selectedMode": {
+      "title": "Modalidade seleccionada:",
+      "description": "Esta é a modalidade elixida previamente antes de asinar o contrato."
+    },
+    "contractCard": {
+      "title": "Contrato",
+      "dni": "DNI"
+    },
+    "signature": {
+      "title": "Sinatura",
+      "clear": "Limpar",
+      "help": "Asina dentro do recadro. Ao confirmar, xerarase o PDF asinado, crearase a reserva provisional e poderás elixir a forma de pagamento.",
+      "detected": "Sinatura detectada correctamente."
+    },
+    "reservation": {
+      "title": "Reserva provisional",
+      "description": "Ao asinar, reservaranse {{assignedKwp}} kWp na instalación seleccionada baixo a modalidade de {{modeLabel}}."
+    },
+    "actions": {
+      "signing": "Asinando...",
+      "signed": "Contrato asinado",
+      "signAndContinue": "Asinar e continuar"
+    },
+    "modal": {
+      "badge": "Contratación",
+      "title": "Selecciona a forma de pagamento",
+      "reservationSummary": "Resumo da reserva",
+      "installation": "Instalación",
+      "reservedPower": "Potencia reservada",
+      "signal": "Sinal",
+      "deadline": "Data límite",
+      "bankTransferTitle": "Transferencia bancaria",
+      "bankTransferDescription": "Recibirás un correo co IBAN, o concepto e o PDF do precontrato asinado. Terás 15 días para realizar a transferencia.",
+      "stripeTitle": "Tarxeta bancaria",
+      "stripeDescription": "Redirixirémoste a Stripe para completar o pagamento seguro do sinal con tarxeta."
+    },
+    "iframe": {
+      "title": "Vista previa do contrato"
+    },
+    "pdf": {
+      "title": "Precontrato de reserva",
+      "contractNumber": "Contrato nº",
+      "clientData": "Datos do cliente",
+      "name": "Nome",
+      "dni": "DNI",
+      "email": "Email",
+      "phone": "Teléfono",
+      "installationData": "Datos da instalación",
+      "installation": "Instalación",
+      "address": "Enderezo",
+      "mode": "Modalidade",
+      "assignedKwp": "kWp asignados",
+      "basicConditions": "Condicións básicas",
+      "condition1": "O cliente solicita a reserva da potencia indicada na instalación seleccionada, quedando dita reserva pendente de confirmación económica.",
+      "condition2": "A reserva formalizarase mediante o pagamento dun sinal, xa sexa con tarxeta ou por transferencia bancaria.",
+      "condition3": "Ata a validación do pagamento, a reserva terá carácter provisional.",
+      "clientSignature": "Sinatura do cliente",
+      "noData": "-"
     }
   },
   "emails": {

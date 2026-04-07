@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { sileo } from "sileo";
+import { useTranslation } from "react-i18next";
 import {
   ArrowRight,
   FileText,
@@ -16,12 +17,29 @@ import {
 } from "lucide-react";
 
 type ProposalMode = "investment" | "service";
+type AppLanguage = "es" | "ca" | "val" | "gl";
+
+function normalizeAppLanguage(value?: string | null): AppLanguage {
+  const lang = String(value || "")
+    .trim()
+    .toLowerCase();
+
+  if (lang === "ca") return "ca";
+  if (lang === "val") return "val";
+  if (lang === "gl" || lang === "gal") return "gl";
+  return "es";
+}
 
 export default function ContinuarContratacionPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
 
   const token = useMemo(() => searchParams.get("token") || "", [searchParams]);
+  const langFromUrl = useMemo(
+    () => normalizeAppLanguage(searchParams.get("lang")),
+    [searchParams],
+  );
 
   const [dni, setDni] = useState("");
   const [nombre, setNombre] = useState("");
@@ -29,84 +47,140 @@ export default function ContinuarContratacionPage() {
   const [selectedMode, setSelectedMode] = useState<ProposalMode>("investment");
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+      console.log("[continue-contract] raw lang:", searchParams.get("lang"));
+  console.log("[continue-contract] normalized lang:", langFromUrl);
+  console.log("[continue-contract] before change:", {
+    language: i18n.language,
+    resolvedLanguage: i18n.resolvedLanguage,
+  });
+    if (langFromUrl && i18n.language !== langFromUrl) {
+      i18n.changeLanguage(langFromUrl);
+    }
+  }, [langFromUrl, i18n]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!token) {
       sileo.error({
-        title: "Enlace no válido",
-        description: "No se ha encontrado el token de acceso.",
+        title: t(
+          "continueContract.toasts.invalidLinkTitle",
+          "Enlace no válido",
+        ),
+        description: t(
+          "continueContract.toasts.invalidLinkDescription",
+          "No se ha encontrado el token de acceso.",
+        ),
       });
       return;
     }
 
     if (!dni.trim() || !nombre.trim() || !apellidos.trim()) {
       sileo.error({
-        title: "Faltan datos",
-        description: "Debes completar DNI, nombre y apellidos.",
+        title: t("continueContract.toasts.missingDataTitle", "Faltan datos"),
+        description: t(
+          "continueContract.toasts.missingDataDescription",
+          "Debes completar DNI, nombre y apellidos.",
+        ),
       });
       return;
     }
 
     setLoading(true);
-try {
-  const { data } = await axios.post(
-    "/api/contracts/proposal-access/validate",
-    {
-      token,
-      dni: dni.trim().toUpperCase(),
-      nombre: nombre.trim(),
-      apellidos: apellidos.trim(),
-    },
-  );
 
-  if (!data?.success || !data?.resumeToken) {
-    throw new Error("No se pudo validar el acceso");
-  }
+    try {
+      const { data } = await axios.post("/api/contracts/proposal-access/validate", {
+        token,
+        dni: dni.trim().toUpperCase(),
+        nombre: nombre.trim(),
+        apellidos: apellidos.trim(),
+      });
 
-  sessionStorage.setItem("proposal_resume_token", data.resumeToken);
+      if (!data?.success || !data?.resumeToken) {
+        throw new Error("No se pudo validar el acceso");
+      }
 
-  sileo.success({
-    title: "Acceso validado",
-    description: "Vamos a continuar con tu contratación.",
-  });
+      const resolvedLanguage = normalizeAppLanguage(
+        data?.study?.language || data?.language || langFromUrl,
+      );
+      console.log("langFromUrl:", langFromUrl);
+console.log("i18n.language:", i18n.language);
+console.log("i18n.resolvedLanguage:", i18n.resolvedLanguage);
+console.log("continueContract.badge:", t("continueContract.badge"));
 
-  navigate(
-    `/contratacion-desde-propuesta?resume=${encodeURIComponent(
-      data.resumeToken,
-    )}&mode=${encodeURIComponent(selectedMode)}`,
-  );
-} catch (error: any) {
-  const message =
-    error?.response?.data?.error ||
-    error?.response?.data?.details ||
-    "No se pudo validar tu acceso.";
+      if (i18n.language !== resolvedLanguage) {
+        await i18n.changeLanguage(resolvedLanguage);
+      }
 
-  sileo.error({
-    title: "No se pudo continuar",
-    description: message,
-  });
-} finally {
-  setLoading(false);
-}
+      sessionStorage.setItem("proposal_resume_token", data.resumeToken);
+      sessionStorage.setItem("proposal_language", resolvedLanguage);
+
+      sileo.success({
+        title: t(
+          "continueContract.toasts.accessValidatedTitle",
+          "Acceso validado",
+        ),
+        description: t(
+          "continueContract.toasts.accessValidatedDescription",
+          "Vamos a continuar con tu contratación.",
+        ),
+      });
+
+      navigate(
+        `/contratacion-desde-propuesta?resume=${encodeURIComponent(
+          data.resumeToken,
+        )}&mode=${encodeURIComponent(selectedMode)}&lang=${encodeURIComponent(
+          resolvedLanguage,
+        )}`,
+      );
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.error ||
+        error?.response?.data?.details ||
+        t(
+          "continueContract.toasts.couldNotValidateDescription",
+          "No se pudo validar tu acceso.",
+        );
+
+      sileo.error({
+        title: t(
+          "continueContract.toasts.couldNotContinueTitle",
+          "No se pudo continuar",
+        ),
+        description: message,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const modeCards = [
     {
       id: "investment" as ProposalMode,
-      title: "Inversión",
-      subtitle: "Mayor rentabilidad a largo plazo",
+      title: t("result.modes.investment", "Inversión"),
+      subtitle: t(
+        "continueContract.modes.investment.subtitle",
+        "Mayor rentabilidad a largo plazo",
+      ),
       icon: Wallet,
-      description:
+      description: t(
+        "continueContract.modes.investment.description",
         "Ideal si quieres maximizar el ahorro y asumir la inversión inicial.",
+      ),
     },
     {
       id: "service" as ProposalMode,
-      title: "Servicio",
-      subtitle: "Menor barrera de entrada",
+      title: t("result.modes.service", "Servicio"),
+      subtitle: t(
+        "continueContract.modes.service.subtitle",
+        "Menor barrera de entrada",
+      ),
       icon: Zap,
-      description:
+      description: t(
+        "continueContract.modes.service.description",
         "Ideal si prefieres una cuota mensual y evitar el desembolso inicial.",
+      ),
     },
   ];
 
@@ -123,19 +197,23 @@ try {
               <div className="relative z-10">
                 <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/90">
                   <Sparkles className="h-4 w-4" />
-                  Continuar contratación
+                  {t(
+                    "continueContract.badge",
+                    "Continuar contratación",
+                  )}
                 </div>
 
                 <h1 className="mt-5 text-3xl md:text-4xl font-black leading-tight">
-                  Retoma tu propuesta
+                  {t("continueContract.hero.titleLine1", "Retoma tu propuesta")}
                   <br />
-                  cuando quieras
+                  {t("continueContract.hero.titleLine2", "cuando quieras")}
                 </h1>
 
                 <p className="mt-4 text-sm leading-6 text-white/75">
-                  Accede con tus datos para continuar la contratación desde la
-                  propuesta que te enviamos por correo y selecciona la modalidad
-                  con la que deseas seguir.
+                  {t(
+                    "continueContract.hero.description",
+                    "Accede con tus datos para continuar la contratación desde la propuesta que te enviamos por correo y selecciona la modalidad con la que deseas seguir.",
+                  )}
                 </p>
 
                 <div className="mt-8 space-y-4">
@@ -145,10 +223,17 @@ try {
                         <ShieldCheck className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold">Acceso seguro</p>
+                        <p className="text-sm font-bold">
+                          {t(
+                            "continueContract.cards.secureAccess.title",
+                            "Acceso seguro",
+                          )}
+                        </p>
                         <p className="mt-1 text-xs leading-5 text-white/70">
-                          Validamos tus datos antes de continuar con la
-                          contratación.
+                          {t(
+                            "continueContract.cards.secureAccess.description",
+                            "Validamos tus datos antes de continuar con la contratación.",
+                          )}
                         </p>
                       </div>
                     </div>
@@ -160,10 +245,17 @@ try {
                         <FileText className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold">Modalidad a elegir</p>
+                        <p className="text-sm font-bold">
+                          {t(
+                            "continueContract.cards.modeChoice.title",
+                            "Modalidad a elegir",
+                          )}
+                        </p>
                         <p className="mt-1 text-xs leading-5 text-white/70">
-                          Podrás continuar por inversión o por servicio y
-                          generar el contrato según la opción elegida.
+                          {t(
+                            "continueContract.cards.modeChoice.description",
+                            "Podrás continuar por inversión o por servicio y generar el contrato según la opción elegida.",
+                          )}
                         </p>
                       </div>
                     </div>
@@ -175,10 +267,17 @@ try {
                         <ArrowRight className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold">Proceso rápido</p>
+                        <p className="text-sm font-bold">
+                          {t(
+                            "continueContract.cards.fastProcess.title",
+                            "Proceso rápido",
+                          )}
+                        </p>
                         <p className="mt-1 text-xs leading-5 text-white/70">
-                          Tras validar el acceso irás directamente al flujo de
-                          contratación.
+                          {t(
+                            "continueContract.cards.fastProcess.description",
+                            "Tras validar el acceso irás directamente al flujo de contratación.",
+                          )}
                         </p>
                       </div>
                     </div>
@@ -187,10 +286,15 @@ try {
 
                 <div className="mt-8 rounded-[1.4rem] bg-white/10 border border-white/10 p-4">
                   <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/55">
-                    Estado del enlace
+                    {t("continueContract.linkStatus.label", "Estado del enlace")}
                   </p>
                   <p className="mt-2 text-sm font-semibold text-white">
-                    {token ? "Token detectado correctamente" : "Falta token"}
+                    {token
+                      ? t(
+                          "continueContract.linkStatus.valid",
+                          "Token detectado correctamente",
+                        )
+                      : t("continueContract.linkStatus.missing", "Falta token")}
                   </p>
                 </div>
               </div>
@@ -200,23 +304,28 @@ try {
               <div className="mb-8">
                 <div className="inline-flex items-center gap-2 rounded-full bg-brand-mint/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-navy">
                   <Sparkles className="h-4 w-4 text-brand-mint" />
-                  Acceso a propuesta
+                  {t("continueContract.accessBadge", "Acceso a propuesta")}
                 </div>
 
                 <h2 className="mt-4 text-3xl md:text-4xl font-black tracking-tight text-brand-navy">
-                  Confirma tus datos
+                  {t("continueContract.form.title", "Confirma tus datss")}
                 </h2>
 
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-brand-gray">
-                  Introduce los datos del titular y selecciona la modalidad con
-                  la que deseas continuar la contratación.
+                  {t(
+                    "continueContract.form.description",
+                    "Introduce los datos del titular y selecciona la modalidad con la que deseas continuar la contratación.",
+                  )}
                 </p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-7">
                 <div className="space-y-3">
                   <p className="text-sm font-bold text-brand-navy">
-                    Modalidad a contratar
+                    {t(
+                      "continueContract.form.modeLabel",
+                      "Modalidad a contratar",
+                    )}
                   </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -284,7 +393,7 @@ try {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                   <div className="md:col-span-1">
                     <label className="mb-2 block text-sm font-semibold text-brand-navy">
-                      DNI
+                      {t("fields.dni", "DNI / NIF")}
                     </label>
                     <div className="relative">
                       <IdCard className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-brand-navy/30" />
@@ -292,7 +401,7 @@ try {
                         type="text"
                         value={dni}
                         onChange={(e) => setDni(e.target.value.toUpperCase())}
-                        placeholder="12345678A"
+                        placeholder={t("placeholders.dni", "12345678A")}
                         className="w-full rounded-2xl border border-brand-navy/10 bg-white px-12 py-4 text-brand-navy outline-none transition placeholder:text-brand-navy/35 focus:border-brand-mint focus:ring-4 focus:ring-brand-mint/10"
                       />
                     </div>
@@ -300,7 +409,7 @@ try {
 
                   <div className="md:col-span-1">
                     <label className="mb-2 block text-sm font-semibold text-brand-navy">
-                      Nombre
+                      {t("fields.name", "Nombre")}
                     </label>
                     <div className="relative">
                       <User className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-brand-navy/30" />
@@ -308,7 +417,7 @@ try {
                         type="text"
                         value={nombre}
                         onChange={(e) => setNombre(e.target.value)}
-                        placeholder="Tu nombre"
+                        placeholder={t("continueContract.form.namePlaceholder", "Tu nombre")}
                         className="w-full rounded-2xl border border-brand-navy/10 bg-white px-12 py-4 text-brand-navy outline-none transition placeholder:text-brand-navy/35 focus:border-brand-mint focus:ring-4 focus:ring-brand-mint/10"
                       />
                     </div>
@@ -316,7 +425,7 @@ try {
 
                   <div className="md:col-span-1">
                     <label className="mb-2 block text-sm font-semibold text-brand-navy">
-                      Apellidos
+                      {t("fields.lastName", "Apellidos")}
                     </label>
                     <div className="relative">
                       <Users className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-brand-navy/30" />
@@ -324,7 +433,10 @@ try {
                         type="text"
                         value={apellidos}
                         onChange={(e) => setApellidos(e.target.value)}
-                        placeholder="Tus apellidos"
+                        placeholder={t(
+                          "continueContract.form.lastNamePlaceholder",
+                          "Tus apellidos",
+                        )}
                         className="w-full rounded-2xl border border-brand-navy/10 bg-white px-12 py-4 text-brand-navy outline-none transition placeholder:text-brand-navy/35 focus:border-brand-mint focus:ring-4 focus:ring-brand-mint/10"
                       />
                     </div>
@@ -343,14 +455,19 @@ try {
 
                     <div>
                       <p className="text-sm font-bold text-brand-navy">
-                        Modalidad seleccionada:{" "}
+                        {t(
+                          "continueContract.selectedMode.title",
+                          "Modalidad seleccionada:",
+                        )}{" "}
                         {selectedMode === "investment"
-                          ? "Inversión"
-                          : "Servicio"}
+                          ? t("result.modes.investment", "Inversión")
+                          : t("result.modes.service", "Servicio")}
                       </p>
                       <p className="mt-1 text-sm leading-6 text-brand-gray">
-                        Continuarás el flujo con esta modalidad para generar el
-                        contrato correspondiente.
+                        {t(
+                          "continueContract.selectedMode.description",
+                          "Continuarás el flujo con esta modalidad para generar el contrato correspondiente.",
+                        )}
                       </p>
                     </div>
                   </div>
@@ -364,11 +481,17 @@ try {
                   {loading ? (
                     <>
                       <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                      Validando acceso...
+                      {t(
+                        "continueContract.actions.validating",
+                        "Validando acceso...",
+                      )}
                     </>
                   ) : (
                     <>
-                      Continuar contratación
+                      {t(
+                        "continueContract.actions.continue",
+                        "Continuar contratación",
+                      )}
                       <ArrowRight className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-0.5" />
                     </>
                   )}

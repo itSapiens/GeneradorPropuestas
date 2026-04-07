@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   Check,
@@ -14,10 +15,10 @@ import {
 import { Icon } from "@iconify/react";
 import { jsPDF } from "jspdf";
 import { sileo } from "sileo";
-import { formatCurrency, formatNumber } from "../lib/utils";
 
 type ProposalMode = "investment" | "service";
 type PaymentMethodId = "stripe" | "bank_transfer";
+type AppLanguage = "es" | "ca" | "val" | "gl";
 
 type ContractPreviewData = {
   contractId: string;
@@ -131,16 +132,70 @@ type BankTransferPaymentResponse = {
   };
 };
 
+function normalizeAppLanguage(value?: string | null): AppLanguage {
+  const lang = String(value || "")
+    .trim()
+    .toLowerCase();
+
+  if (lang === "ca") return "ca";
+  if (lang === "val") return "val";
+  if (lang === "gl" || lang === "gal") return "gl";
+  return "es";
+}
+
+function getLanguageLocale(language: AppLanguage): string {
+  if (language === "ca" || language === "val") return "ca-ES";
+  if (language === "gl") return "gl-ES";
+  return "es-ES";
+}
+
 export default function ContratacionDesdePropuestaPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+
+  const rawLangFromUrl = useMemo(() => searchParams.get("lang"), [searchParams]);
+
+  const activeLanguage = useMemo(
+    () =>
+      normalizeAppLanguage(
+        rawLangFromUrl ||
+          sessionStorage.getItem("proposal_language") ||
+          i18n.resolvedLanguage ||
+          i18n.language,
+      ),
+    [rawLangFromUrl, i18n.language, i18n.resolvedLanguage],
+  );
+
+  const locale = useMemo(
+    () => getLanguageLocale(activeLanguage),
+    [activeLanguage],
+  );
+
+  const formatCurrencyByLanguage = (
+    value: number,
+    currency = "EUR",
+    decimals = 2,
+  ) =>
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: currency.toUpperCase(),
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(Number.isFinite(value) ? value : 0);
+
+  const formatNumberByLanguage = (value: number, decimals = 2) =>
+    new Intl.NumberFormat(locale, {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(Number.isFinite(value) ? value : 0);
 
   const resumeToken =
     searchParams.get("resume") ||
     sessionStorage.getItem("proposal_resume_token") ||
     "";
 
-  const selectedMode: ProposalMode =
+  const selectedModeFromUrl: ProposalMode =
     searchParams.get("mode") === "service" ? "service" : "investment";
 
   const [generatedContract, setGeneratedContract] =
@@ -159,6 +214,12 @@ export default function ContratacionDesdePropuestaPage() {
   const signatureCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const signatureDrawingRef = useRef(false);
 
+  useEffect(() => {
+    if (i18n.resolvedLanguage !== activeLanguage) {
+      void i18n.changeLanguage(activeLanguage);
+    }
+  }, [activeLanguage, i18n]);
+
   const goHome = () => {
     sessionStorage.removeItem("proposal_resume_token");
     navigate("/");
@@ -166,8 +227,17 @@ export default function ContratacionDesdePropuestaPage() {
 
   useEffect(() => {
     const resumeFromUrl = searchParams.get("resume");
+    const langFromUrl = searchParams.get("lang");
+
     if (resumeFromUrl) {
       sessionStorage.setItem("proposal_resume_token", resumeFromUrl);
+    }
+
+    if (langFromUrl) {
+      sessionStorage.setItem(
+        "proposal_language",
+        normalizeAppLanguage(langFromUrl),
+      );
     }
   }, [searchParams]);
 
@@ -297,50 +367,92 @@ export default function ContratacionDesdePropuestaPage() {
       y += lines.length * 14 + 8;
     };
 
+    const modeLabel =
+      preview.proposalMode === "investment"
+        ? t("result.modes.investment", "Inversión")
+        : t("result.modes.service", "Servicio");
+
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(22);
     pdf.setTextColor(7, 0, 95);
-    pdf.text("Precontrato de reserva", margin, y);
+    pdf.text(
+      t("contractFlow.pdf.title", "Precontrato de reserva"),
+      margin,
+      y,
+    );
     y += 24;
 
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(11);
     pdf.setTextColor(90, 90, 90);
-    pdf.text(`Contrato nº ${preview.contractNumber}`, margin, y);
+    pdf.text(
+      `${t("contractFlow.pdf.contractNumber", "Contrato nº")} ${preview.contractNumber}`,
+      margin,
+      y,
+    );
     y += 26;
 
-    writeSectionTitle("Datos del cliente");
-    writeParagraph(
-      `Nombre: ${preview.client.nombre} ${preview.client.apellidos}`,
+    writeSectionTitle(
+      t("contractFlow.pdf.clientData", "Datos del cliente"),
     );
-    writeParagraph(`DNI: ${preview.client.dni}`);
-    writeParagraph(`Email: ${preview.client.email || "-"}`);
-    writeParagraph(`Teléfono: ${preview.client.telefono || "-"}`);
+    writeParagraph(
+      `${t("contractFlow.pdf.name", "Nombre")}: ${preview.client.nombre} ${preview.client.apellidos}`,
+    );
+    writeParagraph(`${t("contractFlow.pdf.dni", "DNI")}: ${preview.client.dni}`);
+    writeParagraph(
+      `${t("contractFlow.pdf.email", "Email")}: ${preview.client.email || t("contractFlow.pdf.noData", "-")}`,
+    );
+    writeParagraph(
+      `${t("contractFlow.pdf.phone", "Teléfono")}: ${preview.client.telefono || t("contractFlow.pdf.noData", "-")}`,
+    );
 
-    writeSectionTitle("Datos de la instalación");
-    writeParagraph(`Instalación: ${preview.installation.nombre_instalacion}`);
-    writeParagraph(`Dirección: ${preview.installation.direccion}`);
-    writeParagraph(
-      `Modalidad: ${preview.proposalMode === "investment" ? "Inversión" : "Servicio"}`,
+    writeSectionTitle(
+      t("contractFlow.pdf.installationData", "Datos de la instalación"),
     );
-    writeParagraph(`kWp asignados: ${preview.assignedKwp}`);
+    writeParagraph(
+      `${t("contractFlow.pdf.installation", "Instalación")}: ${preview.installation.nombre_instalacion}`,
+    );
+    writeParagraph(
+      `${t("contractFlow.pdf.address", "Dirección")}: ${preview.installation.direccion}`,
+    );
+    writeParagraph(
+      `${t("contractFlow.pdf.mode", "Modalidad")}: ${modeLabel}`,
+    );
+    writeParagraph(
+      `${t("contractFlow.pdf.assignedKwp", "kWp asignados")}: ${preview.assignedKwp}`,
+    );
 
-    writeSectionTitle("Condiciones básicas");
-    writeParagraph(
-      "El cliente solicita la reserva de la potencia indicada en la instalación seleccionada, quedando dicha reserva pendiente de confirmación económica.",
+    writeSectionTitle(
+      t("contractFlow.pdf.basicConditions", "Condiciones básicas"),
     );
     writeParagraph(
-      "La reserva se formalizará mediante el pago de una señal, ya sea por tarjeta o por transferencia bancaria.",
+      t(
+        "contractFlow.pdf.condition1",
+        "El cliente solicita la reserva de la potencia indicada en la instalación seleccionada, quedando dicha reserva pendiente de confirmación económica.",
+      ),
     );
     writeParagraph(
-      "Hasta la validación del pago, la reserva tendrá carácter provisional.",
+      t(
+        "contractFlow.pdf.condition2",
+        "La reserva se formalizará mediante el pago de una señal, ya sea por tarjeta o por transferencia bancaria.",
+      ),
+    );
+    writeParagraph(
+      t(
+        "contractFlow.pdf.condition3",
+        "Hasta la validación del pago, la reserva tendrá carácter provisional.",
+      ),
     );
 
     y += 12;
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(12);
     pdf.setTextColor(7, 0, 95);
-    pdf.text("Firma del cliente", margin, y);
+    pdf.text(
+      t("contractFlow.pdf.clientSignature", "Firma del cliente"),
+      margin,
+      y,
+    );
     y += 12;
 
     pdf.addImage(signatureDataUrl, "PNG", margin, y, 180, 70);
@@ -361,8 +473,14 @@ export default function ContratacionDesdePropuestaPage() {
     const loadContract = async () => {
       if (!resumeToken) {
         sileo.error({
-          title: "Acceso no válido",
-          description: "No se ha encontrado el token de continuación.",
+          title: t(
+            "contractFlow.toasts.invalidAccessTitle",
+            "Acceso no válido",
+          ),
+          description: t(
+            "contractFlow.toasts.invalidAccessDescription",
+            "No se ha encontrado el token de continuación.",
+          ),
         });
         navigate("/");
         return;
@@ -379,7 +497,7 @@ export default function ContratacionDesdePropuestaPage() {
           "/api/contracts/generate-from-access",
           {
             resumeToken,
-            proposalMode: selectedMode,
+            proposalMode: selectedModeFromUrl,
           },
         );
 
@@ -391,11 +509,20 @@ export default function ContratacionDesdePropuestaPage() {
 
         if (error?.response?.data?.alreadySigned) {
           sileo.action({
-            title: "Precontrato ya firmado",
+            title: t(
+              "contractFlow.toasts.alreadySignedTitle",
+              "Precontrato ya firmado",
+            ),
             description:
               error?.response?.data?.message ||
-              "Este precontrato ya fue firmado anteriormente.",
-            actionLabel: "Volver al inicio",
+              t(
+                "contractFlow.toasts.alreadySignedDescription",
+                "Este precontrato ya fue firmado anteriormente.",
+              ),
+            actionLabel: t(
+              "contractFlow.leftPanel.backHome",
+              "Volver al inicio",
+            ),
             onAction: goHome,
             duration: 3500,
             icon: (
@@ -414,11 +541,14 @@ export default function ContratacionDesdePropuestaPage() {
         }
 
         sileo.error({
-          title: "No se pudo abrir el contrato",
+          title: t(
+            "contractFlow.toasts.couldNotOpenTitle",
+            "No se pudo abrir el contrato",
+          ),
           description:
             error?.response?.data?.details ||
             error?.response?.data?.error ||
-            "Error desconocido",
+            t("contractFlow.toasts.unknownError", "Error desconocido"),
         });
 
         navigate("/");
@@ -428,24 +558,44 @@ export default function ContratacionDesdePropuestaPage() {
     };
 
     void loadContract();
-  }, [resumeToken, selectedMode, navigate]);
+  }, [resumeToken, selectedModeFromUrl, navigate, t]);
 
   const currentContractId =
     signedContractResult?.contract?.id ?? generatedContract?.contract?.id ?? null;
 
+  const effectiveMode: ProposalMode =
+    generatedContract?.preview?.proposalMode ?? selectedModeFromUrl;
+
+  const modeLabel =
+    effectiveMode === "investment"
+      ? t("result.modes.investment", "Inversión")
+      : t("result.modes.service", "Servicio");
+
   const handleSubmitSignedContract = async () => {
     if (!generatedContract?.contract?.id || !generatedContract?.preview) {
       sileo.error({
-        title: "Contrato no disponible",
-        description: "No se ha podido preparar el contrato para firmar.",
+        title: t(
+          "contractFlow.toasts.contractUnavailableTitle",
+          "Contrato no disponible",
+        ),
+        description: t(
+          "contractFlow.toasts.contractUnavailableDescription",
+          "No se ha podido preparar el contrato para firmar.",
+        ),
       });
       return;
     }
 
     if (!signatureHasContent || !signatureCanvasRef.current) {
       sileo.warning({
-        title: "Falta la firma",
-        description: "Debes firmar en el recuadro antes de continuar.",
+        title: t(
+          "contractFlow.toasts.missingSignatureTitle",
+          "Falta la firma",
+        ),
+        description: t(
+          "contractFlow.toasts.missingSignatureDescription",
+          "Debes firmar en el recuadro antes de continuar.",
+        ),
       });
       return;
     }
@@ -479,9 +629,14 @@ export default function ContratacionDesdePropuestaPage() {
       setIsPaymentMethodModalOpen(true);
 
       sileo.success({
-        title: "Precontrato firmado correctamente",
-        description:
+        title: t(
+          "contractFlow.toasts.signedSuccessTitle",
+          "Precontrato firmado correctamente",
+        ),
+        description: t(
+          "contractFlow.toasts.signedSuccessDescription",
           "Ahora debes seleccionar la forma de pago para continuar con la reserva.",
+        ),
       });
     } catch (error: any) {
       console.error("Error firmando contrato:", error);
@@ -490,11 +645,20 @@ export default function ContratacionDesdePropuestaPage() {
 
       if (error?.response?.data?.alreadySigned) {
         sileo.action({
-          title: "Precontrato ya firmado",
+          title: t(
+            "contractFlow.toasts.alreadySignedTitle",
+            "Precontrato ya firmado",
+          ),
           description:
             error?.response?.data?.message ||
-            "Este precontrato ya fue firmado anteriormente.",
-          actionLabel: "Volver al inicio",
+            t(
+              "contractFlow.toasts.alreadySignedDescription",
+              "Este precontrato ya fue firmado anteriormente.",
+            ),
+          actionLabel: t(
+            "contractFlow.leftPanel.backHome",
+            "Volver al inicio",
+          ),
           onAction: goHome,
           duration: 3500,
           icon: (
@@ -513,12 +677,18 @@ export default function ContratacionDesdePropuestaPage() {
       }
 
       sileo.error({
-        title: "No se pudo firmar el contrato",
+        title: t(
+          "contractFlow.toasts.couldNotSignTitle",
+          "No se pudo firmar el contrato",
+        ),
         description:
           error?.response?.data?.details ||
           error?.response?.data?.error ||
           error?.message ||
-          "Ha ocurrido un error inesperado.",
+          t(
+            "contractFlow.toasts.unexpectedError",
+            "Ha ocurrido un error inesperado.",
+          ),
       });
     } finally {
       setIsSigningContract(false);
@@ -528,8 +698,14 @@ export default function ContratacionDesdePropuestaPage() {
   const handleSelectStripePayment = async () => {
     if (!currentContractId) {
       sileo.error({
-        title: "Contrato no disponible",
-        description: "No se ha encontrado el contrato para iniciar el pago.",
+        title: t(
+          "contractFlow.toasts.contractUnavailableTitle",
+          "Contrato no disponible",
+        ),
+        description: t(
+          "contractFlow.toasts.paymentContractUnavailableDescription",
+          "No se ha encontrado el contrato para iniciar el pago.",
+        ),
       });
       return;
     }
@@ -545,15 +721,27 @@ export default function ContratacionDesdePropuestaPage() {
 
       if (!checkoutUrl) {
         sileo.error({
-          title: "Pago no disponible",
-          description: "No se pudo obtener la URL de Stripe.",
+          title: t(
+            "contractFlow.toasts.paymentUnavailableTitle",
+            "Pago no disponible",
+          ),
+          description: t(
+            "contractFlow.toasts.paymentUnavailableDescription",
+            "No se pudo obtener la URL de Stripe.",
+          ),
         });
         return;
       }
 
       sileo.success({
-        title: "Redirigiendo a Stripe",
-        description: "Te llevamos al pago seguro con tarjeta.",
+        title: t(
+          "contractFlow.toasts.redirectingStripeTitle",
+          "Redirigiendo a Stripe",
+        ),
+        description: t(
+          "contractFlow.toasts.redirectingStripeDescription",
+          "Te llevamos al pago seguro con tarjeta.",
+        ),
       });
 
       window.location.href = checkoutUrl;
@@ -561,12 +749,18 @@ export default function ContratacionDesdePropuestaPage() {
       console.error("Error iniciando pago con Stripe:", error);
 
       sileo.error({
-        title: "No se pudo iniciar el pago con tarjeta",
+        title: t(
+          "contractFlow.toasts.couldNotStartStripeTitle",
+          "No se pudo iniciar el pago con tarjeta",
+        ),
         description:
           error?.response?.data?.details ||
           error?.response?.data?.error ||
           error?.message ||
-          "Ha ocurrido un error inesperado.",
+          t(
+            "contractFlow.toasts.unexpectedError",
+            "Ha ocurrido un error inesperado.",
+          ),
       });
     } finally {
       setIsSelectingPaymentMethod(false);
@@ -574,48 +768,68 @@ export default function ContratacionDesdePropuestaPage() {
   };
 
   const handleSelectBankTransferPayment = async () => {
-  if (!currentContractId) {
-    sileo.error({
-      title: "Contrato no disponible",
-      description: "No se ha encontrado el contrato para iniciar el pago.",
-    });
-    return;
-  }
+    if (!currentContractId) {
+      sileo.error({
+        title: t(
+          "contractFlow.toasts.contractUnavailableTitle",
+          "Contrato no disponible",
+        ),
+        description: t(
+          "contractFlow.toasts.paymentContractUnavailableDescription",
+          "No se ha encontrado el contrato para iniciar el pago.",
+        ),
+      });
+      return;
+    }
 
-  setIsSelectingPaymentMethod(true);
+    setIsSelectingPaymentMethod(true);
 
-  try {
-    const response = await axios.post<BankTransferPaymentResponse>(
-      `/api/contracts/${currentContractId}/payments/bank-transfer`,
-    );
+    try {
+      const response = await axios.post<BankTransferPaymentResponse>(
+        `/api/contracts/${currentContractId}/payments/bank-transfer`,
+      );
 
-    setIsPaymentMethodModalOpen(false);
+      setIsPaymentMethodModalOpen(false);
 
-    sileo.success({
-      title: "Instrucciones enviadas",
-      description: `Hemos enviado el email con las instrucciones de transferencia a ${response.data.bankTransfer.emailSentTo}.`,
-    });
+      sileo.success({
+        title: t(
+          "contractFlow.toasts.bankTransferSentTitle",
+          "Instrucciones enviadas",
+        ),
+        description: t(
+          "contractFlow.toasts.bankTransferSentDescription",
+          "Hemos enviado el email con las instrucciones de transferencia a {{email}}.",
+          { email: response.data.bankTransfer.emailSentTo },
+        ),
+      });
 
-    sessionStorage.removeItem("proposal_resume_token");
+      sessionStorage.removeItem("proposal_resume_token");
 
-    window.setTimeout(() => {
-      navigate("/");
-    }, 1200);
-  } catch (error: any) {
-    console.error("Error seleccionando transferencia bancaria:", error);
+      window.setTimeout(() => {
+        navigate("/");
+      }, 1200);
+    } catch (error: any) {
+      console.error("Error seleccionando transferencia bancaria:", error);
 
-    sileo.error({
-      title: "No se pudo preparar el pago por transferencia",
-      description:
-        error?.response?.data?.details ||
-        error?.response?.data?.error ||
-        error?.message ||
-        "Ha ocurrido un error inesperado.",
-    });
-  } finally {
-    setIsSelectingPaymentMethod(false);
-  }
-};
+      sileo.error({
+        title: t(
+          "contractFlow.toasts.couldNotPrepareBankTitle",
+          "No se pudo preparar el pago por transferencia",
+        ),
+        description:
+          error?.response?.data?.details ||
+          error?.response?.data?.error ||
+          error?.message ||
+          t(
+            "contractFlow.toasts.unexpectedError",
+            "Ha ocurrido un error inesperado.",
+          ),
+      });
+    } finally {
+      setIsSelectingPaymentMethod(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 relative overflow-hidden">
@@ -624,10 +838,13 @@ export default function ContratacionDesdePropuestaPage() {
           <div className="rounded-[2rem] border border-brand-navy/5 bg-white px-8 py-10 shadow-2xl shadow-brand-navy/5 text-center">
             <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 text-brand-navy" />
             <p className="font-bold text-brand-navy">
-              Preparando tu contrato...
+              {t("contractFlow.loading.title", "Preparando tu contrato...")}
             </p>
             <p className="mt-2 text-sm text-brand-gray">
-              Estamos cargando la modalidad seleccionada.
+              {t(
+                "contractFlow.loading.description",
+                "Estamos cargando la modalidad seleccionada.",
+              )}
             </p>
           </div>
         </div>
@@ -639,8 +856,6 @@ export default function ContratacionDesdePropuestaPage() {
     return null;
   }
 
-  const modeLabel = selectedMode === "investment" ? "Inversión" : "Servicio";
-
   return (
     <div className="min-h-screen bg-slate-50 relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(87,217,211,0.16),transparent_30%),radial-gradient(circle_at_top_right,rgba(148,194,255,0.18),transparent_28%),linear-gradient(to_bottom,rgba(7,0,95,0.02),rgba(7,0,95,0.01))]" />
@@ -650,18 +865,18 @@ export default function ContratacionDesdePropuestaPage() {
           {signedContractResult?.reservation ? (
             <div className="rounded-[1.6rem] bg-emerald-50 border border-emerald-200 p-5">
               <p className="text-sm font-bold uppercase tracking-widest text-emerald-700 mb-2">
-                Contrato firmado
+                {t("contractFlow.banner.title", "Contrato firmado")}
               </p>
               <p className="text-sm text-emerald-900 leading-relaxed">
-                Se han reservado{" "}
-                <strong>
-                  {signedContractResult.reservation.reservedKwp} kWp
-                </strong>{" "}
-                en{" "}
-                <strong>
-                  {signedContractResult.reservation.installationName}
-                </strong>
-                .
+                {t(
+                  "contractFlow.banner.description",
+                  "Se han reservado {{reservedKwp}} kWp en {{installationName}}.",
+                  {
+                    reservedKwp: signedContractResult.reservation.reservedKwp,
+                    installationName:
+                      signedContractResult.reservation.installationName,
+                  },
+                )}
               </p>
             </div>
           ) : null}
@@ -673,38 +888,43 @@ export default function ContratacionDesdePropuestaPage() {
               <div className="relative z-10">
                 <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/90">
                   <FileSignature className="h-4 w-4" />
-                  Continuar contratación
+                  {t(
+                    "contractFlow.leftPanel.badge",
+                    "Continuar contratación",
+                  )}
                 </div>
 
                 <h1 className="mt-5 text-3xl md:text-4xl font-black leading-tight">
-                  Revisa y firma
+                  {t("contractFlow.leftPanel.titleLine1", "Revisa y firma")}
                   <br />
-                  tu contrato
+                  {t("contractFlow.leftPanel.titleLine2", "tu contrato")}
                 </h1>
 
                 <p className="mt-4 text-sm leading-6 text-white/75">
-                  Has accedido desde una propuesta enviada previamente. Revisa
-                  la modalidad seleccionada, comprueba el contrato y firma para
-                  continuar con la reserva.
+                  {t(
+                    "contractFlow.leftPanel.description",
+                    "Has accedido desde una propuesta enviada previamente. Revisa la modalidad seleccionada, comprueba el contrato y firma para continuar con la reserva.",
+                  )}
                 </p>
 
                 <div className="mt-7 space-y-4">
                   <div className="rounded-[1.5rem] bg-white/10 border border-white/10 p-4">
                     <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/55">
-                      Titular
+                      {t("contractFlow.leftPanel.holder", "Titular")}
                     </p>
                     <p className="mt-2 text-base font-bold">
                       {generatedContract.preview.client.nombre}{" "}
                       {generatedContract.preview.client.apellidos}
                     </p>
                     <p className="mt-1 text-sm text-white/70">
-                      DNI: {generatedContract.preview.client.dni}
+                      {t("contractFlow.contractCard.dni", "DNI")}:{" "}
+                      {generatedContract.preview.client.dni}
                     </p>
                   </div>
 
                   <div className="rounded-[1.5rem] bg-white/10 border border-white/10 p-4">
                     <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/55">
-                      Instalación
+                      {t("contractFlow.leftPanel.installation", "Instalación")}
                     </p>
                     <p className="mt-2 text-base font-bold">
                       {generatedContract.preview.installation.nombre_instalacion}
@@ -716,10 +936,16 @@ export default function ContratacionDesdePropuestaPage() {
 
                   <div className="rounded-[1.5rem] bg-white/10 border border-white/10 p-4">
                     <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/55">
-                      Potencia asignada
+                      {t(
+                        "contractFlow.leftPanel.assignedPower",
+                        "Potencia asignada",
+                      )}
                     </p>
                     <p className="mt-2 text-base font-bold">
-                      {formatNumber(generatedContract.preview.assignedKwp)} kWp
+                      {formatNumberByLanguage(
+                        generatedContract.preview.assignedKwp,
+                      )}{" "}
+                      kWp
                     </p>
                   </div>
                 </div>
@@ -730,7 +956,10 @@ export default function ContratacionDesdePropuestaPage() {
                   className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white/85 hover:text-white transition"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Volver al inicio
+                  {t(
+                    "contractFlow.leftPanel.backHome",
+                    "Volver al inicio",
+                  )}
                 </button>
               </div>
             </div>
@@ -739,7 +968,7 @@ export default function ContratacionDesdePropuestaPage() {
               <div className="border-b border-brand-navy/5 px-5 py-5 md:px-8 md:py-6 bg-white/95 backdrop-blur-md">
                 <div className="rounded-[1.3rem] bg-brand-mint/10 border border-brand-mint/20 p-4 flex items-start gap-3">
                   <div className="w-11 h-11 rounded-2xl bg-brand-navy text-white flex items-center justify-center shrink-0">
-                    {selectedMode === "investment" ? (
+                    {effectiveMode === "investment" ? (
                       <Wallet className="h-5 w-5" />
                     ) : (
                       <Zap className="h-5 w-5" />
@@ -748,11 +977,17 @@ export default function ContratacionDesdePropuestaPage() {
 
                   <div>
                     <p className="text-sm font-bold text-brand-navy">
-                      Modalidad seleccionada: {modeLabel}
+                      {t(
+                        "contractFlow.selectedMode.title",
+                        "Modalidad seleccionada:",
+                      )}{" "}
+                      {modeLabel}
                     </p>
                     <p className="mt-1 text-sm leading-6 text-brand-gray">
-                      Esta es la modalidad elegida previamente antes de firmar
-                      el contrato.
+                      {t(
+                        "contractFlow.selectedMode.description",
+                        "Esta es la modalidad elegida previamente antes de firmar el contrato.",
+                      )}
                     </p>
                   </div>
                 </div>
@@ -762,7 +997,10 @@ export default function ContratacionDesdePropuestaPage() {
                 <div className="p-4 md:p-8 border-b lg:border-b-0 lg:border-r border-brand-navy/5">
                   <div className="rounded-[1.5rem] overflow-hidden border border-brand-navy/5 bg-brand-sky/5">
                     <iframe
-                      title="Vista previa del contrato"
+                      title={t(
+                        "contractFlow.iframe.title",
+                        "Vista previa del contrato",
+                      )}
                       srcDoc={generatedContract.previewHtml}
                       className="w-full h-[360px] sm:h-[460px] md:h-[620px] bg-white"
                     />
@@ -772,7 +1010,7 @@ export default function ContratacionDesdePropuestaPage() {
                 <div className="p-4 md:p-6 space-y-5 bg-brand-navy/[0.02]">
                   <div className="rounded-[1.4rem] bg-white border border-brand-navy/5 p-4">
                     <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40 mb-2">
-                      Contrato
+                      {t("contractFlow.contractCard.title", "Contrato")}
                     </p>
                     <p className="font-bold text-brand-navy">
                       {generatedContract.preview.contractNumber}
@@ -782,14 +1020,15 @@ export default function ContratacionDesdePropuestaPage() {
                       {generatedContract.preview.client.apellidos}
                     </p>
                     <p className="text-sm text-brand-gray">
-                      DNI: {generatedContract.preview.client.dni}
+                      {t("contractFlow.contractCard.dni", "DNI")}:{" "}
+                      {generatedContract.preview.client.dni}
                     </p>
                   </div>
 
                   <div className="rounded-[1.4rem] bg-white border border-brand-navy/5 p-4">
                     <div className="flex items-center justify-between mb-3">
                       <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40">
-                        Firma
+                        {t("contractFlow.signature.title", "Firma")}
                       </p>
 
                       <button
@@ -797,7 +1036,7 @@ export default function ContratacionDesdePropuestaPage() {
                         onClick={clearSignature}
                         className="text-sm font-semibold text-brand-navy hover:text-brand-mint transition"
                       >
-                        Limpiar
+                        {t("contractFlow.signature.clear", "Limpiar")}
                       </button>
                     </div>
 
@@ -816,9 +1055,10 @@ export default function ContratacionDesdePropuestaPage() {
                     />
 
                     <p className="text-xs text-brand-gray mt-3 leading-relaxed">
-                      Firma dentro del recuadro. Al confirmar, se generará el
-                      PDF firmado, se creará la reserva provisional y podrás
-                      elegir la forma de pago.
+                      {t(
+                        "contractFlow.signature.help",
+                        "Firma dentro del recuadro. Al confirmar, se generará el PDF firmado, se creará la reserva provisional y podrás elegir la forma de pago.",
+                      )}
                     </p>
                   </div>
 
@@ -826,20 +1066,24 @@ export default function ContratacionDesdePropuestaPage() {
                     <div className="flex items-center gap-2 mb-2">
                       <ShieldCheck className="h-5 w-5" />
                       <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/60">
-                        Reserva provisional
+                        {t(
+                          "contractFlow.reservation.title",
+                          "Reserva provisional",
+                        )}
                       </p>
                     </div>
 
                     <p className="text-sm leading-relaxed">
-                      Al firmar, se reservarán{" "}
-                      <span className="font-bold">
-                        {formatNumber(generatedContract.preview.assignedKwp)} kWp
-                      </span>{" "}
-                      en la instalación seleccionada bajo modalidad de{" "}
-                      <span className="font-bold">
-                        {modeLabel.toLowerCase()}
-                      </span>
-                      .
+                      {t(
+                        "contractFlow.reservation.description",
+                        "Al firmar, se reservarán {{assignedKwp}} kWp en la instalación seleccionada bajo modalidad de {{modeLabel}}.",
+                        {
+                          assignedKwp: formatNumberByLanguage(
+                            generatedContract.preview.assignedKwp,
+                          ),
+                          modeLabel: modeLabel.toLowerCase(),
+                        },
+                      )}
                     </p>
                   </div>
 
@@ -853,14 +1097,20 @@ export default function ContratacionDesdePropuestaPage() {
                       {isSigningContract ? (
                         <span className="inline-flex items-center justify-center">
                           <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                          Firmando...
+                          {t("contractFlow.actions.signing", "Firmando...")}
                         </span>
                       ) : (
                         <span className="inline-flex items-center justify-center">
                           <PenLine className="mr-3 h-5 w-5" />
                           {signedContractResult
-                            ? "Contrato firmado"
-                            : "Firmar y continuar"}
+                            ? t(
+                                "contractFlow.actions.signed",
+                                "Contrato firmado",
+                              )
+                            : t(
+                                "contractFlow.actions.signAndContinue",
+                                "Firmar y continuar",
+                              )}
                         </span>
                       )}
                     </button>
@@ -870,7 +1120,7 @@ export default function ContratacionDesdePropuestaPage() {
                       onClick={goHome}
                       className="w-full rounded-[1.2rem] border border-brand-navy/10 bg-white px-4 py-4 text-sm font-bold text-brand-navy transition hover:bg-brand-navy/[0.02]"
                     >
-                      Cancelar
+                      {t("common.cancel", "Cancelar")}
                     </button>
                   </div>
 
@@ -878,7 +1128,10 @@ export default function ContratacionDesdePropuestaPage() {
                     <div className="rounded-[1.2rem] bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800">
                       <div className="flex items-center gap-2">
                         <Check className="h-4 w-4" />
-                        Firma detectada correctamente.
+                        {t(
+                          "contractFlow.signature.detected",
+                          "Firma detectada correctamente.",
+                        )}
                       </div>
                     </div>
                   ) : null}
@@ -896,10 +1149,13 @@ export default function ContratacionDesdePropuestaPage() {
               <div className="p-5 md:p-8 border-b border-brand-navy/5 flex items-center justify-between gap-4">
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40 mb-1">
-                    Contratación
+                    {t("contractFlow.modal.badge", "Contratación")}
                   </p>
                   <h3 className="text-xl md:text-2xl font-bold text-brand-navy">
-                    Selecciona la forma de pago
+                    {t(
+                      "contractFlow.modal.title",
+                      "Selecciona la forma de pago",
+                    )}
                   </h3>
                 </div>
 
@@ -916,35 +1172,49 @@ export default function ContratacionDesdePropuestaPage() {
               <div className="p-5 md:p-8 space-y-6 bg-brand-navy/[0.02]">
                 <div className="rounded-[1.4rem] bg-white border border-brand-navy/5 p-5">
                   <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40 mb-3">
-                    Resumen de la reserva
+                    {t(
+                      "contractFlow.modal.reservationSummary",
+                      "Resumen de la reserva",
+                    )}
                   </p>
 
                   <div className="space-y-2 text-sm text-brand-navy/80">
                     <p>
                       <span className="font-bold text-brand-navy">
-                        Instalación:
+                        {t(
+                          "contractFlow.modal.installation",
+                          "Instalación",
+                        )}
+                        :
                       </span>{" "}
                       {signedContractResult.reservation.installationName}
                     </p>
                     <p>
                       <span className="font-bold text-brand-navy">
-                        Potencia reservada:
+                        {t(
+                          "contractFlow.modal.reservedPower",
+                          "Potencia reservada",
+                        )}
+                        :
                       </span>{" "}
                       {signedContractResult.reservation.reservedKwp} kWp
                     </p>
                     <p>
-                      <span className="font-bold text-brand-navy">Señal:</span>{" "}
-                      {formatCurrency(
+                      <span className="font-bold text-brand-navy">
+                        {t("contractFlow.modal.signal", "Señal")}:
+                      </span>{" "}
+                      {formatCurrencyByLanguage(
                         signedContractResult.reservation.signalAmount,
+                        signedContractResult.reservation.currency || "EUR",
                       )}
                     </p>
                     <p>
                       <span className="font-bold text-brand-navy">
-                        Fecha límite:
+                        {t("contractFlow.modal.deadline", "Fecha límite")}:
                       </span>{" "}
                       {new Date(
                         signedContractResult.reservation.paymentDeadlineAt,
-                      ).toLocaleDateString("es-ES")}
+                      ).toLocaleDateString(locale)}
                     </p>
                   </div>
                 </div>
@@ -964,12 +1234,16 @@ export default function ContratacionDesdePropuestaPage() {
                     </div>
 
                     <p className="text-lg font-bold text-brand-navy">
-                      Transferencia bancaria
+                      {t(
+                        "contractFlow.modal.bankTransferTitle",
+                        "Transferencia bancaria",
+                      )}
                     </p>
                     <p className="mt-2 text-sm text-brand-gray leading-relaxed">
-                      Recibirás un correo con el IBAN, el concepto y el PDF del
-                      precontrato firmado. Tendrás 15 días para realizar la
-                      transferencia.
+                      {t(
+                        "contractFlow.modal.bankTransferDescription",
+                        "Recibirás un correo con el IBAN, el concepto y el PDF del precontrato firmado. Tendrás 15 días para realizar la transferencia.",
+                      )}
                     </p>
                   </button>
 
@@ -987,11 +1261,16 @@ export default function ContratacionDesdePropuestaPage() {
                     </div>
 
                     <p className="text-lg font-bold text-brand-navy">
-                      Tarjeta bancaria
+                      {t(
+                        "contractFlow.modal.stripeTitle",
+                        "Tarjeta bancaria",
+                      )}
                     </p>
                     <p className="mt-2 text-sm text-brand-gray leading-relaxed">
-                      Te redirigiremos a Stripe para completar el pago seguro de
-                      la señal con tarjeta.
+                      {t(
+                        "contractFlow.modal.stripeDescription",
+                        "Te redirigiremos a Stripe para completar el pago seguro de la señal con tarjeta.",
+                      )}
                     </p>
                   </button>
                 </div>
@@ -1006,10 +1285,10 @@ export default function ContratacionDesdePropuestaPage() {
                     {isSelectingPaymentMethod ? (
                       <span className="inline-flex items-center justify-center">
                         <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                        Procesando...
+                        {t("common.processing", "Procesando...")}
                       </span>
                     ) : (
-                      "Cerrar"
+                      t("common.close", "Cerrar")
                     )}
                   </button>
                 </div>
