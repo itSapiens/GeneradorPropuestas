@@ -1,9 +1,175 @@
 {
+  "common": {
+    "confirmAndContinue": "Confirmar i continuar",
+    "downloadPdf": "Descarregar PDF",
+    "cancel": "Cancel·lar",
+    "close": "Tancar",
+    "processing": "Processant..."
+  },
+  "steps": {
+    "upload": "Pujada",
+    "validation": "Validació",
+    "location": "Ubicació",
+    "result": "Resultat"
+  },
   "admin": {
+    "access": "Accés Admin",
     "backToSite": "Tornar a la web"
   },
-   "fileUploader": {
-    "titleDragging": "Solta-ho ací!"
+  "fields": {
+    "name": "Nom",
+    "lastName": "Cognoms",
+    "dni": "DNI / NIF",
+    "email": "Correu electrònic",
+    "phone": "Telèfon",
+    "address": "Adreça completa"
+  },
+  "placeholders": {
+    "name": "Ex. Joan",
+    "lastName": "Ex. Pérez Garcia",
+    "dni": "12345678X",
+    "email": "tu@email.com",
+    "phone": "600 000 000",
+    "address": "Carrer, número, CP, ciutat, província"
+  },
+  "upload": {
+    "privacyConsent": "He llegit i accepte la <privacyLink>Política de Privacitat</privacyLink> i el tractament de les meues dades per a gestionar la pujada de la meua factura i l'elaboració del meu estudi energètic.",
+    "disabledMessage": "Has d'acceptar la política de privacitat i el tractament de dades abans de pujar la factura."
+  },
+  "validation": {
+    "title": "Verifica la teua informació",
+    "description": "Hem analitzat la teua factura. Per favor, confirma que les dades extretes són correctes.",
+    "ownerSection": {
+      "title": "Dades del titular",
+      "subtitle": "Confirma la informació personal detectada en la factura."
+    },
+    "supplySection": {
+      "title": "Dades del subministrament",
+      "subtitle": "Revisa l'adreça completa i el tipus de factura."
+    }
+  },
+  "map": {
+    "title": "Selecciona la teua comunitat",
+    "description": "Estes són les instal·lacions actives disponibles dins del radi de 5 km de la teua ubicació.",
+    "clientLocation": "Ubicació del client",
+    "yourLocation": "La teua ubicació",
+    "availableInstallations_one": "1 instal·lació disponible",
+    "availableInstallations_other": "{{count}} instal·lacions disponibles",
+    "recommendedPlants": "Plantes recomanades",
+    "searchingPlants": "Buscant plantes..."
+  },
+  "calculation": {
+    "titleLine1": "Generant el teu estudi",
+    "titleLine2": "d'alta precisió",
+    "tasks": {
+      "validateBill": "Validant dades de la factura",
+      "analyzeSolar": "Analitzant la radiació solar local",
+      "calculateReturn": "Calculant el retorn de la inversió"
+    }
+  },
+  "fileUploader": {
+    "disabledMessage": "Has d'acceptar la política de privacitat i el tractament de dades abans de pujar la factura.",
+    "titleDefault": "Puja la teua factura elèctrica",
+    "titleDragging": "Solta-ho ací!",
+    "titleDisabled": "Accepta la política abans de pujar",
+    "description": "Arrossega el teu arxiu PDF o imatge ací perquè la nostra IA analitze el teu consum automàticament.",
+    "secureMessage": "Les teues dades estan segures i encriptades",
+    "removeFile": "Eliminar arxiu",
+    "toasts": {
+      "privacyRequiredTitle": "Has d'acceptar la política de privacitat",
+      "privacyRequiredDescription": "Per a pujar la factura, primer has d'acceptar el tractament de dades.",
+      "viewPolicy": "Vore política",
+      "invalidFileTypeTitle": "Tipus d'arxiu no permés",
+      "invalidFileTypeDescription": "Només s'accepten: {{formats}}",
+      "fileTooLargeTitle": "Arxiu massa gran",
+      "fileTooLargeDescription": "El límit és de {{maxSize}}MB"
+    }
+  },
+  "result": {
+    "badge": "Estudi finalisat",
+    "hero": {
+      "titleLine1": "La teua proposta energètica",
+      "titleLine2": "ja està llesta",
+      "compareDescription": "Compara les dues modalitats i revisa quina encaixa millor amb tu.",
+      "singleModeInvestment": "Esta instal·lació només està disponible en modalitat d'inversió.",
+      "singleModeService": "Esta instal·lació només està disponible en modalitat de servici."
+    },
+    "modes": {
+      "investment": "Inversió",
+      "service": "Servici"
+    },
+    "availableMode": "Modalitat disponible",
+    "activeOption": "Opció activa",
+    "selectedMode": "Modalitat seleccionada",
+    "units": {
+      "month": "mes",
+      "years": "anys"
+    },
+    "summary": {
+      "totalInvestment": "Inversió total",
+      "monthlyCost": "Cost mensual",
+      "annualSavings": "Estalvi anual",
+      "monthlySavings": "Estalvi mensual",
+      "monthlySavingsHelper": "Estalvi mensual: {{value}}",
+      "initialCost": "Cost inicial",
+      "monthlyFee": "Quota mensual",
+      "recommendedPower": "Potència recomanada",
+      "annualConsumption": "Consum anual",
+      "annualConsumptionEstimated": "Consum anual estimat",
+      "return": "Retorn",
+      "investment": "Inversió",
+      "savings25Years": "Estalvi 25 anys",
+      "noFee": "Sense quota",
+      "noInitialInvestment": "Sense inversió"
+    },
+    "reserve": {
+      "startedTitle": "Reserva iniciada",
+      "startedDescriptionInvestment": "La reserva ja ha sigut iniciada en modalitat d'inversió.",
+      "startedDescriptionService": "La reserva ja ha sigut iniciada en modalitat de servici.",
+      "reserved": "Reservat",
+      "investment": {
+        "title": "Reservar inversió",
+        "description": "Inicia la reserva en modalitat d'inversió i continua amb el pagament de la senyal.",
+        "continue": "Continuar amb inversió"
+      },
+      "service": {
+        "title": "Reservar servici",
+        "description": "Inicia la reserva en modalitat de servici i continua amb el pagament de la senyal.",
+        "continue": "Continuar amb servici"
+      }
+    },
+    "actions": {
+      "title": "Accions",
+      "youWillHire": "Vas a contractar",
+      "paymentStatus": "Estat del pagament",
+      "pendingSignal": "Senyal pendent",
+      "mode": "Modalitat",
+"power": "Potència",
+"reservedIn": "reservats en"
+    },
+    "proposals": {
+      "investment": {
+        "badge": "Major rendibilitat",
+        "description": "Fas l'inversió i maximitzes l'estalvi a llarg termini.",
+        "points": [
+          "Major estalvi acumulat en 25 anys",
+          "Més control sobre la rendibilitat del projecte",
+          "Ideal si busques un retorn econòmic sostingut",
+          "Sense quota mensual recurrent"
+        ]
+      },
+      "service": {
+        "badge": "Menor entrada",
+        "description": "Model que reduïx la barrera d'entrada.",
+        "points": [
+          "Sense desemborsament inicial",
+          "Quota mensual fixa",
+          "Ideal si prioritces no desemborsar directament"
+        ]
+      }
+    },
+    "cards": {
+  "mode": "Modalitat"
+}
   }
 }
-

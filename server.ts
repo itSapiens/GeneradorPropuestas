@@ -28,7 +28,7 @@ const SAPIENS_CONTACT_EMAIL =
   process.env.SAPIENS_CONTACT_EMAIL || "info@sapiensenergia.es";
 
  const SAPIENS_BANK_ACCOUNT_IBAN =
-  process.env.SAPIENS_BANK_ACCOUNT_IBAN || "ESXXXXX"; 
+  process.env.SAPIENS_BANK_ACCOUNT_IBAN || "ES7001822339620201642233"; 
 
 //Strine
 

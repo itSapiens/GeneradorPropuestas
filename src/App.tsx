@@ -78,6 +78,7 @@ import { jsPDF } from "jspdf";
 import { log } from "console";
 
 import { Trans, useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 type Step = "upload" | "validation" | "map" | "calculation" | "result";
 
 interface ApiInstallation {
@@ -1009,6 +1010,7 @@ function buildProposalCardData(
   result: CalculationResult | null,
   mode: "investment" | "service",
   installation: ApiInstallation | null,
+  t: TFunction,
 ): ProposalCardData {
   const recommendedPowerKwp = getFirstNumericField(result, [
     "recommendedPowerKwp",
@@ -1055,8 +1057,8 @@ function buildProposalCardData(
 
     return {
       id: "investment",
-      title: "Inversión",
-      badge: "Mayor rentabilidad",
+      title: t("result.modes.investment"),
+      badge: t("result.proposals.investment.badge"),
       annualSavings,
       totalSavings25Years,
       upfrontCost,
@@ -1066,12 +1068,12 @@ function buildProposalCardData(
       paybackYears,
       recommendedPowerKwp,
       annualConsumptionKwh,
-      description: "Realizas la inversión y maximizas el ahorro a largo plazo.",
+      description: t("result.proposals.investment.description"),
       valuePoints: [
-        "Mayor ahorro acumulado en 25 años",
-        "Más control sobre la rentabilidad del proyecto",
-        "Ideal si buscas retorno económico sostenido",
-        "Sin cuota mensual recurrente",
+        t("result.proposals.investment.points.0"),
+        t("result.proposals.investment.points.1"),
+        t("result.proposals.investment.points.2"),
+        t("result.proposals.investment.points.3"),
       ],
     };
   }
@@ -1102,8 +1104,8 @@ function buildProposalCardData(
 
   return {
     id: "service",
-    title: "Servicio",
-    badge: "Menor entrada",
+    title: t("result.modes.service"),
+    badge: t("result.proposals.service.badge"),
     annualSavings,
     totalSavings25Years,
     upfrontCost: 0,
@@ -1113,11 +1115,11 @@ function buildProposalCardData(
     paybackYears,
     recommendedPowerKwp,
     annualConsumptionKwh,
-    description: "Modelo que reduce la barrera de entrada.",
+    description: t("result.proposals.service.description"),
     valuePoints: [
-      "Sin desembolso inicial",
-      "Cuota mensual fija",
-      "Ideal si priorizas no desembolsar directamente",
+      t("result.proposals.service.points.0"),
+      t("result.proposals.service.points.1"),
+      t("result.proposals.service.points.2"),
     ],
   };
 }
@@ -1144,6 +1146,7 @@ function buildProposalPdfSummary(
 function buildProposalPdfSummariesForInstallation(
   result: CalculationResult,
   installation: ApiInstallation | null,
+  t: TFunction,
 ): ProposalPdfSummary[] {
   if (!installation) return [];
 
@@ -1154,7 +1157,9 @@ function buildProposalPdfSummariesForInstallation(
   const modes = getAvailableProposalModes(normalizedModalidad);
 
   return modes.map((mode) =>
-    buildProposalPdfSummary(buildProposalCardData(result, mode, installation)),
+    buildProposalPdfSummary(
+      buildProposalCardData(result, mode, installation, t),
+    ),
   );
 }
 
@@ -1467,6 +1472,7 @@ function MainAppContent() {
     investmentResult,
     "investment",
     selectedInstallation,
+    t,
   );
   const [clientCoordinates, setClientCoordinates] = useState<{
     lat: number;
@@ -1502,6 +1508,7 @@ function MainAppContent() {
     serviceResult,
     "service",
     selectedInstallation,
+    t,
   );
 
   const activeProposal =
@@ -1510,16 +1517,24 @@ function MainAppContent() {
   const activeModeLabelLower = activeModeLabel.toLowerCase();
 
   const reserveCardTitle = contractAlreadySigned
-    ? "Reserva iniciada"
-    : `Reservar ${activeModeLabelLower}`;
+    ? t("result.reserve.startedTitle")
+    : activeProposal.id === "investment"
+      ? t("result.reserve.investment.title")
+      : t("result.reserve.service.title");
 
   const reserveCardDescription = contractAlreadySigned
-    ? `La reserva ya ha sido iniciada en modalidad de ${activeModeLabelLower}.`
-    : `Inicia la reserva en modalidad de ${activeModeLabelLower} y continúa con el pago de la señal.`;
+    ? activeProposal.id === "investment"
+      ? t("result.reserve.startedDescriptionInvestment")
+      : t("result.reserve.startedDescriptionService")
+    : activeProposal.id === "investment"
+      ? t("result.reserve.investment.description")
+      : t("result.reserve.service.description");
 
   const reserveButtonText = contractAlreadySigned
-    ? "Reservado"
-    : `Reservar ${activeModeLabelLower}`;
+    ? t("result.reserve.reserved")
+    : activeProposal.id === "investment"
+      ? t("result.reserve.investment.title")
+      : t("result.reserve.service.title");
   const investmentMetrics = getProposalMetrics(investmentProposal);
   const serviceMetrics = getProposalMetrics(serviceProposal);
   const activeMetrics = getProposalMetrics(activeProposal);
@@ -1533,16 +1548,17 @@ function MainAppContent() {
   const visibleProposalPanels = availableProposalModes.map(
     (mode) => proposalByMode[mode],
   );
-
   const topPrimaryResumeCard = {
     label:
-      activeProposal.id === "investment" ? "Inversión total" : "Coste mensual",
+      activeProposal.id === "investment"
+        ? t("result.summary.totalInvestment")
+        : t("result.summary.monthlyCost"),
     value:
       activeProposal.id === "investment"
         ? formatCurrency(activeProposal.upfrontCost)
         : activeProposal.monthlyFee && activeProposal.monthlyFee > 0
-          ? `${formatCurrency(activeProposal.monthlyFee)} / mes`
-          : "Sin cuota",
+          ? `${formatCurrency(activeProposal.monthlyFee)} / ${t("result.units.month")}`
+          : t("result.summary.noFee"),
     icon:
       activeProposal.id === "investment"
         ? "solar:wallet-money-bold-duotone"
@@ -1550,43 +1566,48 @@ function MainAppContent() {
   };
 
   const topSecondaryResumeCard = {
-    label: "Ahorro anual",
+    label: t("result.summary.annualSavings"),
     value: formatCurrency(activeProposal.annualSavings),
-    helper: `Ahorro mensual: ${formatCurrency(activeProposal.annualSavings / 12)}`,
+    helper: t("result.summary.monthlySavingsHelper", {
+      value: formatCurrency(activeProposal.annualSavings / 12),
+    }),
     icon: "solar:graph-up-bold-duotone",
   };
 
   const topActiveMetrics = [
     {
-      label: activeProposal.id === "investment" ? "Inversión" : "Inversión",
+      label: t("result.summary.investment"),
       value:
         activeProposal.id === "investment"
           ? formatCurrency(activeProposal.upfrontCost)
-          : "Sin inversión",
+          : t("result.summary.noInitialInvestment"),
       icon: "solar:calculator-bold-duotone",
     },
     {
-      label: activeProposal.id === "investment" ? "Retorno" : "Cuota mensual",
+      label:
+        activeProposal.id === "investment"
+          ? t("result.summary.return")
+          : t("result.summary.monthlyFee"),
       value:
         activeProposal.id === "investment"
           ? activeProposal.paybackYears > 0
-            ? `${Math.round(activeProposal.paybackYears)} años`
+            ? `${Math.round(activeProposal.paybackYears)} ${t("result.units.years")}`
             : "-"
           : activeProposal.monthlyFee && activeProposal.monthlyFee > 0
-            ? `${formatCurrency(activeProposal.monthlyFee)} / mes`
-            : "Sin cuota",
+            ? `${formatCurrency(activeProposal.monthlyFee)} / ${t("result.units.month")}`
+            : t("result.summary.noFee"),
       icon:
         activeProposal.id === "investment"
           ? "solar:graph-up-bold-duotone"
           : "solar:wallet-money-bold-duotone",
     },
     {
-      label: "Potencia recomendada",
+      label: t("result.summary.recommendedPower"),
       value: `${formatNumber(activeProposal.recommendedPowerKwp)} kWp`,
       icon: "solar:bolt-bold-duotone",
     },
     {
-      label: "Consumo anual",
+      label: t("result.summary.annualConsumption"),
       value: `${Math.round(activeProposal.annualConsumptionKwh)} kWh`,
       icon: "solar:chart-2-bold-duotone",
     },
@@ -1700,7 +1721,7 @@ function MainAppContent() {
   );
   const [savedStudy, setSavedStudy] = useState<any | null>(null);
   const studyPersistLock = useRef(false);
-const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
+  const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
   const {
     register,
     control,
@@ -1762,6 +1783,7 @@ const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
         const pdfSummaries = buildProposalPdfSummariesForInstallation(
           activeCalculationResult,
           selectedInstallation,
+          t,
         );
 
         const pdfArtifact = await buildPdfArtifact(
@@ -1807,6 +1829,7 @@ const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
     const proposalSummariesForPdf = buildProposalPdfSummariesForInstallation(
       result,
       installation,
+      t,
     );
 
     const pdfArtifact = await buildPdfArtifact(
@@ -2820,109 +2843,99 @@ const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
   return (
     <Layout>
       {/* Selector idioma */}
-<div className="fixed top-8 right-6 z-[101]">
-  <div className="relative">
-    <button
-      type="button"
-      onClick={() => setIsLanguageMenuOpen((prev) => !prev)}
-      className="group flex items-center justify-center w-14 h-14 rounded-2xl border border-white/40 bg-white/60 backdrop-blur-2xl shadow-[0_16px_40px_rgba(7,0,95,0.12)] hover:shadow-[0_20px_50px_rgba(7,0,95,0.16)] transition-all"
-      aria-label="Seleccionar idioma"
-      title="Seleccionar idioma"
-    >
-      <Icon
-        icon="solar:global-bold-duotone"
-        className="w-7 h-7 text-brand-navy group-hover:scale-110 transition-transform"
-      />
-    </button>
+      <div className="fixed top-8 right-6 z-[101]">
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsLanguageMenuOpen((prev) => !prev)}
+            className="group flex items-center justify-center w-14 h-14 rounded-2xl border border-white/40 bg-white/60 backdrop-blur-2xl shadow-[0_16px_40px_rgba(7,0,95,0.12)] hover:shadow-[0_20px_50px_rgba(7,0,95,0.16)] transition-all"
+            aria-label="Seleccionar idioma"
+            title="Seleccionar idioma"
+          >
+            <Icon
+              icon="solar:global-bold-duotone"
+              className="w-7 h-7 text-brand-navy group-hover:scale-110 transition-transform"
+            />
+          </button>
 
-    <AnimatePresence>
-      {isLanguageMenuOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: -8, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -8, scale: 0.96 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-          className="absolute top-16 right-0 w-56 rounded-[1.8rem] border border-white/40 bg-white/70 backdrop-blur-2xl p-2 shadow-[0_20px_60px_rgba(7,0,95,0.15)]"
-        >
-          {[
-            {
-              code: "es",
-              short: "ES",
-              name: "Castellano",
-              flag: "/flags/es.png",
-            },
-            {
-              code: "ca",
-              short: "CA",
-              name: "Català",
-              flag: "/flags/ca.png",
-            },
-            {
-              code: "val",
-              short: "VAL",
-              name: "Valencià",
-              flag: "/flags/val.png",
-            },
-          ].map((lang) => {
-            const active = i18n.language === lang.code;
-
-            return (
-              <button
-                key={lang.code}
-                type="button"
-                onClick={() => {
-                  i18n.changeLanguage(lang.code);
-                  setIsLanguageMenuOpen(false);
-                }}
-                className={cn(
-                  "w-full flex items-center gap-3 rounded-[1.2rem] px-3 py-3 text-left transition-all",
-                  active
-                    ? "brand-gradient text-brand-navy shadow-md"
-                    : "text-brand-navy/75 hover:bg-white hover:text-brand-navy"
-                )}
+          <AnimatePresence>
+            {isLanguageMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="absolute top-16 right-0 w-56 rounded-[1.8rem] border border-white/40 bg-white/70 backdrop-blur-2xl p-2 shadow-[0_20px_60px_rgba(7,0,95,0.15)]"
               >
-                <img
-                  src={lang.flag}
-                  alt={lang.name}
-                  className="w-9 h-9 rounded-full object-cover border border-black/5"
-                />
+                {[
+                  {
+                    code: "es",
+                    short: "ES",
+                    name: "Castellano",
+                    flag: "/flags/es.png",
+                  },
+                  {
+                    code: "ca",
+                    short: "CA",
+                    name: "Català",
+                    flag: "/flags/ca.png",
+                  },
+                  {
+                    code: "val",
+                    short: "VAL",
+                    name: "Valencià",
+                    flag: "/flags/val.png",
+                  },
+                ].map((lang) => {
+                  const active = i18n.language === lang.code;
 
-                <div className="flex flex-col leading-none">
-                  <span className="text-sm font-extrabold tracking-[0.12em]">
-                    {lang.short}
-                  </span>
-                  <span className="mt-1 text-[11px] font-medium opacity-70">
-                    {lang.name}
-                  </span>
-                </div>
+                  return (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      onClick={() => {
+                        i18n.changeLanguage(lang.code);
+                        setIsLanguageMenuOpen(false);
+                      }}
+                      className={cn(
+                        "w-full flex items-center gap-3 rounded-[1.2rem] px-3 py-3 text-left transition-all",
+                        active
+                          ? "brand-gradient text-brand-navy shadow-md"
+                          : "text-brand-navy/75 hover:bg-white hover:text-brand-navy",
+                      )}
+                    >
+                      <img
+                        src={lang.flag}
+                        alt={lang.name}
+                        className="w-9 h-9 rounded-full object-cover border border-black/5"
+                      />
 
-                <div className="ml-auto">
-                  {active ? (
-                    <Icon
-                      icon="solar:check-circle-bold-duotone"
-                      className="w-5 h-5 text-brand-navy"
-                    />
-                  ) : null}
-                </div>
-              </button>
-            );
-          })}
-        </motion.div>
-      )}
-    </AnimatePresence>
-  </div>
-</div>
+                      <div className="flex flex-col leading-none">
+                        <span className="text-sm font-extrabold tracking-[0.12em]">
+                          {lang.short}
+                        </span>
+                        <span className="mt-1 text-[11px] font-medium opacity-70">
+                          {lang.name}
+                        </span>
+                      </div>
 
-    <div className="fixed bottom-8 right-8 z-[100]">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="glass-card rounded-full px-6 py-3 font-bold text-brand-navy/60 hover:text-brand-navy border-brand-navy/5 shadow-xl"
-        onClick={() => setView(view === "public" ? "admin" : "public")}
-      >
-        {view === "public" ? t("admin.access") : t("admin.backToSite")}
-      </Button>
-    </div>
+                      <div className="ml-auto">
+                        {active ? (
+                          <Icon
+                            icon="solar:check-circle-bold-duotone"
+                            className="w-5 h-5 text-brand-navy"
+                          />
+                        ) : null}
+                      </div>
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
       <div className="fixed bottom-8 right-8 z-[100]">
         <Button
           variant="ghost"
@@ -2930,7 +2943,18 @@ const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
           className="glass-card rounded-full px-6 py-3 font-bold text-brand-navy/60 hover:text-brand-navy border-brand-navy/5 shadow-xl"
           onClick={() => setView(view === "public" ? "admin" : "public")}
         >
-{view === "public" ? t("admin.access") : t("admin.backToSite")}        </Button>
+          {view === "public" ? t("admin.access") : t("admin.backToSite")}
+        </Button>
+      </div>
+      <div className="fixed bottom-8 right-8 z-[100]">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="glass-card rounded-full px-6 py-3 font-bold text-brand-navy/60 hover:text-brand-navy border-brand-navy/5 shadow-xl"
+          onClick={() => setView(view === "public" ? "admin" : "public")}
+        >
+          {view === "public" ? t("admin.access") : t("admin.backToSite")}{" "}
+        </Button>
       </div>
 
       <div className="max-w-7xl mx-auto">
@@ -3044,28 +3068,29 @@ const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
                         className="mt-1 h-5 w-5 rounded border-brand-navy/20 text-brand-mint focus:ring-brand-mint"
                       />
 
-<span className="text-sm text-brand-gray leading-relaxed">
-  <Trans
-    i18nKey="upload.privacyConsent"
-    components={{
-      privacyLink: (
-        <a
-          href="../public/politica-privacidad.html"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-semibold text-brand-navy underline underline-offset-4 hover:text-brand-mint"
-        />
-      ),
-    }}
-  />
-</span>
+                      <span className="text-sm text-brand-gray leading-relaxed">
+                        <Trans
+                          i18nKey="upload.privacyConsent"
+                          components={{
+                            privacyLink: (
+                              <a
+                                href="../public/politica-privacidad.html"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-semibold text-brand-navy underline underline-offset-4 hover:text-brand-mint"
+                              />
+                            ),
+                          }}
+                        />
+                      </span>
                     </label>
                   </div>
 
                   <FileUploader
                     onFileSelect={handleFileSelect}
                     disabled={!privacyAccepted}
-disabledMessage={t("upload.disabledMessage")}                  />
+                    disabledMessage={t("upload.disabledMessage")}
+                  />
                   {/* <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
                     {[
                       {
@@ -3112,12 +3137,12 @@ disabledMessage={t("upload.disabledMessage")}                  />
                   className="max-w-5xl mx-auto"
                 >
                   <div className="mb-12 text-center">
-<h2 className="text-4xl font-bold mb-4">
-  {t("validation.title")}
-</h2>
-<p className="text-brand-gray">
-  {t("validation.description")}
-</p>
+                    <h2 className="text-4xl font-bold mb-4">
+                      {t("validation.title")}
+                    </h2>
+                    <p className="text-brand-gray">
+                      {t("validation.description")}
+                    </p>
                   </div>
 
                   <div className="bg-white rounded-[2.5rem] p-10 border border-brand-navy/5 shadow-2xl shadow-brand-navy/5">
@@ -3125,59 +3150,59 @@ disabledMessage={t("upload.disabledMessage")}                  />
                       onSubmit={handleSubmit(onValidationSubmit)}
                       className="space-y-10"
                     >
-<FormSection
-  title={t("validation.ownerSection.title")}
-  subtitle={t("validation.ownerSection.subtitle")}
->
+                      <FormSection
+                        title={t("validation.ownerSection.title")}
+                        subtitle={t("validation.ownerSection.subtitle")}
+                      >
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-<Input
-  label={t("fields.name")}
-  {...register("name")}
-  error={errors.name?.message}
-  placeholder={t("placeholders.name")}
-/>
+                          <Input
+                            label={t("fields.name")}
+                            {...register("name")}
+                            error={errors.name?.message}
+                            placeholder={t("placeholders.name")}
+                          />
 
-<Input
-  label={t("fields.lastName")}
-  {...register("lastName")}
-  error={errors.lastName?.message}
-  placeholder={t("placeholders.lastName")}
-/>
+                          <Input
+                            label={t("fields.lastName")}
+                            {...register("lastName")}
+                            error={errors.lastName?.message}
+                            placeholder={t("placeholders.lastName")}
+                          />
 
-<Input
-  label={t("fields.dni")}
-  {...register("dni")}
-  error={errors.dni?.message}
-  placeholder={t("placeholders.dni")}
-/>
+                          <Input
+                            label={t("fields.dni")}
+                            {...register("dni")}
+                            error={errors.dni?.message}
+                            placeholder={t("placeholders.dni")}
+                          />
 
-<Input
-  label={t("fields.email")}
-  {...register("email")}
-  error={errors.email?.message}
-  placeholder={t("placeholders.email")}
-/>
+                          <Input
+                            label={t("fields.email")}
+                            {...register("email")}
+                            error={errors.email?.message}
+                            placeholder={t("placeholders.email")}
+                          />
 
-<Input
-  label={t("fields.phone")}
-  {...register("phone")}
-  error={errors.phone?.message}
-  placeholder={t("placeholders.phone")}
-/>
+                          <Input
+                            label={t("fields.phone")}
+                            {...register("phone")}
+                            error={errors.phone?.message}
+                            placeholder={t("placeholders.phone")}
+                          />
 
-<Input
-  label={t("fields.address")}
-  {...register("address")}
-  error={errors.address?.message}
-  placeholder={t("placeholders.address")}
-/>
+                          <Input
+                            label={t("fields.address")}
+                            {...register("address")}
+                            error={errors.address?.message}
+                            placeholder={t("placeholders.address")}
+                          />
                         </div>
                       </FormSection>
 
-     <FormSection
-  title={t("validation.supplySection.title")}
-  subtitle={t("validation.supplySection.subtitle")}
->
+                      <FormSection
+                        title={t("validation.supplySection.title")}
+                        subtitle={t("validation.supplySection.subtitle")}
+                      >
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                           {/* <Controller
                             name="billType"
@@ -3207,17 +3232,15 @@ disabledMessage={t("upload.disabledMessage")}                  />
                       </FormSection>
 
                       <div className="flex justify-center pt-4">
-               <Button
-  type="submit"
-  size="lg"
-  className="w-full md:w-auto px-12 py-7 text-lg rounded-2xl"
->
-  {t("common.confirmAndContinue")}
-  <ArrowRight className="ml-3 w-5 h-5" />
-</Button>
+                        <Button
+                          type="submit"
+                          size="lg"
+                          className="w-full md:w-auto px-12 py-7 text-lg rounded-2xl"
+                        >
+                          {t("common.confirmAndContinue")}
+                          <ArrowRight className="ml-3 w-5 h-5" />
+                        </Button>
                       </div>
-
-
                     </form>
                   </div>
                 </motion.div>
@@ -3231,12 +3254,10 @@ disabledMessage={t("upload.disabledMessage")}                  />
                   className="space-y-8"
                 >
                   <div className="text-center mb-12">
-       <h2 className="text-4xl font-bold mb-4">
-  {t("map.title")}
-</h2>
-<p className="text-brand-gray">
-  {t("map.description")}
-</p>
+                    <h2 className="text-4xl font-bold mb-4">
+                      {t("map.title")}
+                    </h2>
+                    <p className="text-brand-gray">{t("map.description")}</p>
                   </div>
 
                   <div className="flex flex-col lg:flex-row gap-10 h-[700px]">
@@ -3256,7 +3277,8 @@ disabledMessage={t("upload.disabledMessage")}                  />
                           <Marker
                             position={[clientCoords.lat, clientCoords.lng]}
                           >
-<Popup>{t("map.clientLocation")}</Popup>                          </Marker>
+                            <Popup>{t("map.clientLocation")}</Popup>{" "}
+                          </Marker>
 
                           <Circle
                             center={[clientCoords.lat, clientCoords.lng]}
@@ -3300,9 +3322,9 @@ disabledMessage={t("upload.disabledMessage")}                  />
                             <MapPin className="w-6 h-6" />
                           </div>
                           <div>
-                          <p className="text-xs font-bold uppercase tracking-widest text-brand-navy/40">
-  {t("map.yourLocation")}
-</p>
+                            <p className="text-xs font-bold uppercase tracking-widest text-brand-navy/40">
+                              {t("map.yourLocation")}
+                            </p>
                             <p className="font-bold text-brand-navy">
                               {extractedData?.address ||
                                 "Cargando dirección..."}
@@ -3310,24 +3332,26 @@ disabledMessage={t("upload.disabledMessage")}                  />
                           </div>
                         </div>
 
-                      <div className="hidden md:block px-4 py-2 bg-brand-mint/20 text-brand-navy text-[10px] font-bold rounded-full uppercase tracking-widest">
-  {t("map.availableInstallations", { count: installations.length })}
-</div>
+                        <div className="hidden md:block px-4 py-2 bg-brand-mint/20 text-brand-navy text-[10px] font-bold rounded-full uppercase tracking-widest">
+                          {t("map.availableInstallations", {
+                            count: installations.length,
+                          })}
+                        </div>
                       </div>
                     </div>
 
                     <div className="w-full lg:w-96 flex flex-col gap-6 overflow-y-auto pr-4 custom-scrollbar">
-                   <h3 className="font-bold text-xl text-brand-navy flex items-center gap-2">
-  <TrendingUp className="w-5 h-5 text-brand-mint" />
-  {t("map.recommendedPlants")}
-</h3>
+                      <h3 className="font-bold text-xl text-brand-navy flex items-center gap-2">
+                        <TrendingUp className="w-5 h-5 text-brand-mint" />
+                        {t("map.recommendedPlants")}
+                      </h3>
 
                       {isLoadingInstallations ? (
                         <div className="flex flex-col items-center justify-center py-12 text-brand-navy/40">
                           <Loader2 className="w-8 h-8 animate-spin mb-4" />
-                       <p className="text-sm font-bold uppercase tracking-widest">
-  {t("map.searchingPlants")}
-</p>
+                          <p className="text-sm font-bold uppercase tracking-widest">
+                            {t("map.searchingPlants")}
+                          </p>
                         </div>
                       ) : installations.length === 0 ? (
                         <div className="rounded-[2rem] border border-amber-200 bg-amber-50 px-6 py-6 text-left">
@@ -3451,12 +3475,12 @@ disabledMessage={t("upload.disabledMessage")}                  />
                     <div className="absolute -inset-4 border-4 border-brand-mint border-t-transparent rounded-[3rem] animate-spin" />
                   </div>
 
-       <h2 className="text-4xl font-bold mb-6">
-  {t("calculation.titleLine1")} <br />
-  <span className="brand-gradient-text">
-    {t("calculation.titleLine2")}
-  </span>
-</h2>
+                  <h2 className="text-4xl font-bold mb-6">
+                    {t("calculation.titleLine1")} <br />
+                    <span className="brand-gradient-text">
+                      {t("calculation.titleLine2")}
+                    </span>
+                  </h2>
 
                   <p className="text-brand-gray mb-12 max-w-sm mx-auto">
                     Nuestros algoritmos están procesando miles de variables para
@@ -3465,10 +3489,10 @@ disabledMessage={t("upload.disabledMessage")}                  />
 
                   <div className="space-y-4 max-w-xs w-full">
                     {[
-  t("calculation.tasks.validateBill"),
-  t("calculation.tasks.analyzeSolar"),
-  t("calculation.tasks.calculateReturn"),
-].map((text, i) => (
+                      t("calculation.tasks.validateBill"),
+                      t("calculation.tasks.analyzeSolar"),
+                      t("calculation.tasks.calculateReturn"),
+                    ].map((text, i) => (
                       <motion.div
                         key={i}
                         initial={{ opacity: 0, y: 10 }}
@@ -3508,20 +3532,22 @@ disabledMessage={t("upload.disabledMessage")}                  />
                               icon="solar:check-circle-bold-duotone"
                               className="h-4 w-4"
                             />
-                            Estudio finalizado
+                            {t("result.badge")}
                           </div>
 
                           <div>
                             <h2 className="text-3xl md:text-5xl font-bold text-brand-navy leading-tight">
-                              Tu propuesta energética
+                              {t("result.hero.titleLine1")}
                               <br />
-                              ya está lista
+                              {t("result.hero.titleLine2")}{" "}
                             </h2>
 
                             <p className="mt-3 text-sm md:text-base text-brand-navy/70 max-w-2xl leading-relaxed">
                               {hasMultipleProposalModes
-                                ? "Compara ambas modalidades y revisa cuál encaja mejor contigo."
-                                : `Esta instalación solo está disponible en modalidad de ${activeProposal.title.toLowerCase()}.`}
+                                ? t("result.hero.compareDescription")
+                                : activeProposal.id === "investment"
+                                  ? t("result.hero.singleModeInvestment")
+                                  : t("result.hero.singleModeService")}
                             </p>
                           </div>
                         </div>
@@ -3544,7 +3570,7 @@ disabledMessage={t("upload.disabledMessage")}                  />
                                 icon="solar:wallet-money-bold-duotone"
                                 className="h-5 w-5"
                               />
-                              Inversión
+                              {t("result.modes.investment")}
                             </button>
 
                             <button
@@ -3561,7 +3587,7 @@ disabledMessage={t("upload.disabledMessage")}                  />
                                 icon="solar:bolt-bold-duotone"
                                 className="h-5 w-5"
                               />
-                              Servicio
+                              {t("result.modes.service")}{" "}
                             </button>
                           </div>
                         ) : (
@@ -3580,7 +3606,7 @@ disabledMessage={t("upload.disabledMessage")}                  />
 
                               <div>
                                 <p className="text-[10px] uppercase tracking-[0.14em] font-bold text-brand-navy/40">
-                                  Modalidad disponible
+                                  {t("result.availableMode")}
                                 </p>
                                 <p className="text-base md:text-lg font-bold text-brand-navy">
                                   {activeProposal.title}
@@ -3601,14 +3627,14 @@ disabledMessage={t("upload.disabledMessage")}                  />
                               className="h-5 w-5 text-brand-navy"
                             />
                             <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-brand-navy/45">
-                              Opción activa
+                              {t("result.activeOption")}
                             </p>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-4 md:gap-5">
                             <div className="rounded-[1.4rem] bg-white/35 border border-white/25 p-4">
                               <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-brand-navy/40">
-                                Modalidad seleccionada
+                                {t("result.selectedMode")}{" "}
                               </p>
                               <p className="mt-2 text-2xl md:text-3xl font-bold text-brand-navy">
                                 {activeProposal.title}
@@ -3878,7 +3904,7 @@ disabledMessage={t("upload.disabledMessage")}                  />
                                 }
                                 className="h-4 w-4"
                               />
-                              Modalidad {proposal.title.toLowerCase()}
+{t("result.cards.mode")} {proposal.title.toLowerCase()}
                             </div>
 
                             <div>
@@ -3914,7 +3940,7 @@ disabledMessage={t("upload.disabledMessage")}                  />
                                       : "text-brand-navy/40",
                                   )}
                                 >
-                                  Ahorro anual
+{t("result.summary.annualSavings")}
                                 </p>
                                 <p className="mt-2 text-lg font-bold">
                                   {formatCurrency(proposal.annualSavings)}
@@ -3974,8 +4000,7 @@ disabledMessage={t("upload.disabledMessage")}                  />
                                       : "text-brand-navy/40",
                                   )}
                                 >
-                                  Ahorro mensual
-                                </p>
+{t("result.summary.monthlySavings")}                                </p>
                                 <p className="mt-2 text-lg font-bold">
                                   {formatCurrency(proposal.annualSavings / 12)}
                                 </p>
@@ -4031,13 +4056,13 @@ disabledMessage={t("upload.disabledMessage")}                  />
                             )}
                           >
                             <p>
-                              Potencia recomendada:{" "}
+                              {t("result.summary.recommendedPower")}::{" "}
                               <span className="font-bold">
                                 {formatNumber(proposal.recommendedPowerKwp)} kWp
                               </span>
                             </p>
                             <p className="mt-1">
-                              Consumo anual estimado:{" "}
+                              {t("result.summary.annualConsumptionEstimated")}:{" "}
                               <span className="font-bold">
                                 {Math.round(proposal.annualConsumptionKwh)} kWh
                               </span>
@@ -4048,156 +4073,149 @@ disabledMessage={t("upload.disabledMessage")}                  />
                     })}
 
                     {/* ACCIONES */}
-                    <div className="rounded-[2rem] md:rounded-[2.5rem] bg-white border border-brand-navy/5 shadow-2xl shadow-brand-navy/5 p-5 md:p-6 flex flex-col gap-5 xl:min-h-[520px]">
-                      <div>
-                        <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-brand-navy/40">
-                          Acciones
-                        </p>
-                      </div>
+                   <div className="rounded-[2rem] md:rounded-[2.5rem] bg-white border border-brand-navy/5 shadow-2xl shadow-brand-navy/5 p-5 md:p-6 flex flex-col gap-5 xl:min-h-[520px]">
+  <div>
+    <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-brand-navy/40">
+      {t("result.actions.title")}
+    </p>
+  </div>
 
-                      <div className="rounded-[1.4rem] bg-brand-navy text-white p-4 border border-brand-navy">
-                        <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/50">
-                          Vas a contratar
-                        </p>
+  <div className="rounded-[1.4rem] bg-brand-navy text-white p-4 border border-brand-navy">
+    <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/50">
+      {t("result.actions.youWillHire")}
+    </p>
 
-                        <p className="mt-3 text-2xl font-bold">
-                          {activeProposal.title}
-                        </p>
+    <p className="mt-3 text-2xl font-bold">
+      {activeProposal.title}
+    </p>
 
-                        <div className="mt-4 space-y-2 text-sm text-white/75">
-                          <p>
-                            Modalidad:{" "}
-                            <span className="font-bold text-white">
-                              {activeProposal.title}
-                            </span>
-                          </p>
+    <div className="mt-4 space-y-2 text-sm text-white/75">
+      <p>
+        {t("result.actions.mode")}:{" "}
+        <span className="font-bold text-white">
+          {activeProposal.title}
+        </span>
+      </p>
 
-                          <p>
-                            Ahorro anual:{" "}
-                            <span className="font-bold text-white">
-                              {formatCurrency(activeProposal.annualSavings)}
-                            </span>
-                          </p>
+      <p>
+        {t("result.summary.annualSavings")}:{" "}
+        <span className="font-bold text-white">
+          {formatCurrency(activeProposal.annualSavings)}
+        </span>
+      </p>
 
-                          <p>
-                            {activeProposal.id === "investment" ? (
-                              <>
-                                Coste inicial:{" "}
-                                {formatCurrency(activeProposal.upfrontCost)}
-                              </>
-                            ) : activeProposal.monthlyFee &&
-                              activeProposal.monthlyFee > 0 ? (
-                              <>
-                                Cuota mensual:{" "}
-                                {formatNumber(activeProposal.monthlyFee)}
-                                <span className="ml-1 text-xs font-semibold opacity-70">
-                                  € / mes
-                                </span>
-                              </>
-                            ) : (
-                              "Sin cuota mensual"
-                            )}
-                          </p>
+      <p>
+        {activeProposal.id === "investment" ? (
+          <>
+            {t("result.summary.initialCost")}:{" "}
+            <span className="font-bold text-white">
+              {formatCurrency(activeProposal.upfrontCost)}
+            </span>
+          </>
+        ) : activeProposal.monthlyFee && activeProposal.monthlyFee > 0 ? (
+          <>
+            {t("result.summary.monthlyFee")}:{" "}
+            <span className="font-bold text-white">
+              {formatNumber(activeProposal.monthlyFee)} € / {t("result.units.month")}
+            </span>
+          </>
+        ) : (
+          t("result.summary.noFee")
+        )}
+      </p>
 
-                          <p>
-                            Potencia:{" "}
-                            <span className="font-bold text-white">
-                              {formatNumber(activeProposal.recommendedPowerKwp)}{" "}
-                              kWp
-                            </span>
-                          </p>
-                        </div>
-                      </div>
+      <p>
+        {t("result.actions.power")}:{" "}
+        <span className="font-bold text-white">
+          {formatNumber(activeProposal.recommendedPowerKwp)} kWp
+        </span>
+      </p>
+    </div>
+  </div>
 
-                      {signedContractResult?.reservation ? (
-                        <div className="rounded-[1.4rem] bg-brand-mint/10 border border-brand-mint/20 p-4 text-brand-navy">
-                          <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-brand-navy/50">
-                            Reserva iniciada
-                          </p>
+  {signedContractResult?.reservation ? (
+    <div className="rounded-[1.4rem] bg-brand-mint/10 border border-brand-mint/20 p-4 text-brand-navy">
+      <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-brand-navy/50">
+        {t("result.reserve.startedTitle")}
+      </p>
 
-                          <div className="mt-3 space-y-2 text-sm leading-relaxed">
-                            <p>
-                              <span className="font-bold">
-                                {signedContractResult.reservation.reservedKwp}{" "}
-                                kWp
-                              </span>{" "}
-                              reservados en{" "}
-                              <span className="font-bold">
-                                {
-                                  signedContractResult.reservation
-                                    .installationName
-                                }
-                              </span>
-                              .
-                            </p>
+      <div className="mt-3 space-y-2 text-sm leading-relaxed">
+        <p>
+          <span className="font-bold">
+            {signedContractResult.reservation.reservedKwp} kWp
+          </span>{" "}
+          {t("result.actions.reservedIn")}{" "}
+          <span className="font-bold">
+            {signedContractResult.reservation.installationName}
+          </span>
+          .
+        </p>
 
-                            <p>
-                              Estado del pago:{" "}
-                              <span className="font-bold">
-                                {signedContractResult.reservation.paymentStatus}
-                              </span>
-                            </p>
+        <p>
+          {t("result.actions.paymentStatus")}:{" "}
+          <span className="font-bold">
+            {signedContractResult.reservation.paymentStatus}
+          </span>
+        </p>
 
-                            <p>
-                              Señal pendiente:{" "}
-                              <span className="font-bold">
-                                {formatCurrency(
-                                  signedContractResult.reservation.signalAmount,
-                                )}
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-                      ) : null}
+        <p>
+          {t("result.actions.pendingSignal")}:{" "}
+          <span className="font-bold">
+            {formatCurrency(signedContractResult.reservation.signalAmount)}
+          </span>
+        </p>
+      </div>
+    </div>
+  ) : null}
 
-                      <div className="mt-auto space-y-3">
-                        <Button
-                          className={cn(
-                            "w-full py-5 rounded-[1.2rem] border-none",
-                            contractAlreadySigned
-                              ? "bg-brand-navy/10 text-brand-navy/50 cursor-not-allowed"
-                              : "bg-brand-mint text-brand-navy hover:bg-brand-mint/90",
-                          )}
-                          onClick={handleGenerateContract}
-                          disabled={
-                            !savedStudy?.study?.id ||
-                            isGeneratingContract ||
-                            isSigningContract ||
-                            contractAlreadySigned
-                          }
-                        >
-                          <span className="inline-flex items-center justify-center">
-                            <span className="mr-3 inline-flex h-6 w-6 items-center justify-center">
-                              {isGeneratingContract ? (
-                                <Loader2 className="h-6 w-6 animate-spin" />
-                              ) : contractAlreadySigned ? (
-                                <Icon
-                                  icon="solar:shield-check-bold-duotone"
-                                  className="h-6 w-6"
-                                />
-                              ) : (
-                                <Icon
-                                  icon="solar:pen-new-square-bold-duotone"
-                                  className="h-6 w-6"
-                                />
-                              )}
-                            </span>
-                            <span>{reserveButtonText}</span>
-                          </span>
-                        </Button>
+  <div className="mt-auto space-y-3">
+    <Button
+      className={cn(
+        "w-full py-5 rounded-[1.2rem] border-none",
+        contractAlreadySigned
+          ? "bg-brand-navy/10 text-brand-navy/50 cursor-not-allowed"
+          : "bg-brand-mint text-brand-navy hover:bg-brand-mint/90",
+      )}
+      onClick={handleGenerateContract}
+      disabled={
+        !savedStudy?.study?.id ||
+        isGeneratingContract ||
+        isSigningContract ||
+        contractAlreadySigned
+      }
+    >
+      <span className="inline-flex items-center justify-center">
+        <span className="mr-3 inline-flex h-6 w-6 items-center justify-center">
+          {isGeneratingContract ? (
+            <Loader2 className="h-6 w-6 animate-spin" />
+          ) : contractAlreadySigned ? (
+            <Icon
+              icon="solar:shield-check-bold-duotone"
+              className="h-6 w-6"
+            />
+          ) : (
+            <Icon
+              icon="solar:pen-new-square-bold-duotone"
+              className="h-6 w-6"
+            />
+          )}
+        </span>
+        <span>{reserveButtonText}</span>
+      </span>
+    </Button>
 
-                        <Button
-                          className="w-full py-5 rounded-[1.2rem] brand-gradient text-brand-navy border-none"
-                          onClick={handleDownloadPDF}
-                        >
-                          <Icon
-                            icon="solar:download-minimalistic-bold-duotone"
-                            className="mr-3 h-6 w-6"
-                          />
-                          Descargar PDF
-                        </Button>
-                      </div>
-                    </div>
+    <Button
+      className="w-full py-5 rounded-[1.2rem] brand-gradient text-brand-navy border-none"
+      onClick={handleDownloadPDF}
+    >
+      <Icon
+        icon="solar:download-minimalistic-bold-duotone"
+        className="mr-3 h-6 w-6"
+      />
+      {t("common.downloadPdf")}
+    </Button>
+  </div>
+</div>
                   </div>
                 </motion.div>
               )}
@@ -4506,13 +4524,11 @@ disabledMessage={t("upload.disabledMessage")}                  />
         ) : null}
       </AnimatePresence>
     </Layout>
-    
   );
 }
 
 export default function App() {
   return (
-    
     <Routes>
       <Route path="/contratacion" element={<ContinuarContratacionPage />} />
 

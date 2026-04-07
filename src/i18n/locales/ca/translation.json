@@ -84,5 +84,92 @@
       "fileTooLargeTitle": "Arxiu massa gran",
       "fileTooLargeDescription": "El límit és de {{maxSize}}MB"
     }
+  },
+  "result": {
+    "badge": "Estudi finalitzat",
+    "hero": {
+      "titleLine1": "La teua proposta energètica",
+      "titleLine2": "ja està llesta",
+      "compareDescription": "Compara ambdues modalitats i revisa quina encaixa millor amb tu.",
+      "singleModeInvestment": "Aquesta instal·lació només està disponible en modalitat d'inversió.",
+      "singleModeService": "Aquesta instal·lació només està disponible en modalitat de servei."
+    },
+    "modes": {
+      "investment": "Inversió",
+      "service": "Servei"
+    },
+    "availableMode": "Modalitat disponible",
+    "activeOption": "Opció activa",
+    "selectedMode": "Modalitat seleccionada",
+    "units": {
+      "month": "mes",
+      "years": "anys"
+    },
+    "summary": {
+      "totalInvestment": "Inversió total",
+      "monthlyCost": "Cost mensual",
+      "annualSavings": "Estalvi anual",
+      "monthlySavings": "Estalvi mensual",
+      "monthlySavingsHelper": "Estalvi mensual: {{value}}",
+      "initialCost": "Cost inicial",
+      "monthlyFee": "Quota mensual",
+      "recommendedPower": "Potència recomanada",
+      "annualConsumption": "Consum anual",
+      "annualConsumptionEstimated": "Consum anual estimat",
+      "return": "Retorn",
+      "investment": "Inversió",
+      "savings25Years": "Estalvi 25 anys",
+      "noFee": "Sense quota",
+      "noInitialInvestment": "Sense inversió"
+    },
+    "reserve": {
+      "startedTitle": "Reserva iniciada",
+      "startedDescriptionInvestment": "La reserva ja ha sigut iniciada en modalitat d'inversió.",
+      "startedDescriptionService": "La reserva ja ha sigut iniciada en modalitat de servei.",
+      "reserved": "Reservat",
+      "investment": {
+        "title": "Reservar inversió",
+        "description": "Inicia la reserva en modalitat d'inversió i continua amb el pagament del senyal.",
+        "continue": "Continuar amb inversió"
+      },
+      "service": {
+        "title": "Reservar servei",
+        "description": "Inicia la reserva en modalitat de servei i continua amb el pagament del senyal.",
+        "continue": "Continuar amb servei"
+      }
+    },
+    "actions": {
+      "title": "Accions",
+      "youWillHire": "Contractaràs",
+      "paymentStatus": "Estat del pagament",
+      "pendingSignal": "Senyal pendent",
+      "mode": "Modalitat",
+"power": "Potència",
+"reservedIn": "reservats en"
+    },
+    "proposals": {
+      "investment": {
+        "badge": "Major rendibilitat",
+        "description": "Fas la inversió i maximitzes l'estalvi a llarg termini.",
+        "points": [
+          "Major estalvi acumulat en 25 anys",
+          "Més control sobre la rendibilitat del projecte",
+          "Ideal si busques retorn econòmic sostingut",
+          "Sense quota mensual recurrent"
+        ]
+      },
+      "service": {
+        "badge": "Menor entrada",
+        "description": "Model que redueix la barrera d'entrada.",
+        "points": [
+          "Sense desemborsament inicial",
+          "Quota mensual fixa",
+          "Ideal si prioritzes no desemborsar directament"
+        ]
+      }
+    },
+    "cards": {
+  "mode": "Modalitat"
+}
   }
 }

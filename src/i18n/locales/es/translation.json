@@ -67,8 +67,7 @@
       "calculateReturn": "Calculando retorno de inversión"
     }
   },
-  
- "fileUploader": {
+  "fileUploader": {
     "disabledMessage": "Debes aceptar la política de privacidad y el tratamiento de datos antes de subir la factura.",
     "titleDefault": "Sube tu factura eléctrica",
     "titleDragging": "¡Suéltalo aquí!",
@@ -85,11 +84,92 @@
       "fileTooLargeTitle": "Archivo demasiado grande",
       "fileTooLargeDescription": "El límite es de {{maxSize}}MB"
     }
-
-
-
-
- }
-
-
+  },
+  "result": {
+    "badge": "Estudio finalizado",
+    "hero": {
+      "titleLine1": "Tu propuesta energética",
+      "titleLine2": "ya está lista",
+      "compareDescription": "Compara ambas modalidades y revisa cuál encaja mejor contigo.",
+      "singleModeInvestment": "Esta instalación solo está disponible en modalidad de inversión.",
+      "singleModeService": "Esta instalación solo está disponible en modalidad de servicio."
+    },
+    "modes": {
+      "investment": "Inversión",
+      "service": "Servicio"
+    },
+    "availableMode": "Modalidad disponible",
+    "activeOption": "Opción activa",
+    "selectedMode": "Modalidad seleccionada",
+    "units": {
+      "month": "mes",
+      "years": "años"
+    },
+    "summary": {
+      "totalInvestment": "Inversión total",
+      "monthlyCost": "Coste mensual",
+      "annualSavings": "Ahorro anual",
+      "monthlySavings": "Ahorro mensual",
+      "monthlySavingsHelper": "Ahorro mensual: {{value}}",
+      "initialCost": "Coste inicial",
+      "monthlyFee": "Cuota mensual",
+      "recommendedPower": "Potencia recomendada",
+      "annualConsumption": "Consumo anual",
+      "annualConsumptionEstimated": "Consumo anual estimado",
+      "return": "Retorno",
+      "investment": "Inversión",
+      "savings25Years": "Ahorro 25 años",
+      "noFee": "Sin cuota",
+      "noInitialInvestment": "Sin inversión"
+    },
+    "reserve": {
+      "startedTitle": "Reserva iniciada",
+      "startedDescriptionInvestment": "La reserva ya ha sido iniciada en modalidad de inversión.",
+      "startedDescriptionService": "La reserva ya ha sido iniciada en modalidad de servicio.",
+      "reserved": "Reservado",
+      "investment": {
+        "title": "Reservar inversión",
+        "description": "Inicia la reserva en modalidad de inversión y continúa con el pago de la señal.",
+        "continue": "Continuar con inversión"
+      },
+      "service": {
+        "title": "Reservar servicio",
+        "description": "Inicia la reserva en modalidad de servicio y continúa con el pago de la señal.",
+        "continue": "Continuar con servicio"
+      }
+    },
+    "actions": {
+      "title": "Acciones",
+      "youWillHire": "Vas a contratar",
+      "paymentStatus": "Estado del pago",
+      "pendingSignal": "Señal pendiente",
+      "mode": "Modalidad",
+      "power": "Potencia",
+      "reservedIn": "reservados en"
+    },
+    "proposals": {
+      "investment": {
+        "badge": "Mayor rentabilidad",
+        "description": "Realizas la inversión y maximizas el ahorro a largo plazo.",
+        "points": [
+          "Mayor ahorro acumulado en 25 años",
+          "Más control sobre la rentabilidad del proyecto",
+          "Ideal si buscas retorno económico sostenido",
+          "Sin cuota mensual recurrente"
+        ]
+      },
+      "service": {
+        "badge": "Menor entrada",
+        "description": "Modelo que reduce la barrera de entrada.",
+        "points": [
+          "Sin desembolso inicial",
+          "Cuota mensual fija",
+          "Ideal si priorizas no desembolsar directamente"
+        ]
+      }
+    },
+    "cards": {
+      "mode": "Modalidad"
+    }
+  }
 }
