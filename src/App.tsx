@@ -4892,25 +4892,58 @@ useEffect(() => {
 }
 
 export default function App() {
- const [mapsKey, setMapsKey] = useState("");
+  const [mapsKey, setMapsKey] = useState("");
+  const [mapsConfigLoading, setMapsConfigLoading] = useState(true);
+  const [mapsConfigError, setMapsConfigError] = useState("");
 
   useEffect(() => {
     fetch("/api/config")
-      .then((res) => res.json())
-      .then((data) => {
-        setMapsKey((data.googleMapsApiKey || "").trim());
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        console.log("CONFIG RESPONSE:", data);
+
+        const key = (data.googleMapsApiKey || "").trim();
+
+        if (!key) {
+          throw new Error("La API key viene vacía");
+        }
+
+        setMapsKey(key);
       })
       .catch((error) => {
         console.error("Error cargando config del mapa:", error);
+        setMapsConfigError(error.message || "Error desconocido");
+      })
+      .finally(() => {
+        setMapsConfigLoading(false);
       });
   }, []);
 
-  if (!mapsKey) {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p>Cargando configuración del mapa...</p>
-    </div>
-  );  }
+  if (mapsConfigLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Cargando configuración del mapa...</p>
+      </div>
+    );
+  }
+
+  if (mapsConfigError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6 text-center">
+        <div>
+          <p className="font-bold text-red-600 mb-2">
+            Error cargando la configuración del mapa
+          </p>
+          <p>{mapsConfigError}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <APIProvider
       apiKey={mapsKey}
@@ -4920,42 +4953,34 @@ export default function App() {
     >
       <Routes>
         <Route path="/contratacion" element={<ContinuarContratacionPage />} />
-
         <Route
           path="/continue-contract"
           element={<ContinuarContratacionPage />}
         />
-
         <Route
           path="/continuar-contratacion"
           element={<ContinuarContratacionPage />}
         />
-
         <Route
           path="/contratacion-desde-propuesta"
           element={<ContratacionDesdePropuestaPage />}
         />
-
         <Route
           path="/reserva-confirmada"
           element={<ReservationConfirmedPage />}
         />
-
         <Route
           path="/continuar-contratacion/exito"
           element={<ReservationConfirmedPage />}
         />
-
         <Route
           path="/reserva-cancelada"
           element={<ReservationCancelledPage />}
         />
-
         <Route
           path="/continuar-contratacion/cancelado"
           element={<ReservationCancelledPage />}
         />
-
         <Route path="*" element={<MainAppContent />} />
       </Routes>
     </APIProvider>
