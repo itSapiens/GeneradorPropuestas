@@ -82,10 +82,16 @@ const INSTALLATION_SEARCH_RADIUS_METERS = Number(
 );
 
 /** API Key Google Maps JS API (mismo proyecto que Geocoding + Places). */
-const GOOGLE_MAPS_API_KEY = String(
-  import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
-);
+// const GOOGLE_MAPS_API_KEY = String(
+//   import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
+// );
 import { log } from "console";
+
+const GOOGLE_MAPS_API_KEY = (import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '').trim();
+
+console.log('PROD?', import.meta.env.PROD);
+console.log('MAPS KEY EXISTS?', !!GOOGLE_MAPS_API_KEY);
+console.log('MAPS KEY LENGTH', GOOGLE_MAPS_API_KEY.length);
 
 import { Trans, useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
