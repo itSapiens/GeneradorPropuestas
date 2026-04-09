@@ -87,11 +87,6 @@ const INSTALLATION_SEARCH_RADIUS_METERS = Number(
 // );
 import { log } from "console";
 
-const GOOGLE_MAPS_API_KEY = (import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '').trim();
-
-console.log('PROD?', import.meta.env.PROD);
-console.log('MAPS KEY EXISTS?', !!GOOGLE_MAPS_API_KEY);
-console.log('MAPS KEY LENGTH', GOOGLE_MAPS_API_KEY.length);
 
 import { Trans, useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -4897,12 +4892,28 @@ useEffect(() => {
 }
 
 export default function App() {
-  // APIProvider carga la Google Maps JS API una sola vez para toda la app.
-  // Las bibliotecas "places" y "marker" son necesarias para el autocomplete
-  // y los AdvancedMarker del mapa de instalaciones.
+ const [mapsKey, setMapsKey] = useState("");
+
+  useEffect(() => {
+    fetch("/api/config")
+      .then((res) => res.json())
+      .then((data) => {
+        setMapsKey((data.googleMapsApiKey || "").trim());
+      })
+      .catch((error) => {
+        console.error("Error cargando config del mapa:", error);
+      });
+  }, []);
+
+  if (!mapsKey) {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <p>Cargando configuración del mapa...</p>
+    </div>
+  );  }
   return (
     <APIProvider
-      apiKey={GOOGLE_MAPS_API_KEY}
+      apiKey={mapsKey}
       libraries={["places", "marker"]}
       language="es"
       region="ES"

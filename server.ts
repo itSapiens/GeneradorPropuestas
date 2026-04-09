@@ -3010,6 +3010,12 @@ async function startServer() {
   },
 );
 
+//obtener clave google api
+app.get('/api/config', (_req, res) => {
+  res.json({
+    googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || ''
+  });
+});
   app.get("/api/stripe/checkout-session-status", async (req, res) => {
     try {
       const sessionId = String(req.query.session_id || "").trim();
