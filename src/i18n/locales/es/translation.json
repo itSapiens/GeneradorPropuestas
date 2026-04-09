@@ -1,0 +1,607 @@
+{
+  "extraConsumption": {
+    "badge": "Previsión de consumo",
+    "title": "¿Tienes pensado incrementar tu consumo eléctrico?",
+    "description": "Si planeas instalar climatización o adquirir un coche eléctrico, podemos dimensionar tu instalación solar para cubrir también ese consumo futuro.",
+    "no": "No, mi consumo será similar",
+    "yes": "Sí, quiero indicarlo",
+    "selectOptions": "Selecciona lo que tienes previsto:",
+    "hvac": {
+      "label": "Climatización",
+      "hint": "Bomba de calor / aerotermia",
+      "inputLabel": "Superficie de la vivienda (m²)"
+    },
+    "ev": {
+      "label": "Coche eléctrico",
+      "hint": "Carga doméstica con wallbox",
+      "inputLabel": "Kilómetros anuales estimados"
+    },
+    "confirm": "Continuar con el estudio",
+    "skipLink": "Omitir, no quiero indicar incremento",
+    "errors": {
+      "invalidM2": "Introduce un valor entre 10 y 1000 m²",
+      "invalidKm": "Introduce un valor entre 500 y 200.000 km"
+    }
+  },
+  "common": {
+    "confirmAndContinue": "Confirmar y continuar",
+    "downloadPdf": "Descargar PDF",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "processing": "Procesando..."
+  },
+  "steps": {
+    "upload": "Subida",
+    "validation": "Validación",
+    "location": "Ubicación",
+    "result": "Resultado"
+  },
+  "fields": {
+    "name": "Nombre",
+    "lastName": "Apellidos",
+    "dni": "DNI / NIF",
+    "email": "Email",
+    "phone": "Teléfono",
+    "address": "Dirección completa"
+  },
+  "placeholders": {
+    "name": "Ej. Juan",
+    "lastName": "Ej. Pérez García",
+    "dni": "12345678X",
+    "email": "tu@email.com",
+    "phone": "600 000 000",
+    "address": "Calle, número, CP, ciudad, provincia"
+  },
+  "upload": {
+    "privacyConsent": "He leído y acepto la <privacyLink>Política de Privacidad</privacyLink> y el tratamiento de mis datos para gestionar la subida de mi factura y la elaboración de mi estudio energético.",
+    "disabledMessage": "Debes aceptar la política de privacidad y el tratamiento de datos antes de subir la factura."
+  },
+  "validation": {
+    "title": "Verifica tu información",
+    "description": "Hemos analizado tu factura. Por favor, confirma que los datos extraídos son correctos.",
+    "ownerSection": {
+      "title": "Datos del titular",
+      "subtitle": "Confirma la información personal detectada en la factura."
+    },
+    "supplySection": {
+      "title": "Datos del suministro",
+      "subtitle": "Revisa la dirección completa y el tipo de factura."
+    }
+  },
+  "map": {
+    "title": "Selecciona tu comunidad",
+    "description": "Estas son las instalaciones activas disponibles dentro del radio de 5 km de tu ubicación.",
+    "clientLocation": "Ubicación del cliente",
+    "yourLocation": "Tu ubicación",
+    "loadingAddress": "Cargando dirección...",
+    "mapUnavailable": "No se ha podido cargar el mapa porque faltan coordenadas.",
+    "availableInstallations_one": "1 instalación disponible",
+    "availableInstallations_other": "{{count}} instalaciones disponibles",
+    "recommendedPlants": "Plantas recomendadas",
+    "searchingPlants": "Buscando plantas...",
+    "installationCard": {
+      "photovoltaic": "Fotovoltaica",
+      "storage": "Almacenamiento",
+      "effectiveHours": "{{value}} h efectivas",
+      "reserved": "Reservados: {{value}} kWp",
+      "modes": {
+        "investment": "Inversión",
+        "service": "Servicio",
+        "both": "Ambas"
+      }
+    },
+    "availability": {
+      "insufficientCapacityTitle": "No hay capacidad suficiente disponible",
+      "insufficientCapacityDescription": "Hemos encontrado instalaciones cercanas, pero ninguna dispone ahora mismo de la potencia necesaria para cubrir la recomendación de tu estudio. Contacta con Sapiens para revisar tu caso.",
+      "noInstallationsTitle": "No hay instalaciones disponibles",
+      "noInstallationsDescription": "No hemos encontrado instalaciones activas dentro del radio configurado para esta dirección. Contacta con Sapiens para revisar tu caso."
+    },
+    "contact": {
+      "phone": "Teléfono",
+      "email": "Email"
+    }
+  },
+  "calculation": {
+    "titleLine1": "Generando tu estudio",
+    "titleLine2": "de alta precisión",
+    "tasks": {
+      "validateBill": "Validando datos de factura",
+      "analyzeSolar": "Analizando radiación solar local",
+      "calculateReturn": "Calculando retorno de inversión"
+    }
+  },
+  "fileUploader": {
+    "disabledMessage": "Debes aceptar la política de privacidad y el tratamiento de datos antes de subir la factura.",
+    "titleDefault": "Sube tu factura eléctrica",
+    "titleDragging": "¡Suéltalo aquí!",
+    "titleDisabled": "Acepta la política antes de subir",
+    "description": "Arrastra tu archivo PDF o imagen aquí para que nuestra IA analice tu consumo automáticamente.",
+    "secureMessage": "Tus datos están seguros y encriptados",
+    "removeFile": "Eliminar archivo",
+    "toasts": {
+      "privacyRequiredTitle": "Debes aceptar la política de privacidad",
+      "privacyRequiredDescription": "Para subir la factura, primero tienes que aceptar el tratamiento de datos.",
+      "viewPolicy": "Ver política",
+      "invalidFileTypeTitle": "Tipo de archivo no permitido",
+      "invalidFileTypeDescription": "Solo se aceptan: {{formats}}",
+      "fileTooLargeTitle": "Archivo demasiado grande",
+      "fileTooLargeDescription": "El límite es de {{maxSize}}MB"
+    }
+  },
+  "toasts": {
+    "extraction": {
+      "fallbackTitle": "Extracción completada con apoyo del fallback",
+      "fallbackDescription": "Revisa los datos detectados antes de continuar.",
+      "warningTitle": "Aviso {{index}}",
+      "manualReviewTitle": "Campos que requieren revisión",
+      "manualReviewDescription": "Comprueba manualmente estos campos: {{fields}}",
+      "missingFieldsTitle": "Campos incompletos",
+      "missingFieldsDescription": "Hay {{count}} campos que pueden necesitar revisión manual."
+    }
+  },
+  "result": {
+    "badge": "Estudio finalizado",
+    "hero": {
+      "titleLine1": "Tu propuesta energética",
+      "titleLine2": "ya está lista",
+      "compareDescription": "Compara ambas modalidades y revisa cuál encaja mejor contigo.",
+      "singleModeInvestment": "Esta instalación solo está disponible en modalidad de inversión.",
+      "singleModeService": "Esta instalación solo está disponible en modalidad de servicio."
+    },
+    "modes": {
+      "investment": "Inversión",
+      "service": "Servicio"
+    },
+    "availableMode": "Modalidad disponible",
+    "activeOption": "Opción activa",
+    "selectedMode": "Modalidad seleccionada",
+    "units": {
+      "month": "mes",
+      "years": "años"
+    },
+    "summary": {
+      "totalInvestment": "Inversión total",
+      "monthlyCost": "Coste mensual",
+      "annualSavings": "Ahorro anual",
+      "monthlySavings": "Ahorro mensual",
+      "monthlySavingsHelper": "Ahorro mensual: {{value}}",
+      "initialCost": "Coste inicial",
+      "monthlyFee": "Cuota mensual",
+      "recommendedPower": "Potencia recomendada",
+      "annualConsumption": "Consumo anual",
+      "annualConsumptionEstimated": "Consumo anual estimado",
+      "return": "Retorno",
+      "investment": "Inversión",
+      "savings25Years": "Ahorro 25 años",
+      "noFee": "Sin cuota",
+      "noInitialInvestment": "Sin inversión"
+    },
+    "reserve": {
+      "startedTitle": "Reserva iniciada",
+      "startedDescriptionInvestment": "La reserva ya ha sido iniciada en modalidad de inversión.",
+      "startedDescriptionService": "La reserva ya ha sido iniciada en modalidad de servicio.",
+      "reserved": "Reservado",
+      "investment": {
+        "title": "Reservar inversión",
+        "description": "Inicia la reserva en modalidad de inversión y continúa con el pago de la señal.",
+        "continue": "Continuar con inversión"
+      },
+      "service": {
+        "title": "Reservar servicio",
+        "description": "Inicia la reserva en modalidad de servicio y continúa con el pago de la señal.",
+        "continue": "Continuar con servicio"
+      }
+    },
+    "actions": {
+      "title": "Acciones",
+      "youWillHire": "Vas a contratar",
+      "paymentStatus": "Estado del pago",
+      "pendingSignal": "Señal pendiente",
+      "mode": "Modalidad",
+      "power": "Potencia",
+      "reservedIn": "reservados en"
+    },
+    "proposals": {
+      "investment": {
+        "badge": "Mayor rentabilidad",
+        "description": "Realizas la inversión y maximizas el ahorro a largo plazo.",
+        "points": [
+          "Mayor ahorro acumulado en 25 años",
+          "Más control sobre la rentabilidad del proyecto",
+          "Ideal si buscas retorno económico sostenido",
+          "Sin cuota mensual recurrente"
+        ]
+      },
+      "service": {
+        "badge": "Menor entrada",
+        "description": "Modelo que reduce la barrera de entrada.",
+        "points": [
+          "Sin desembolso inicial",
+          "Cuota mensual fija",
+          "Ideal si priorizas no desembolsar directamente"
+        ]
+      }
+    },
+    "cards": {
+      "mode": "Modalidad"
+    }
+  },
+  "contractPdf": {
+    "htmlLang": "es",
+    "title": "Contrato de adhesión",
+    "contractNumber": "Contrato nº",
+    "date": "Fecha",
+    "clientData": "Datos del cliente",
+    "name": "Nombre",
+    "dni": "DNI",
+    "email": "Email",
+    "phone": "Teléfono",
+    "address": "Dirección",
+    "installationData": "Datos de la instalación",
+    "installation": "Instalación",
+    "mode": "Modalidad",
+    "assignedKwp": "kWp asignados",
+    "basicConditions": "Condiciones básicas",
+    "condition1": "El cliente solicita la reserva de la potencia indicada en la instalación seleccionada, quedando dicha reserva pendiente de confirmación económica.",
+    "condition2": "Se informa al cliente de un plazo orientativo de 15 días para realizar la transferencia correspondiente.",
+    "condition3": "Hasta la validación del pago, la reserva tendrá carácter provisional.",
+    "clientSignature": "Firma del cliente",
+    "modes": {
+      "investment": "Inversión",
+      "service": "Servicio"
+    }
+  },
+  "paymentReceipt": {
+    "title": "Justificante de pago",
+    "precontractLabel": "Precontrato",
+    "holderSection": "Titular",
+    "client": "Cliente",
+    "dni": "DNI",
+    "reservationSection": "Reserva",
+    "contractId": "Contrato ID",
+    "reservationId": "Reserva ID",
+    "installation": "Instalación",
+    "reservedPower": "Potencia reservada",
+    "paidAmount": "Importe abonado",
+    "currency": "Moneda",
+    "paymentDate": "Fecha de pago",
+    "stripeSection": "Referencia Stripe",
+    "checkoutSessionId": "Checkout Session ID",
+    "paymentIntentId": "Payment Intent ID",
+    "footer": "Este documento acredita la recepción de la señal asociada al precontrato de reserva/participación."
+  },
+  "continueContract": {
+    "badge": "Continuar contratación",
+    "accessBadge": "Acceso a propuesta",
+    "hero": {
+      "titleLine1": "Retoma tu propuesta",
+      "titleLine2": "cuando quieras",
+      "description": "Accede con tus datos para continuar la contratación desde la propuesta que te enviamos por correo y selecciona la modalidad con la que deseas seguir."
+    },
+    "cards": {
+      "secureAccess": {
+        "title": "Acceso seguro",
+        "description": "Validamos tus datos antes de continuar con la contratación."
+      },
+      "modeChoice": {
+        "title": "Modalidad a elegir",
+        "description": "Podrás continuar por inversión o por servicio y generar el contrato según la opción elegida."
+      },
+      "fastProcess": {
+        "title": "Proceso rápido",
+        "description": "Tras validar el acceso irás directamente al flujo de contratación."
+      }
+    },
+    "linkStatus": {
+      "label": "Estado del enlace",
+      "valid": "Token detectado correctamente",
+      "missing": "Falta token"
+    },
+    "form": {
+      "title": "Confirma tus datos",
+      "description": "Introduce los datos del titular y selecciona la modalidad con la que deseas continuar la contratación.",
+      "modeLabel": "Modalidad a contratar",
+      "namePlaceholder": "Tu nombre",
+      "lastNamePlaceholder": "Tus apellidos"
+    },
+    "modes": {
+      "investment": {
+        "subtitle": "Mayor rentabilidad a largo plazo",
+        "description": "Ideal si quieres maximizar el ahorro y asumir la inversión inicial."
+      },
+      "service": {
+        "subtitle": "Menor barrera de entrada",
+        "description": "Ideal si prefieres una cuota mensual y evitar el desembolso inicial."
+      }
+    },
+    "selectedMode": {
+      "title": "Modalidad seleccionada:",
+      "description": "Continuarás el flujo con esta modalidad para generar el contrato correspondiente."
+    },
+    "actions": {
+      "continue": "Continuar contratación",
+      "validating": "Validando acceso..."
+    },
+    "toasts": {
+      "invalidLinkTitle": "Enlace no válido",
+      "invalidLinkDescription": "No se ha encontrado el token de acceso.",
+      "missingDataTitle": "Faltan datos",
+      "missingDataDescription": "Debes completar DNI, nombre y apellidos.",
+      "accessValidatedTitle": "Acceso validado",
+      "accessValidatedDescription": "Vamos a continuar con tu contratación.",
+      "couldNotContinueTitle": "No se pudo continuar",
+      "couldNotValidateDescription": "No se pudo validar tu acceso."
+    }
+  },
+  "contractFlow": {
+    "loading": {
+      "title": "Preparando tu contrato...",
+      "description": "Estamos cargando la modalidad seleccionada."
+    },
+    "toasts": {
+      "invalidAccessTitle": "Acceso no válido",
+      "invalidAccessDescription": "No se ha encontrado el token de continuación.",
+      "alreadySignedTitle": "Precontrato ya firmado",
+      "alreadySignedDescription": "Este precontrato ya fue firmado anteriormente.",
+      "couldNotOpenTitle": "No se pudo abrir el contrato",
+      "unknownError": "Error desconocido",
+      "contractUnavailableTitle": "Contrato no disponible",
+      "contractUnavailableDescription": "No se ha podido preparar el contrato para firmar.",
+      "paymentContractUnavailableDescription": "No se ha encontrado el contrato para iniciar el pago.",
+      "missingSignatureTitle": "Falta la firma",
+      "missingSignatureDescription": "Debes firmar en el recuadro antes de continuar.",
+      "signedSuccessTitle": "Precontrato firmado correctamente",
+      "signedSuccessDescription": "Ahora debes seleccionar la forma de pago para continuar con la reserva.",
+      "couldNotSignTitle": "No se pudo firmar el contrato",
+      "unexpectedError": "Ha ocurrido un error inesperado.",
+      "paymentUnavailableTitle": "Pago no disponible",
+      "paymentUnavailableDescription": "No se pudo obtener la URL de Stripe.",
+      "redirectingStripeTitle": "Redirigiendo a Stripe",
+      "redirectingStripeDescription": "Te llevamos al pago seguro con tarjeta.",
+      "couldNotStartStripeTitle": "No se pudo iniciar el pago con tarjeta",
+      "bankTransferSentTitle": "Instrucciones enviadas",
+      "bankTransferSentDescription": "Hemos enviado el email con las instrucciones de transferencia a {{email}}.",
+      "couldNotPrepareBankTitle": "No se pudo preparar el pago por transferencia"
+    },
+    "banner": {
+      "title": "Contrato firmado",
+      "description": "Se han reservado {{reservedKwp}} kWp en {{installationName}}."
+    },
+    "leftPanel": {
+      "badge": "Continuar contratación",
+      "titleLine1": "Revisa y firma",
+      "titleLine2": "tu contrato",
+      "description": "Has accedido desde una propuesta enviada previamente. Revisa la modalidad seleccionada, comprueba el contrato y firma para continuar con la reserva.",
+      "holder": "Titular",
+      "installation": "Instalación",
+      "assignedPower": "Potencia asignada",
+      "backHome": "Volver al inicio"
+    },
+    "selectedMode": {
+      "title": "Modalidad seleccionada:",
+      "description": "Esta es la modalidad elegida previamente antes de firmar el contrato."
+    },
+    "contractCard": {
+      "title": "Contrato",
+      "dni": "DNI"
+    },
+    "signature": {
+      "title": "Firma",
+      "clear": "Limpiar",
+      "help": "Firma dentro del recuadro. Al confirmar, se generará el PDF firmado, se creará la reserva provisional y podrás elegir la forma de pago.",
+      "detected": "Firma detectada correctamente."
+    },
+    "reservation": {
+      "title": "Reserva provisional",
+      "description": "Al firmar, se reservarán {{assignedKwp}} kWp en la instalación seleccionada bajo modalidad de {{modeLabel}}."
+    },
+    "actions": {
+      "signing": "Firmando...",
+      "signed": "Contrato firmado",
+      "signAndContinue": "Firmar y continuar"
+    },
+    "modal": {
+      "badge": "Contratación",
+      "title": "Selecciona la forma de pago",
+      "reservationSummary": "Resumen de la reserva",
+      "installation": "Instalación",
+      "reservedPower": "Potencia reservada",
+      "signal": "Señal",
+      "deadline": "Fecha límite",
+      "bankTransferTitle": "Transferencia bancaria",
+      "bankTransferDescription": "Recibirás un correo con el IBAN, el concepto y el PDF del precontrato firmado. Tendrás 15 días para realizar la transferencia.",
+      "stripeTitle": "Tarjeta bancaria",
+      "stripeDescription": "Te redirigiremos a Stripe para completar el pago seguro de la señal con tarjeta."
+    },
+    "iframe": {
+      "title": "Vista previa del contrato"
+    },
+    "pdf": {
+      "title": "Precontrato de reserva",
+      "contractNumber": "Contrato nº",
+      "clientData": "Datos del cliente",
+      "name": "Nombre",
+      "dni": "DNI",
+      "email": "Email",
+      "phone": "Teléfono",
+      "installationData": "Datos de la instalación",
+      "installation": "Instalación",
+      "address": "Dirección",
+      "mode": "Modalidad",
+      "assignedKwp": "kWp asignados",
+      "basicConditions": "Condiciones básicas",
+      "condition1": "El cliente solicita la reserva de la potencia indicada en la instalación seleccionada, quedando dicha reserva pendiente de confirmación económica.",
+      "condition2": "La reserva se formalizará mediante el pago de una señal, ya sea por tarjeta o por transferencia bancaria.",
+      "condition3": "Hasta la validación del pago, la reserva tendrá carácter provisional.",
+      "clientSignature": "Firma del cliente",
+      "noData": "-"
+    }
+  },
+  "emails": {
+    "proposal": {
+      "subject": "Tu propuesta energética ya está disponible",
+      "greeting": "Hola {{clientName}},",
+      "body1": "Te adjuntamos tu propuesta energética en PDF.",
+      "body2": "Hemos preparado esta propuesta a partir de los datos de tu factura.",
+      "continueText": "También puedes continuar el proceso desde el siguiente enlace seguro:",
+      "cta": "Continuar contratación",
+      "securityNote": "Por seguridad, este enlace puede caducar.",
+      "body3": "Si tienes cualquier duda, puedes responder directamente a este correo.",
+      "farewell": "Un saludo"
+    },
+    "bankTransfer": {
+      "subject": "Instrucciones para completar tu reserva por transferencia",
+      "greeting": "Hola {{clientName}},",
+      "body1": "Adjuntamos tu precontrato firmado y los datos para completar la reserva mediante transferencia bancaria.",
+      "contractNumber": "Precontrato",
+      "installation": "Instalación",
+      "reservedPower": "Potencia reservada",
+      "signalAmount": "Importe de la señal",
+      "deadline": "Fecha límite",
+      "iban": "IBAN",
+      "beneficiary": "Beneficiario",
+      "concept": "Concepto",
+      "body2": "Es importante que indiques exactamente el concepto en la transferencia para poder identificar el pago correctamente.",
+      "body3": "Una vez recibido y validado el pago, te enviaremos la confirmación por correo electrónico.",
+      "farewell": "Un saludo"
+    },
+    "reservationConfirmed": {
+      "subject": "Confirmación de tu reserva y justificante de pago",
+      "greeting": "Hola {{clientName}},",
+      "body1": "Hemos confirmado correctamente tu reserva.",
+      "contractNumber": "Precontrato",
+      "installation": "Instalación",
+      "reservedPower": "Potencia reservada",
+      "signalAmount": "Señal abonada",
+      "paymentDate": "Fecha de pago",
+      "body2": "Adjuntamos el precontrato y el justificante de pago para tu referencia.",
+      "body3": "Gracias por confiar en nosotros.",
+      "farewell": "Un saludo"
+    },
+    "signedContract": {
+      "subject": "Tu contrato firmado y reserva provisional - Sapiens Energía",
+      "greeting": "Hola {{clientName}},",
+      "body1": "Adjuntamos una copia de tu contrato firmado.",
+      "body2": "Hemos realizado una reserva provisional de {{reservedKwp}} kWp en la planta {{installationName}}.",
+      "body3": "Dispones de un plazo orientativo de 15 días, hasta el {{formattedDate}}, para realizar la transferencia y confirmar la reserva.",
+      "contractLink": "Puedes consultar también tu contrato aquí:",
+      "farewell": "Gracias por confiar en nosotros."
+    },
+    "proposalPdf": {
+      "pageTitle": "PROPUESTA ENERGÉTICA",
+      "header": {
+        "date": "FECHA"
+      },
+      "footer": {
+        "note": "Propuesta generada automáticamente por Sapiens Energía a partir del análisis documental de la factura del cliente."
+      },
+      "hero": {
+        "executiveReport": "INFORME EJECUTIVO",
+        "serviceTitle": "Propuesta energética\nmodalidad servicio",
+        "investmentTitle": "Propuesta energética\nmodalidad inversión",
+        "serviceSubtitle": "Modelo pensado para reducir la entrada inicial, simplificar la contratación y ofrecer una cuota más predecible.",
+        "investmentSubtitle": "Modelo orientado a maximizar el ahorro acumulado, acelerar la amortización y reforzar la rentabilidad a largo plazo."
+      },
+      "viability": {
+        "high": "Alta",
+        "medium": "Media",
+        "low": "Baja"
+      },
+      "sections": {
+        "supplyData": "DATOS DEL SUMINISTRO",
+        "priorityRecommendations": "RECOMENDACIONES PRIORITARIAS",
+        "economicSummary": "RESUMEN ECONÓMICO",
+        "technicalProfile": "PERFIL TÉCNICO",
+        "executiveConclusion": "CONCLUSIÓN EJECUTIVA"
+      },
+      "supply": {
+        "holder": "Titular",
+        "cups": "CUPS",
+        "tariff": "Tarifa",
+        "address": "Dirección",
+        "email": "Email",
+        "iban": "IBAN",
+        "annualInvoiceConsumption": "Consumo anual factura",
+        "contractedPower": "Potencia contratada",
+        "hvac": "Climatización prevista",
+        "ev": "Coche eléctrico previsto"
+      },
+      "labels": {
+        "solarViability": "VIABILIDAD SOLAR",
+        "consumptionDistribution": "Distribución del consumo",
+        "powerAndProduction": "Potencia y producción",
+        "annualProduction": "Prod. anual",
+        "selfConsumption": "Autocons.",
+        "summary": "Resumen",
+        "estimated": "estimado",
+        "modality": "Modalidad",
+        "modalityUpper": "MODALIDAD",
+        "observation": "Observación",
+        "client": "Cliente"
+      },
+      "common": {
+        "consult": "Consultar",
+        "notAvailable": "N/D"
+      },
+      "highlights": {
+        "service": [
+          "Sin desembolso inicial elevado",
+          "Cuota mensual fija y predecible"
+        ],
+        "investment": [
+          "Mayor ahorro acumulado a largo plazo",
+          "Más control sobre la rentabilidad del proyecto"
+        ]
+      },
+      "recommendations": {
+        "service": [
+          {
+            "title": "Reducir la barrera de entrada",
+            "description": "La modalidad de servicio permite empezar sin un desembolso inicial elevado y con una cuota más previsible."
+          },
+          {
+            "title": "Equilibrar cuota y ahorro",
+            "description": "Conviene revisar la relación entre cuota mensual, ahorro anual y horizonte esperado para validar la propuesta."
+          }
+        ],
+        "investment": [
+          {
+            "title": "Maximizar el retorno de la inversión",
+            "description": "El nivel de consumo detectado hace atractiva una solución fotovoltaica orientada a capturar más ahorro acumulado."
+          },
+          {
+            "title": "Priorizar rentabilidad a largo plazo",
+            "description": "La inversión directa gana valor cuando se busca mayor ahorro total, control del activo y amortización sostenida."
+          }
+        ]
+      },
+      "conclusion": {
+        "service": "La modalidad de servicio encaja bien cuando se busca una entrada más cómoda, una cuota mensual clara y una decisión de contratación más flexible.",
+        "investment": "La modalidad de inversión encaja mejor cuando se prioriza el ahorro acumulado, la amortización de la instalación y la rentabilidad a medio y largo plazo."
+      },
+      "observation": {
+        "service": "Pensada para facilitar la entrada y mantener una cuota estable.",
+        "investment": "Pensada para maximizar el ahorro acumulado y la rentabilidad a largo plazo."
+      },
+      "recommendation": {
+        "pageTitle": "RECOMENDACIÓN FINAL",
+        "header": "RECOMENDACIÓN SAPIENS",
+        "pendingTitle": "Recomendación pendiente",
+        "pendingDescription": "No se ha podido determinar una recomendación final con la información disponible.",
+        "investmentTitle": "Recomendamos la modalidad de inversión",
+        "investmentDescription": "La inversión ofrece un ahorro acumulado superior a largo plazo ({{totalSavings}}) y un retorno estimado de {{paybackYears}} años. La recomendamos cuando se prioriza la rentabilidad global del proyecto y la amortización de la instalación.",
+        "serviceTitle": "Recomendamos la modalidad de servicio",
+        "serviceDescription": "La diferencia de ahorro acumulado frente a la inversión es reducida ({{savingsGap}}), pero la modalidad de servicio evita un desembolso inicial elevado y mantiene una cuota mensual estimada de {{monthlyFee}}. La recomendamos cuando se prioriza una entrada más cómoda, mayor flexibilidad y una decisión de contratación más sencilla.",
+        "genericInvestmentTitle": "Recomendación: modalidad de inversión",
+        "genericServiceTitle": "Recomendación: modalidad de servicio",
+        "conclusionAndNextStep": "CONCLUSIÓN Y SIGUIENTE PASO",
+        "executiveConclusionTitle": "Conclusión ejecutiva",
+        "executiveInvestment": "Por perfil económico y ahorro acumulado, recomendamos avanzar con la modalidad de inversión. Es la opción que mejor capitaliza el consumo detectado y ofrece una rentabilidad más sólida en el horizonte analizado.",
+        "executiveService": "Por flexibilidad de entrada y equilibrio entre ahorro y facilidad de contratación, recomendamos valorar la modalidad de servicio como la vía más cómoda para iniciar el proyecto.",
+        "executivePending": "No se ha podido establecer una recomendación final automática.",
+        "nextStepTitle": "Siguiente paso recomendado",
+        "nextStepDescription": "Validar la propuesta seleccionada, revisar los datos del suministro y continuar con la reserva o contratación según la modalidad elegida."
+      }
+    }
+  }
+}

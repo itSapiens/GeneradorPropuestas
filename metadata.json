@@ -1,0 +1,7 @@
+{
+  "name": "SolarStudy Pro",
+  "description": "Plataforma premium de estudios energéticos con extracción por IA y geolocalización.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

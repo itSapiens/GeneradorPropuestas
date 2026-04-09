@@ -1,0 +1,54 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
+
+@theme {
+  --font-sans: "Cabin", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Playfair Display", serif;
+
+  --color-brand-navy: #000054;
+  --color-brand-mint: #54D9C7;
+  --color-brand-sky: #94C2FF;
+  --color-brand-gray: #706F6F;
+
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+}
+
+@layer base {
+  body {
+    @apply antialiased bg-[#F8FAFC] text-brand-navy font-sans;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight;
+  }
+}
+
+.brand-gradient {
+  background: linear-gradient(135deg, #54D9C7 0%, #94C2FF 100%);
+}
+
+.brand-gradient-text {
+  @apply bg-clip-text text-transparent;
+  background-image: linear-gradient(135deg, #54D9C7 0%, #94C2FF 100%);
+}
+
+.glass-card {
+  @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-sm;
+}
+
+/* Center Sileo Toaster content */
+[data-sonner-toast] {
+  text-align: center !important;
+  justify-content: center !important;
+}
+
+[data-sonner-toast] [data-title] {
+  text-align: center !important;
+  width: 100% !important;
+}
+
+.markdown-body {
+  @apply text-sm leading-relaxed text-brand-gray;
+}
