@@ -10,7 +10,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-brand-navy font-sans selection:bg-brand-mint/20">
-      <header className="sticky top-0 z-50 w-full border-b border-brand-navy/5 bg-white/80 backdrop-blur-xl">
+      {/* <header className="sticky top-0 z-50 w-full border-b border-brand-navy/5 bg-white/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3 group cursor-pointer">
             <div className="w-40 h-14 rounded-2xl overflow-hidden flex items-center justify-center bg-transparent  px-3 group-hover:scale-105 transition-transform duration-300">
@@ -24,7 +24,7 @@ export default function Layout({ children }: LayoutProps) {
             <div className="flex flex-col"></div>
           </div>
         </div>
-      </header>
+      </header> */}
 
       <main className="container mx-auto px-4 py-12">{children}</main>
 
