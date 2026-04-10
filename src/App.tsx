@@ -1004,20 +1004,40 @@ function getServiceMonthlyFeeFromInstallation(
   return null;
 }
 
+
+//Calculo de la inversion según la fórmula: Coste inversión = Coste kWh inversión * Potencia recomendada (kWp) * Horas efectivas * 25 años  24681-8550
+function parseNumericValue(value: unknown): number {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().replace(',', '.');
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return 0;
+}
+
 function getInvestmentCostFromFormula(
   installation: ApiInstallation | null,
   recommendedPowerKwp: number,
 ): number {
   if (!installation) return 0;
 
-  const effectiveHours = Number(installation.horas_efectivas ?? 0);
-  const investmentCostPerKwh = Number(installation.coste_kwh_inversion ?? 0);
+  const effectiveHours = parseNumericValue(installation.horas_efectivas);
+  const investmentCostPerKwh = parseNumericValue(
+    installation.coste_kwh_inversion,
+  );
 
   if (
     !Number.isFinite(recommendedPowerKwp) ||
     recommendedPowerKwp <= 0 ||
     !Number.isFinite(effectiveHours) ||
-    effectiveHours <= 0
+    effectiveHours <= 0 ||
+    !Number.isFinite(investmentCostPerKwh) ||
+    investmentCostPerKwh <= 0
   ) {
     return 0;
   }
@@ -1029,17 +1049,28 @@ function getInvestmentRealCostFromFormula(
   installation: ApiInstallation | null,
   recommendedPowerKwp: number,
 ): number {
+  if (!installation) return 0;
+
   const baseInvestmentCost = getInvestmentCostFromFormula(
     installation,
     recommendedPowerKwp,
   );
 
-  if (!Number.isFinite(recommendedPowerKwp) || recommendedPowerKwp <= 0) {
+  const annualMaintenancePerKwp = parseNumericValue(
+    installation.coste_anual_mantenimiento_por_kwp,
+  );
+
+  if (
+    !Number.isFinite(baseInvestmentCost) ||
+    baseInvestmentCost <= 0 ||
+    !Number.isFinite(recommendedPowerKwp) ||
+    recommendedPowerKwp <= 0
+  ) {
     return 0;
   }
 
   const maintenance25Years =
-    INVESTMENT_MAINTENANCE_EUR_PER_KWP_YEAR * recommendedPowerKwp * 25;
+    annualMaintenancePerKwp * recommendedPowerKwp * 25;
 
   return Math.max(baseInvestmentCost - maintenance25Years, 0);
 }
