@@ -37,9 +37,12 @@ type ContractPreviewData = {
     id: string;
     nombre_instalacion: string;
     direccion: string;
+    potencia_instalada_kwp?: number | null;
+    almacenamiento_kwh?: number | null;
+    horas_efectivas?: number | null;
+    porcentaje_autoconsumo?: number | null;
   };
 };
-
 type GeneratedContractResponse = {
   success: boolean;
   contract: {
@@ -339,6 +342,7 @@ export default function ContratacionDesdePropuestaPage() {
     preview: ContractPreviewData,
     signatureDataUrl: string,
   ) => {
+      console.log("preview contrato firmado:", preview);
     const pdf = new jsPDF({
       unit: "pt",
       format: "a4",
@@ -406,21 +410,46 @@ export default function ContratacionDesdePropuestaPage() {
       `${t("contractFlow.pdf.phone", "Teléfono")}: ${preview.client.telefono || t("contractFlow.pdf.noData", "-")}`,
     );
 
-    writeSectionTitle(
-      t("contractFlow.pdf.installationData", "Datos de la instalación"),
-    );
-    writeParagraph(
-      `${t("contractFlow.pdf.installation", "Instalación")}: ${preview.installation.nombre_instalacion}`,
-    );
-    writeParagraph(
-      `${t("contractFlow.pdf.address", "Dirección")}: ${preview.installation.direccion}`,
-    );
-    writeParagraph(
-      `${t("contractFlow.pdf.mode", "Modalidad")}: ${modeLabel}`,
-    );
-    writeParagraph(
-      `${t("contractFlow.pdf.assignedKwp", "kWp asignados")}: ${preview.assignedKwp}`,
-    );
+writeSectionTitle(
+  t("contractFlow.pdf.installationData", "Datos de la instalación"),
+);
+writeParagraph(
+  `${t("contractFlow.pdf.installation", "Instalación")}: ${preview.installation.nombre_instalacion}`,
+);
+writeParagraph(
+  `${t("contractFlow.pdf.address", "Dirección")}: ${preview.installation.direccion}`,
+);
+writeParagraph(
+  `${t("contractFlow.pdf.mode", "Modalidad")}: ${modeLabel}`,
+);
+writeParagraph(
+  `${t("contractFlow.pdf.assignedKwp", "kWp asignados")}: ${preview.assignedKwp}`,
+);
+
+// Datos técnicos
+writeSectionTitle(
+  t("contractFlow.pdf.technicalData", "Datos técnicos de la instalación"),
+);
+writeParagraph(
+  `${t("contractFlow.pdf.installedPower", "Potencia instalada")}: ${
+    preview.installation.potencia_instalada_kwp ?? "-"
+  } kWp`,
+);
+writeParagraph(
+  `${t("contractFlow.pdf.batteryCapacity", "Batería")}: ${
+    preview.installation.almacenamiento_kwh ?? "-"
+  } kWh`,
+);
+writeParagraph(
+  `${t("contractFlow.pdf.effectiveHours", "Horas efectivas")}: ${
+    preview.installation.horas_efectivas ?? "-"
+  } h/año`,
+);
+writeParagraph(
+  `${t("contractFlow.pdf.selfConsumption", "Autoconsumo estimado")}: ${
+    preview.installation.porcentaje_autoconsumo ?? "-"
+  } %`,
+);
 
     writeSectionTitle(
       t("contractFlow.pdf.basicConditions", "Condiciones básicas"),
@@ -1219,7 +1248,7 @@ export default function ContratacionDesdePropuestaPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                   <button
                     type="button"
                     onClick={handleSelectBankTransferPayment}
@@ -1247,7 +1276,7 @@ export default function ContratacionDesdePropuestaPage() {
                     </p>
                   </button>
 
-                  <button
+                  {/* <button
                     type="button"
                     onClick={handleSelectStripePayment}
                     disabled={isSelectingPaymentMethod}
@@ -1272,7 +1301,7 @@ export default function ContratacionDesdePropuestaPage() {
                         "Te redirigiremos a Stripe para completar el pago seguro de la señal con tarjeta.",
                       )}
                     </p>
-                  </button>
+                  </button> */}
                 </div>
 
                 <div className="pt-2">

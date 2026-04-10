@@ -828,6 +828,10 @@ type ContractPreviewData = {
     id: string;
     nombre_instalacion: string;
     direccion: string;
+    potencia_instalada_kwp?: number | null;
+    almacenamiento_kwh?: number | null;
+    horas_efectivas?: number | null;
+    porcentaje_autoconsumo?: number | null;
   };
 };
 
@@ -1466,12 +1470,7 @@ function calculateRequiredKwpForInstallation(
   const invoiceVariableEnergyAmountEur =
     getInvoiceVariableEnergyAmountFromExtraction(rawExtraction);
 
-  console.log("[calc] periodPrices:", periodPrices);
-  console.log("[calc] periodConsumptions:", periodConsumptions);
-  console.log(
-    "[calc] invoiceVariableEnergyAmountEur:",
-    invoiceVariableEnergyAmountEur,
-  );
+
 
   const result = calculateEnergyStudy({
     monthlyConsumptionKwh:
@@ -1596,12 +1595,6 @@ function MainAppContent() {
   const defaultProposalMode = getDefaultProposalMode(
     normalizedInstallationModalidad,
   );
-  console.log(
-    "[DEBUG] modalidad instalación:",
-    selectedInstallation?.modalidad,
-  );
-  console.log("[DEBUG] availableProposalModes:", availableProposalModes);
-  console.log("[DEBUG] instalación seleccionada:", selectedInstallation);
 
   // const defaultProposalMode = getDefaultProposalMode(
   //   selectedInstallation?.modalidad,
@@ -1992,7 +1985,6 @@ function MainAppContent() {
     result: CalculationResult,
     installation: ApiInstallation,
   ) => {
-    console.log("[front] persistStudyAutomatically START");
 
     if (!uploadedInvoiceFile) {
       throw new Error(
@@ -2000,12 +1992,8 @@ function MainAppContent() {
       );
     }
 
-    console.log("[front] uploadedInvoiceFile:", uploadedInvoiceFile);
-    console.log("[front] validatedData.email:", validatedData.email);
-    console.log("[front] installation.id:", installation.id);
-
+   
     const billData = toBaseBillData(validatedData, extraConsumption);
-    console.log("[front] billData:", billData);
 
     const initialProposalMode = getDefaultProposalMode(installation.modalidad);
 
@@ -2021,20 +2009,14 @@ function MainAppContent() {
       proposalSummariesForPdf,
       currentAppLanguage,
     );
-    console.log("[front] pdfArtifact generado:", pdfArtifact);
 
     const proposalBlob = pdfArtifactToBlob(pdfArtifact);
-    console.log("[front] proposalBlob:", proposalBlob);
 
     const proposalFile = new File(
       [proposalBlob],
       `Estudio_Solar_${validatedData.name || "cliente"}.pdf`,
       { type: "application/pdf" },
     );
-
-    console.log("[front] proposalFile:", proposalFile);
-    console.log("[front] proposalFile.size:", proposalFile.size);
-    console.log("[front] proposalFile.type:", proposalFile.type);
 
     const extractedLocation = (rawExtraction?.location ?? {}) as Record<
       string,
@@ -2522,7 +2504,6 @@ function MainAppContent() {
         },
       );
 
-      console.log("RESPUESTA /sign:", response.data);
 
       setSignedContractResult(response.data);
       setIsContractModalOpen(false);
@@ -3177,14 +3158,12 @@ useEffect(() => {
     );
     setCurrentStep("result");
     sileo.success({ title: "Estudio generado con éxito" });
-    console.log("[front] entrando en persistencia automática");
 
     void (async () => {
       if (studyPersistLock.current) return;
       studyPersistLock.current = true;
 
       try {
-        console.log("[front] llamando a persistStudyAutomatically...");
         await persistStudyAutomatically(
           validatedData,
           result,
@@ -4107,7 +4086,7 @@ useEffect(() => {
                             "group relative w-full min-h-[210px] overflow-hidden rounded-[1.9rem] border p-6 text-left shadow-xl transition-all backdrop-blur-xl",
                             contractAlreadySigned
                               ? "cursor-not-allowed border-white/20 bg-white/20 opacity-70"
-                              : "border-white/30 bg-[linear-gradient(135deg,rgba(84,217,199,0.88),rgba(148,194,255,0.88))] hover:shadow-[0_18px_45px_rgba(0,0,84,0.12)]",
+                              :"border-white/30 bg-[linear-gradient(135deg,rgba(0,0,84,0.98),rgba(28,78,216,0.88))] hover:shadow-[0_18px_45px_rgba(0,0,84,0.22)]",
                           )}
                         >
                           {!contractAlreadySigned ? (
@@ -4151,7 +4130,7 @@ useEffect(() => {
                                 repeat: Infinity,
                                 ease: "easeInOut",
                               }}
-                              className="mb-5 flex h-16 w-16 items-center justify-center rounded-[1.3rem] bg-[#000054] text-white shadow-[0_10px_28px_rgba(0,0,84,0.18)]"
+                              className="mb-5 flex h-16 w-16 items-center justify-center rounded-[1.3rem] bg-brand-mint text-shadow-brand-navy shadow-[0_10px_28px_rgba(0,0,84,0.18)]"
                             >
                               {isGeneratingContract ? (
                                 <Loader2 className="h-8 w-8 animate-spin" />
@@ -4168,16 +4147,16 @@ useEffect(() => {
                               )}
                             </motion.div>
 
-                            <p className="text-3xl md:text-[2rem] font-bold text-[#000054]">
+                            <p className="text-3xl md:text-[2rem] font-bold text-[#ffffff]">
                               {reserveCardTitle}
                             </p>
 
-                            <p className="mt-3 max-w-sm text-base leading-relaxed text-[#000054]/78">
+                            <p className="mt-3 max-w-sm text-base leading-relaxed text-[#ffff]/78">
                               {reserveCardDescription}
                             </p>
 
                             {!contractAlreadySigned ? (
-                              <div className="mt-12 inline-flex items-center gap-2 rounded-full border border-[#000054]/10 bg-white/28 px-5 py-2 text-sm font-semibold text-[#000054]">
+                              <div className="mt-12 inline-flex items-center gap-2 rounded-full border border-[#000054]/10 bg-white/70 px-5 py-2 text-sm font-bold text-[#000054]">
                                 {`Continuar con ${activeModeLabelLower}`}
                                 <motion.span
                                   animate={{ x: [0, 2, 0] }}
@@ -4831,7 +4810,7 @@ useEffect(() => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                     <button
                       type="button"
                       onClick={handleSelectBankTransferPayment}
@@ -4859,7 +4838,7 @@ useEffect(() => {
                       </p>
                     </button>
 
-                    <button
+                    {/* <button
                       type="button"
                       onClick={handleSelectStripePayment}
                       disabled={isSelectingPaymentMethod}
@@ -4884,7 +4863,7 @@ useEffect(() => {
                           "Te redirigiremos a Stripe para completar el pago seguro de la señal con tarjeta.",
                         )}
                       </p>
-                    </button>
+                    </button> */}
                   </div>
 
                   <div className="pt-2">

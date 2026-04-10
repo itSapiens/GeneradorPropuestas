@@ -1465,18 +1465,32 @@ function buildBasicContractHtml(params: {
           }</p>
         </div>
 
-        <div class="box">
-          <h3>${texts.installationData}</h3>
-          <p><strong>${texts.installation}:</strong> ${
-            params.installation.nombre_instalacion
-          }</p>
-          <p><strong>${texts.address}:</strong> ${params.installation.direccion}</p>
-          <p><strong>${texts.mode}:</strong> ${getProposalModeLabel(
-            params.proposalMode,
-            params.language,
-          )}</p>
-          <p><strong>${texts.assignedKwp}:</strong> ${params.assignedKwp}</p>
-        </div>
+<div class="box">
+  <h3>${texts.installationData}</h3>
+  <p><strong>${texts.installation}:</strong> ${
+    params.installation.nombre_instalacion ?? "-"
+  }</p>
+  <p><strong>${texts.address}:</strong> ${
+    params.installation.direccion ?? "-"
+  }</p>
+  <p><strong>${texts.mode}:</strong> ${getProposalModeLabel(
+    params.proposalMode,
+    params.language,
+  )}</p>
+  <p><strong>${texts.assignedKwp}:</strong> ${params.assignedKwp ?? "-"}</p>
+  <p><strong>Potencia instalada:</strong> ${
+    params.installation.potencia_instalada_kwp ?? "-"
+  } kWp</p>
+  <p><strong>Batería:</strong> ${
+    params.installation.almacenamiento_kwh ?? "-"
+  } kWh</p>
+  <p><strong>Horas efectivas:</strong> ${
+    params.installation.horas_efectivas ?? "-"
+  } h/año</p>
+  <p><strong>Autoconsumo estimado:</strong> ${
+    params.installation.porcentaje_autoconsumo ?? "-"
+  }%</p>
+</div>
 
         <div class="box">
           <h3>${texts.basicConditions}</h3>

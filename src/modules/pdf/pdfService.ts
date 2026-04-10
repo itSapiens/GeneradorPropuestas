@@ -392,7 +392,6 @@ function drawExtraConsumptionBadge(
 
   drawCard(doc, x, y, w, h, COLORS.white, COLORS.border, h / 2);
 
-  // fondo del icono
   const iconBoxX = x + 1.6;
   const iconBoxY = y + 1.6;
   const iconBoxSize = 5.9;
@@ -408,25 +407,24 @@ function drawExtraConsumptionBadge(
     iconBoxSize / 2,
   );
 
-  // icono centrado visualmente dentro del círculo
   if (type === "hvac") {
     drawHvacIcon(doc, iconBoxX + 0.15, iconBoxY + 0.1);
   } else {
     drawCarIcon(doc, iconBoxX + 0.1, iconBoxY + 0.2);
   }
 
-  writeText(doc, label, x + 8.8, y + 3.65, {
-    size: 3.5,
+  writeText(doc, label, x + 8.8, y + 3.35, {
+    size: 5.5,
     color: COLORS.muted,
     fontStyle: "bold",
-    maxWidth: 22,
+    maxWidth: 23,
   });
 
-  writeText(doc, value, x + 8.8, y + 6.95, {
-    size: 4.7,
+  writeText(doc, value, x + 8.8, y + 6.65, {
+    size: 5.4,
     color: COLORS.navy,
     fontStyle: "bold",
-    maxWidth: 22,
+    maxWidth: 23,
   });
 }
 
@@ -454,9 +452,12 @@ function drawHeroExtraConsumptionBadges(
     badges.push({
       type: "ev",
       label: "Vehículo eléct.",
-      value: `${formatNumber(data.extraConsumptionEvKmYear, language, 0)} km/año`,
+      value: `${formatNumber(data.extraConsumptionEvKmYear, language, 0)} km`,
     });
   }
+
+
+  
 
   if (badges.length === 0) return;
 
@@ -964,25 +965,25 @@ function getSupplyRows(
   ];
 
   // Previsión de incremento de consumo: solo se muestra si el usuario lo indicó.
-  if (data.extraConsumptionHvacM2 && data.extraConsumptionHvacM2 > 0) {
-    const hvacAnnualKwh = Math.round(
-      data.extraConsumptionHvacM2 * HVAC_KWH_PER_M2_YEAR,
-    );
-    rows.push([
-      tPdf(language, "supply.hvac", "Climatización prevista"),
-      `${formatNumber(data.extraConsumptionHvacM2, language, 0)} m² (+${formatNumber(hvacAnnualKwh, language, 0)} kWh/año)`,
-    ]);
-  }
+  // if (data.extraConsumptionHvacM2 && data.extraConsumptionHvacM2 > 0) {
+  //   const hvacAnnualKwh = Math.round(
+  //     data.extraConsumptionHvacM2 * HVAC_KWH_PER_M2_YEAR,
+  //   );
+  //   rows.push([
+  //     tPdf(language, "supply.hvac", "Climatización "),
+  //     `${formatNumber(data.extraConsumptionHvacM2, language, 0)} m² (+${formatNumber(hvacAnnualKwh, language, 0)} kWh/año)`,
+  //   ]);
+  // }
 
-  if (data.extraConsumptionEvKmYear && data.extraConsumptionEvKmYear > 0) {
-    const evAnnualKwh = Math.round(
-      data.extraConsumptionEvKmYear * EV_KWH_PER_KM,
-    );
-    rows.push([
-      tPdf(language, "supply.ev", "Coche eléctrico previsto"),
-      `${formatNumber(data.extraConsumptionEvKmYear, language, 0)} km/año (+${formatNumber(evAnnualKwh, language, 0)} kWh/año)`,
-    ]);
-  }
+  // if (data.extraConsumptionEvKmYear && data.extraConsumptionEvKmYear > 0) {
+  //   const evAnnualKwh = Math.round(
+  //     data.extraConsumptionEvKmYear * EV_KWH_PER_KM,
+  //   );
+  //   rows.push([
+  //     tPdf(language, "supply.ev", "Coche eléctrico "),
+  //     `${formatNumber(data.extraConsumptionEvKmYear, language, 0)} km/año (+${formatNumber(evAnnualKwh, language, 0)} kWh/año)`,
+  //   ]);
+  // }
 
   return rows;
 }
@@ -1301,42 +1302,59 @@ function renderStudyPdfPage(
     COLORS.mintSoft,
   );
 
-  // fila inferior
-if (data.extraConsumptionHvacM2 && data.extraConsumptionHvacM2 > 0) {
-  const hvacAnnualKwh = Math.round(
-    data.extraConsumptionHvacM2 * HVAC_KWH_PER_M2_YEAR,
-  );
+const hvacM2: number = Number(data.extraConsumptionHvacM2 ?? 0);
+const evKmYear: number = Number(data.extraConsumptionEvKmYear ?? 0);
 
-  drawExtraConsumptionBadge(
-    doc,
-    heroPillX1,
-    heroBottomPillY,
-    "Climatización",
-    `+${formatNumber(hvacAnnualKwh, language, 0)} kWh/año`,
-    "hvac",
-  );
-} else {
-  drawChip(doc, heroPillX1, heroBottomPillY, "", heroPillW);
+const hasHvac = hvacM2 > 0;
+const hasEv = evKmYear > 0;
+
+const visibleBottomPills: Array<{
+  type: "hvac" | "ev" | "viability";
+  label?: string;
+  value?: string;
+}> = [];
+
+if (hasHvac) {
+  const hvacAnnualKwh = Math.round(hvacM2 * HVAC_KWH_PER_M2_YEAR);
+
+  visibleBottomPills.push({
+    type: "hvac",
+    label: "Climatización",
+    value: `${formatNumber(hvacM2, language, 0)} m² (+${formatNumber(hvacAnnualKwh, language, 0)} kWh/año)`,
+  });
 }
 
-if (data.extraConsumptionEvKmYear && data.extraConsumptionEvKmYear > 0) {
-  const evAnnualKwh = Math.round(
-    data.extraConsumptionEvKmYear * EV_KWH_PER_KM,
-  );
+if (hasEv) {
+  const evAnnualKwh = Math.round(evKmYear * EV_KWH_PER_KM);
 
-  drawExtraConsumptionBadge(
-    doc,
-    heroPillX2,
-    heroBottomPillY,
-    "Vehículo eléct.",
-    `+${formatNumber(evAnnualKwh, language, 0)} kWh/año`,
-    "ev",
-  );
-} else {
-  drawChip(doc, heroPillX2, heroBottomPillY, "", heroPillW);
+  visibleBottomPills.push({
+    type: "ev",
+    label: "Vehículo eléct.",
+    value: `${formatNumber(evKmYear, language, 0)} km (+${formatNumber(evAnnualKwh, language, 0)} kWh/año)`,
+  });
 }
 
-  drawInfoPill(doc, heroPillX3, heroBottomPillY, heroPillW, heroPillH, {
+visibleBottomPills.push({
+  type: "viability",
+});
+
+const pillXs = [heroPillX1, heroPillX2, heroPillX3];
+
+visibleBottomPills.forEach((pill, index) => {
+  const x = pillXs[index];
+  const y = heroBottomPillY;
+
+  if (pill.type === "hvac") {
+    drawExtraConsumptionBadge(doc, x, y, pill.label!, pill.value!, "hvac");
+    return;
+  }
+
+  if (pill.type === "ev") {
+    drawExtraConsumptionBadge(doc, x, y, pill.label!, pill.value!, "ev");
+    return;
+  }
+
+  drawInfoPill(doc, x, y, heroPillW, heroPillH, {
     title: tPdf(language, "labels.solarViability", "VIABILIDADE SOLAR"),
     value: String(result.viabilityScore),
     subtitle: viabilityLabel,
@@ -1345,6 +1363,7 @@ if (data.extraConsumptionEvKmYear && data.extraConsumptionEvKmYear > 0) {
     valueColor: COLORS.navy,
     subtitleColor: COLORS.success,
   });
+});
 
   const kpiY = heroY + heroH + 5;
   const kpiH = 17;

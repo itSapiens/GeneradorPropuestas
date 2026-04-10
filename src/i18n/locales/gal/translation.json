@@ -77,7 +77,7 @@
     "mapUnavailable": "Non se puido cargar o mapa porque faltan coordenadas.",
     "availableInstallations_one": "1 instalación dispoñible",
     "availableInstallations_other": "{{count}} instalacións dispoñibles",
-    "recommendedPlants": "Plantas recomendadas",
+    "recommendedPlants": "Seleccione unha planta",
     "searchingPlants": "Buscando plantas...",
     "installationCard": {
       "photovoltaic": "Fotovoltaica",
@@ -523,8 +523,8 @@
         "iban": "IBAN",
         "annualInvoiceConsumption": "Consumo anual da factura",
         "contractedPower": "Potencia contratada",
-        "hvac": "Climatización prevista",
-        "ev": "Coche eléctrico previsto"
+        "hvac": "Climatización ",
+        "ev": "Coche eléctrico "
       },
       "labels": {
         "solarViability": "VIABILIDADE SOLAR",
