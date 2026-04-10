@@ -77,7 +77,7 @@
     "mapUnavailable": "No se ha podido cargar el mapa porque faltan coordenadas.",
     "availableInstallations_one": "1 instalación disponible",
     "availableInstallations_other": "{{count}} instalaciones disponibles",
-    "recommendedPlants": "Seleccione una planta",
+    "recommendedPlants": "Seleccione una instalación",
     "searchingPlants": "Buscando plantas...",
     "installationCard": {
       "photovoltaic": "Fotovoltaica",

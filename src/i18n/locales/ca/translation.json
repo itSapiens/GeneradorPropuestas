@@ -77,7 +77,7 @@
     "mapUnavailable": "No s'ha pogut carregar el mapa perquè falten coordenades.",
     "availableInstallations_one": "1 instal·lació disponible",
     "availableInstallations_other": "{{count}} instal·lacions disponibles",
-    "recommendedPlants": "Seleccioneu una planta",
+    "recommendedPlants": "Seleccioneu una instal·lació",
     "searchingPlants": "Buscant plantes...",
     "installationCard": {
       "photovoltaic": "Fotovoltaica",
