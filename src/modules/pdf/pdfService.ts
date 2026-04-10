@@ -293,6 +293,188 @@ function drawChip(
   });
 }
 
+function drawInfoPill(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  options: {
+    title?: string;
+    value: string;
+    subtitle?: string;
+    fill?: readonly [number, number, number];
+    titleColor?: readonly [number, number, number];
+    valueColor?: readonly [number, number, number];
+    subtitleColor?: readonly [number, number, number];
+  },
+) {
+  const {
+    title,
+    value,
+    subtitle,
+    fill = COLORS.white,
+    titleColor = COLORS.muted,
+    valueColor = COLORS.navy,
+    subtitleColor = COLORS.success,
+  } = options;
+
+  drawCard(doc, x, y, w, h, fill, COLORS.border, h / 2);
+
+  if (title) {
+    writeText(doc, title, x + w / 2, y + 3.2, {
+      size: 3.9,
+      color: titleColor,
+      fontStyle: "bold",
+      align: "center",
+      maxWidth: w - 5,
+    });
+  }
+
+  writeText(doc, value, x + w / 2, y + 6.35, {
+    size: 7.4,
+    color: valueColor,
+    fontStyle: "bold",
+    align: "center",
+    maxWidth: w - 5,
+  });
+
+  if (subtitle) {
+    writeText(doc, subtitle, x + w / 2, y + 8.35, {
+      size: 4.5,
+      color: subtitleColor,
+      fontStyle: "bold",
+      align: "center",
+      maxWidth: w - 5,
+    });
+  }
+}
+
+
+function drawCarIcon(doc: jsPDF, x: number, y: number, color = COLORS.navy) {
+  setDraw(doc, color);
+  doc.setLineWidth(0.32);
+
+  doc.roundedRect(x + 0.65, y + 2.15, 5.1, 1.95, 0.65, 0.65, "S");
+  doc.line(x + 1.65, y + 2.15, x + 2.45, y + 1.2);
+  doc.line(x + 2.45, y + 1.2, x + 4, y + 1.2);
+  doc.line(x + 4, y + 1.2, x + 4.95, y + 2.15);
+
+  doc.circle(x + 1.9, y + 4.7, 0.5, "S");
+  doc.circle(x + 4.7, y + 4.7, 0.5, "S");
+}
+
+function drawHvacIcon(doc: jsPDF, x: number, y: number, color = COLORS.navy) {
+  setDraw(doc, color);
+  doc.setLineWidth(0.32);
+
+  doc.roundedRect(x + 0.7, y + 1.05, 5.2, 2.9, 0.65, 0.65, "S");
+
+  doc.line(x + 1.35, y + 1.75, x + 5.2, y + 1.75);
+  doc.line(x + 1.35, y + 2.35, x + 5.2, y + 2.35);
+  doc.line(x + 1.35, y + 2.95, x + 5.2, y + 2.95);
+
+  doc.line(x + 1.95, y + 4.2, x + 1.95, y + 5.15);
+  doc.line(x + 3.3, y + 4.2, x + 3.3, y + 5.15);
+  doc.line(x + 4.65, y + 4.2, x + 4.65, y + 5.15);
+}
+
+function drawExtraConsumptionBadge(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  label: string,
+  value: string,
+  type: "hvac" | "ev",
+) {
+  const w = 34;
+  const h = 9.6;
+
+  drawCard(doc, x, y, w, h, COLORS.white, COLORS.border, h / 2);
+
+  // fondo del icono
+  const iconBoxX = x + 1.6;
+  const iconBoxY = y + 1.6;
+  const iconBoxSize = 5.9;
+
+  drawCard(
+    doc,
+    iconBoxX,
+    iconBoxY,
+    iconBoxSize,
+    iconBoxSize,
+    COLORS.soft,
+    COLORS.soft,
+    iconBoxSize / 2,
+  );
+
+  // icono centrado visualmente dentro del círculo
+  if (type === "hvac") {
+    drawHvacIcon(doc, iconBoxX + 0.15, iconBoxY + 0.1);
+  } else {
+    drawCarIcon(doc, iconBoxX + 0.1, iconBoxY + 0.2);
+  }
+
+  writeText(doc, label, x + 8.8, y + 3.65, {
+    size: 3.5,
+    color: COLORS.muted,
+    fontStyle: "bold",
+    maxWidth: 22,
+  });
+
+  writeText(doc, value, x + 8.8, y + 6.95, {
+    size: 4.7,
+    color: COLORS.navy,
+    fontStyle: "bold",
+    maxWidth: 22,
+  });
+}
+
+
+function drawHeroExtraConsumptionBadges(
+  doc: jsPDF,
+  data: BillData,
+  language: AppLanguage,
+) {
+  const badges: Array<{
+    type: "hvac" | "ev";
+    label: string;
+    value: string;
+  }> = [];
+
+  if (data.extraConsumptionHvacM2 && data.extraConsumptionHvacM2 > 0) {
+    badges.push({
+      type: "hvac",
+      label: "Climatización",
+      value: `${formatNumber(data.extraConsumptionHvacM2, language, 0)} m²`,
+    });
+  }
+
+  if (data.extraConsumptionEvKmYear && data.extraConsumptionEvKmYear > 0) {
+    badges.push({
+      type: "ev",
+      label: "Vehículo eléct.",
+      value: `${formatNumber(data.extraConsumptionEvKmYear, language, 0)} km/año`,
+    });
+  }
+
+  if (badges.length === 0) return;
+
+  const startX = 89;
+  const y = 41.5;
+  const gap = 2;
+
+  badges.forEach((badge, index) => {
+    drawExtraConsumptionBadge(
+      doc,
+      startX + index * (30 + gap),
+      y,
+      badge.label,
+      badge.value,
+      badge.type,
+    );
+  });
+}
 function drawMetricCard(
   doc: jsPDF,
   x: number,
@@ -764,7 +946,7 @@ function getSupplyRows(
     [tPdf(language, "supply.tariff", "Tarifa"), data.billType || "-"],
     [tPdf(language, "supply.address", "Dirección"), data.address || "-"],
     [tPdf(language, "supply.email", "Email"), data.email || "-"],
-    [tPdf(language, "supply.iban", "IBAN"), getMaskedIbanText(data)],
+    // [tPdf(language, "supply.iban", "IBAN"), getMaskedIbanText(data)],
     [
       tPdf(
         language,
@@ -1052,11 +1234,17 @@ function renderStudyPdfPage(
   doc.roundedRect(margin, heroY, 76, heroH, 7, 7, "F");
   doc.rect(margin + 70, heroY, 6, heroH, "F");
 
-  writeText(doc, tPdf(language, "hero.executiveReport", "INFORME EJECUTIVO"), margin + 5, heroY + 7.5, {
-    size: 6.5,
-    color: COLORS.sky,
-    fontStyle: "bold",
-  });
+  writeText(
+    doc,
+    tPdf(language, "hero.executiveReport", "INFORME EJECUTIVO"),
+    margin + 5,
+    heroY + 7.5,
+    {
+      size: 6.5,
+      color: COLORS.sky,
+      fontStyle: "bold",
+    },
+  );
 
   const heroTitle =
     proposal.mode === "service"
@@ -1078,35 +1266,84 @@ function renderStudyPdfPage(
     maxWidth: 64,
   });
 
-  writeText(doc, getHeroSubtitle(proposal.mode, language), margin + 5, heroY + 27, {
-    size: 5.7,
-    color: COLORS.heroText,
-    maxWidth: 64,
-  });
+  writeText(
+    doc,
+    getHeroSubtitle(proposal.mode, language),
+    margin + 5,
+    heroY + 27,
+    {
+      size: 5.7,
+      color: COLORS.heroText,
+      maxWidth: 64,
+    },
+  );
 
-  const chipY = heroY + 5;
-  drawChip(doc, 90, chipY, data.billType || "2TD", 27);
-  drawChip(doc, 120, chipY, proposal.title, 28);
-  drawChip(doc, 151, chipY, proposal.badge || "Ahorro", 29, COLORS.mintSoft);
+  // Pills del hero
+  const heroPillW = 34;
+  const heroPillH = 9.6;
+  const heroPillGap = 3;
+  const heroPillX1 = 88;
+  const heroPillX2 = heroPillX1 + heroPillW + heroPillGap;
+  const heroPillX3 = heroPillX2 + heroPillW + heroPillGap;
 
-  drawCard(doc, 150, heroY + 16, 40, 16, COLORS.mintSoft, COLORS.border, 5);
-  writeText(doc, tPdf(language, "labels.solarViability", "VIABILIDAD SOLAR"), 170, heroY + 21, {
-    size: 5.5,
-    color: COLORS.muted,
-    fontStyle: "bold",
-    align: "center",
-  });
-  writeText(doc, String(result.viabilityScore), 170, heroY + 28, {
-    size: 13,
-    color: COLORS.navy,
-    fontStyle: "bold",
-    align: "center",
-  });
-  writeText(doc, viabilityLabel, 170, heroY + 31.5, {
-    size: 6.5,
-    color: COLORS.success,
-    fontStyle: "bold",
-    align: "center",
+  const heroTopPillY = heroY + 5;
+  const heroBottomPillY = heroY + 18.5;
+
+  // fila superior
+  drawChip(doc, heroPillX1, heroTopPillY, data.billType || "2TD", heroPillW);
+  drawChip(doc, heroPillX2, heroTopPillY, proposal.title, heroPillW);
+  drawChip(
+    doc,
+    heroPillX3,
+    heroTopPillY,
+    proposal.badge || "Ahorro",
+    heroPillW,
+    COLORS.mintSoft,
+  );
+
+  // fila inferior
+if (data.extraConsumptionHvacM2 && data.extraConsumptionHvacM2 > 0) {
+  const hvacAnnualKwh = Math.round(
+    data.extraConsumptionHvacM2 * HVAC_KWH_PER_M2_YEAR,
+  );
+
+  drawExtraConsumptionBadge(
+    doc,
+    heroPillX1,
+    heroBottomPillY,
+    "Climatización",
+    `+${formatNumber(hvacAnnualKwh, language, 0)} kWh/año`,
+    "hvac",
+  );
+} else {
+  drawChip(doc, heroPillX1, heroBottomPillY, "", heroPillW);
+}
+
+if (data.extraConsumptionEvKmYear && data.extraConsumptionEvKmYear > 0) {
+  const evAnnualKwh = Math.round(
+    data.extraConsumptionEvKmYear * EV_KWH_PER_KM,
+  );
+
+  drawExtraConsumptionBadge(
+    doc,
+    heroPillX2,
+    heroBottomPillY,
+    "Vehículo eléct.",
+    `+${formatNumber(evAnnualKwh, language, 0)} kWh/año`,
+    "ev",
+  );
+} else {
+  drawChip(doc, heroPillX2, heroBottomPillY, "", heroPillW);
+}
+
+  drawInfoPill(doc, heroPillX3, heroBottomPillY, heroPillW, heroPillH, {
+    title: tPdf(language, "labels.solarViability", "VIABILIDADE SOLAR"),
+    value: String(result.viabilityScore),
+    subtitle: viabilityLabel,
+    fill: COLORS.mintSoft,
+    titleColor: COLORS.muted,
+    valueColor: COLORS.navy,
+    subtitleColor: COLORS.success,
   });
 
   const kpiY = heroY + heroH + 5;
@@ -1238,13 +1475,13 @@ function renderStudyPdfPage(
     getSupplyRows(data, result, proposal, language),
     22,
     gridCardW - 32,
-    {
-      labelSize: 5.8,
-      valueSize: 5.8,
-      minValueSize: 5.2,
-      lineHeight: 2.9,
-      minRowHeight: 6.2,
-    },
+{
+  labelSize: 5.4,
+  valueSize: 5.4,
+  minValueSize: 4.8,
+  lineHeight: 2.4,
+  minRowHeight: 5.1,
+},
   );
 
   const rightX = margin + gridCardW + gridGap;
@@ -1310,7 +1547,14 @@ function renderStudyPdfPage(
     bottomY + 8,
     tPdf(language, "sections.economicSummary", "RESUMEN ECONÓMICO"),
   );
-  drawEconomicSummary(doc, margin + 4, bottomY + 16, gridCardW - 8, proposal, language);
+  drawEconomicSummary(
+    doc,
+    margin + 4,
+    bottomY + 16,
+    gridCardW - 8,
+    proposal,
+    language,
+  );
 
   drawShadow(doc, rightX, bottomY, gridCardW, gridCardH);
   drawCard(
@@ -1421,7 +1665,16 @@ function renderStudyPdfPage(
     ),
   );
 
-  drawCard(doc, margin + 4, concY + 14, 85, 22, COLORS.soft, COLORS.border, 5);
+  drawCard(
+    doc,
+    margin + 4,
+    concY + 14,
+    85,
+    22,
+    COLORS.soft,
+    COLORS.border,
+    5,
+  );
   writeText(doc, tPdf(language, "labels.summary", "Resumen"), margin + 8, concY + 19.5, {
     size: 7,
     color: COLORS.navy,
@@ -1509,6 +1762,8 @@ function renderStudyPdfPage(
     align: "center",
   });
 }
+
+
 
 function getRecommendedProposal(
   proposals: ProposalPdfSummary[],
