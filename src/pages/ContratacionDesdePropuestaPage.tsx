@@ -342,7 +342,6 @@ export default function ContratacionDesdePropuestaPage() {
     preview: ContractPreviewData,
     signatureDataUrl: string,
   ) => {
-      console.log("preview contrato firmado:", preview);
     const pdf = new jsPDF({
       unit: "pt",
       format: "a4",

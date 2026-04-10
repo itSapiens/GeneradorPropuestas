@@ -76,7 +76,6 @@ export async function sendStudyByEmail({
   // Si no hay un archivo adjunto, generamos el PDF usando los datos.
   if (!attachment) {
     // Verificar que el flujo llega aquí
-    console.log("Generando PDF...");
 
     // Generamos el PDF usando la función ya existente en pdfService
     // NOTA: generateStudyPDF requiere un tercer parámetro con la(s)
@@ -87,19 +86,16 @@ export async function sendStudyByEmail({
     const generatedPdf = generateStudyPDF(billData, calculationResult, []);
 
     // Verificamos que generatedPdf tenga el objeto jsPDF
-    console.log("PDF generado:", generatedPdf);
 
     // Convertimos el PDF a un Blob usando el método output de jsPDF
     const pdfBlob = generatedPdf.output("blob");
 
     // Verificamos si el Blob es válido
-    console.log("PDF convertido a Blob:", pdfBlob);
 
     // Ahora pasamos el Blob a Base64
     pdfAttachment = await blobToBase64DataUrl(pdfBlob);
 
     // Verificar la conversión a Base64
-    console.log("PDF convertido a Base64:", pdfAttachment);
   } else {
     // Si ya tenemos un archivo adjunto, lo convertimos a base64
     pdfAttachment = await blobToBase64DataUrl(attachment);
@@ -126,16 +122,6 @@ export async function sendStudyByEmail({
     pdf_attachment: pdfAttachment, // Aquí pasa el archivo PDF convertido a Base64
   };
 
-  console.log("EMAILJS CONFIG", {
-    SERVICE_ID,
-    TEMPLATE_ID,
-    PUBLIC_KEY,
-  });
-
-  console.log("EMAILJS PARAMS", {
-    ...templateParams,
-    pdf_attachment: pdfAttachment ? "[BASE64_PDF_GENERATED]" : "[EMPTY]",
-  });
 
   // Enviar el correo con EmailJS
   const response = await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, {

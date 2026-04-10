@@ -113,16 +113,6 @@ export async function sendProposalEmail({
 }: SendProposalEmailParams) {
   const lang = normalizeAppLanguage(language);
 
-  console.log("[mailer] to:", to);
-  console.log("[mailer] from:", smtpFrom());
-  console.log("[mailer] host:", process.env.SMTP_HOST || "(vacío)");
-  console.log("[mailer] port:", process.env.SMTP_PORT || "587");
-  console.log("[mailer] filename:", pdfFilename);
-  console.log("[mailer] proposalUrl:", proposalUrl);
-  console.log("[mailer] continueContractUrl:", continueContractUrl);
-  console.log("[mailer] language:", lang);
-  console.log("[mailer] pdfBuffer length:", pdfBuffer?.length);
-
   const subject = translate(
     lang,
     "emails.proposal.subject",

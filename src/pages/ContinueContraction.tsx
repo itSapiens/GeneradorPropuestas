@@ -48,12 +48,7 @@ export default function ContinuarContratacionPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-      console.log("[continue-contract] raw lang:", searchParams.get("lang"));
-  console.log("[continue-contract] normalized lang:", langFromUrl);
-  console.log("[continue-contract] before change:", {
-    language: i18n.language,
-    resolvedLanguage: i18n.resolvedLanguage,
-  });
+
     if (langFromUrl && i18n.language !== langFromUrl) {
       i18n.changeLanguage(langFromUrl);
     }
@@ -104,10 +99,6 @@ export default function ContinuarContratacionPage() {
       const resolvedLanguage = normalizeAppLanguage(
         data?.study?.language || data?.language || langFromUrl,
       );
-      console.log("langFromUrl:", langFromUrl);
-console.log("i18n.language:", i18n.language);
-console.log("i18n.resolvedLanguage:", i18n.resolvedLanguage);
-console.log("continueContract.badge:", t("continueContract.badge"));
 
       if (i18n.language !== resolvedLanguage) {
         await i18n.changeLanguage(resolvedLanguage);

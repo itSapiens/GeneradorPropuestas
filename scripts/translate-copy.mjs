@@ -110,7 +110,6 @@ async function main() {
 
     const targetJsonPath = path.resolve(`src/copy/${target}.json`);
     await fs.writeFile(targetJsonPath, JSON.stringify(output, null, 2), "utf-8");
-    console.log(`Traducido: ${targetJsonPath}`);
 
     const targetTsPath = path.resolve(`src/copy/${target}.ts`);
     await fs.writeFile(
@@ -118,7 +117,6 @@ async function main() {
       `import { es } from './es';\n\nexport const ${target} = ${JSON.stringify(output, null, 2)};\n`,
       "utf-8",
     );
-    console.log(`Generado TS: ${targetTsPath}`);
   }
 }
 
