@@ -1,85 +1,117 @@
-// // server/services/contractAccessService.ts
-// import crypto from "node:crypto";
-// import jwt from "jsonwebtoken";
-// import { supabaseAdmin } from "../supabase"; // adapta la ruta
+﻿import crypto from "node:crypto";
+import jwt from "jsonwebtoken";
 
-// const CONTRACT_RESUME_JWT_SECRET =
-//   process.env.CONTRACT_RESUME_JWT_SECRET || "change-me";
+import { supabase } from "../clients/supabaseClient";
+import { CONTRACT_RESUME_JWT_SECRET, FRONTEND_URL } from "../config/env";
+import {
+  normalizeAppLanguage,
+  type AppLanguage,
+} from "./contractLocalizationService";
 
-// export function generatePlainToken(size = 32) {
-//   return crypto.randomBytes(size).toString("base64url");
-// }
+export function normalizeIdentityText(value: string): string {
+  return (value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
 
-// export function sha256(value: string) {
-//   return crypto.createHash("sha256").update(value).digest("hex");
-// }
+export function normalizeDni(value: string): string {
+  return (value || "").trim().toUpperCase().replace(/\s+/g, "");
+}
 
-// export function normalizeText(value: string) {
-//   return (value || "")
-//     .normalize("NFD")
-//     .replace(/[\u0300-\u036f]/g, "")
-//     .trim()
-//     .toLowerCase()
-//     .replace(/\s+/g, " ");
-// }
+export function sha256(value: string): string {
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
 
-// export function normalizeDni(value: string) {
-//   return (value || "").trim().toUpperCase().replace(/\s+/g, "");
-// // }
+function generatePlainAccessToken(size = 32): string {
+  return crypto.randomBytes(size).toString("base64url");
+}
 
-// export async function createProposalContinueToken(params: {
-//   studyId: string;
-//   clientId: string;
-//   expiresInHours?: number;
-// }) {
-//   const { studyId, clientId, expiresInHours = 24 * 15 } = params;
+export function buildContinueContractUrl(
+  plainToken: string,
+  language: AppLanguage = "es",
+) {
+  return `${FRONTEND_URL.replace(
+    /\/$/,
+    "",
+  )}/continuar-contratacion?token=${encodeURIComponent(plainToken)}&lang=${encodeURIComponent(language)}`;
+}
 
-//   const plainToken = generatePlainToken(32);
-//   const tokenHash = sha256(plainToken);
+export async function createProposalContinueAccessToken(params: {
+  studyId: string;
+  clientId: string;
+  language?: unknown;
+  expiresInDays?: number;
+}) {
+  const { studyId, clientId, language, expiresInDays = 15 } = params;
 
-//   const expiresAt = new Date(
-//     Date.now() + expiresInHours * 60 * 60 * 1000
-//   ).toISOString();
+  const appLanguage = normalizeAppLanguage(language);
 
-//   const { error } = await supabaseAdmin
-//     .from("contract_access_tokens")
-//     .insert({
-//       study_id: studyId,
-//       client_id: clientId,
-//       contract_id: null,
-//       token_hash: tokenHash,
-//       purpose: "proposal_continue",
-//       expires_at: expiresAt,
-//     });
+  const plainToken = generatePlainAccessToken(32);
+  const tokenHash = sha256(plainToken);
+  const expiresAt = new Date(
+    Date.now() + expiresInDays * 24 * 60 * 60 * 1000,
+  ).toISOString();
 
-//   if (error) {
-//     throw new Error(
-//       `No se pudo crear contract_access_token: ${error.message}`
-//     );
-//   }
+  await supabase
+    .from("contract_access_tokens")
+    .update({
+      revoked_at: new Date().toISOString(),
+    })
+    .eq("study_id", studyId)
+    .eq("client_id", clientId)
+    .eq("purpose", "proposal_continue")
+    .is("used_at", null)
+    .is("revoked_at", null);
 
-//   return {
-//     plainToken,
-//     expiresAt,
-//   };
-// }
+  const { error } = await supabase.from("contract_access_tokens").insert({
+    study_id: studyId,
+    contract_id: null,
+    client_id: clientId,
+    token_hash: tokenHash,
+    purpose: "proposal_continue",
+    expires_at: expiresAt,
+    used_at: null,
+    revoked_at: null,
+  });
 
-// export function signContractResumeToken(payload: {
-//   studyId: string;
-//   clientId: string;
-//   installationId: string;
-// }) {
-//   return jwt.sign(payload, CONTRACT_RESUME_JWT_SECRET, {
-//     expiresIn: "30m",
-//   });
-// }
+  if (error) {
+    throw new Error(
+      `No se pudo crear el token de acceso al contrato: ${error.message}`,
+    );
+  }
 
-// export function verifyContractResumeToken(token: string) {
-//   return jwt.verify(token, CONTRACT_RESUME_JWT_SECRET) as {
-//     studyId: string;
-//     clientId: string;
-//     installationId: string;
-//     iat: number;
-//     exp: number;
-//   };
-// }
+  return {
+    plainToken,
+    expiresAt,
+    continueUrl: buildContinueContractUrl(plainToken, appLanguage),
+  };
+}
+
+export function signContractResumeToken(payload: {
+  studyId: string;
+  clientId: string;
+  installationId: string;
+}) {
+  return jwt.sign(payload, CONTRACT_RESUME_JWT_SECRET, {
+    expiresIn: "30m",
+  });
+}
+
+export function verifyContractResumeToken(token: string): {
+  studyId: string;
+  clientId: string;
+  installationId: string;
+  iat: number;
+  exp: number;
+} {
+  return jwt.verify(token, CONTRACT_RESUME_JWT_SECRET) as {
+    studyId: string;
+    clientId: string;
+    installationId: string;
+    iat: number;
+    exp: number;
+  };
+}
