@@ -3,7 +3,7 @@ import { ProposalMode } from "../../types/proposal.types";
 
 
 
-interface Proposal {
+export interface Proposal {
   id: ProposalMode;
   title: string;
   description: string;

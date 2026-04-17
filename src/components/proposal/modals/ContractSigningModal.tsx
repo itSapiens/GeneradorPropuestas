@@ -1,6 +1,7 @@
 import Button from "@/src/components/ui/Button";
 import { AnimatePresence, motion } from "motion/react";
-import { Icon, Loader2 } from "lucide-react";
+import { Icon } from "@iconify/react";
+import { Loader2 } from "lucide-react";
 import { GeneratedContractResponse } from "@/src/modules/proposal/components/types/proposal.types";
 import { TFunction } from "i18next";
 // import type {

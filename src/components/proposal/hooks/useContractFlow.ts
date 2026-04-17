@@ -3,16 +3,13 @@ import axios from "axios";
 import jsPDF from "jspdf";
 import { sileo } from "sileo";
 // import { AppLanguage } from "@/src/modules/pdf/pdfService";
-// import { ProposalCardData, GeneratedContractResponse, SignedContractResponse, ContractPreviewData, StripePaymentResponse, BankTransferPaymentResponse, AppLanguage } from "@/src/modules/proposal/components/types/proposal.types";
 import { getDateLocale } from "@/src/modules/proposal/components/utils/proposalNumbers";
 import { TFunction } from "i18next";
-// import { getDateLocale } from "../utils/proposalNumbers";
 import type {
   AppLanguage,
   BankTransferPaymentResponse,
   ContractPreviewData,
   GeneratedContractResponse,
-  ProposalCardData,
   ProposalMode,
   SignedContractResponse,
   StripePaymentResponse,
@@ -20,14 +17,14 @@ import type {
 
 interface UseContractFlowParams {
   savedStudy: any;
-  activeProposal: ProposalCardData;
+  activeProposalMode: ProposalMode;
   currentAppLanguage: AppLanguage;
   t: TFunction;
 }
 
 export function useContractFlow({
   savedStudy,
-  activeProposal,
+  activeProposalMode,
   currentAppLanguage,
   t,
 }: UseContractFlowParams) {
@@ -282,7 +279,7 @@ export function useContractFlow({
       const response = await axios.post<GeneratedContractResponse>(
         `/api/contracts/generate-from-study/${studyId}`,
         {
-          proposalMode: activeProposal.id,
+          proposalMode: activeProposalMode,
           language: currentAppLanguage,
         },
       );

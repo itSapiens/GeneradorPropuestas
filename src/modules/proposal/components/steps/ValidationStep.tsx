@@ -12,7 +12,11 @@ import { ValidationBillData, ValidationBillDataFormInput } from "../types/propos
 
 type ValidationStepProps = {
   register: UseFormRegister<ValidationBillDataFormInput>;
-  control: Control<ValidationBillDataFormInput, unknown>;
+  control: Control<
+    ValidationBillDataFormInput,
+    unknown,
+    ValidationBillData
+  >;
   handleSubmit: UseFormHandleSubmit<ValidationBillDataFormInput, ValidationBillData>;
   errors: FieldErrors<ValidationBillDataFormInput>;
   onSubmit: (data: ValidationBillData) => void;

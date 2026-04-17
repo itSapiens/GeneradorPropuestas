@@ -20,7 +20,7 @@ export function buildPeriodPricesFromValidatedData(validatedData: ValidationBill
 
 
 
-function buildPeriodConsumptionsFromValidatedData(
+export function buildPeriodConsumptionsFromValidatedData(
   validatedData: ValidationBillData,
 ) {
   return {
@@ -34,7 +34,7 @@ function buildPeriodConsumptionsFromValidatedData(
 }
 
 
-function getInvoiceVariableEnergyAmountFromExtraction(
+export function getInvoiceVariableEnergyAmountFromExtraction(
   extraction: ExtractedBillData | null,
 ): number | undefined {
   const invoiceData = extraction?.invoice_data as
@@ -63,7 +63,7 @@ function getInvoiceVariableEnergyAmountFromExtraction(
   return undefined;
 }
 
-function mapExtractedToBillData(
+export function mapExtractedToBillData(
   data: ExtractedBillData,
 ): Partial<ValidationBillData> {
   const fullLastName = buildLastName(
@@ -193,7 +193,7 @@ function mapExtractedToBillData(
 }
 
 
-function toBaseBillData(
+export function toBaseBillData(
   data: Partial<ValidationBillData>,
   extra?: ExtraConsumptionSelections,
 ): BillData {
@@ -248,7 +248,7 @@ function shouldHideFromValidation(field: string): boolean {
 }
 
 
-function showExtractionToasts(extraction: ExtractedBillData, t: TFunction) {
+export function showExtractionToasts(extraction: ExtractedBillData, t: TFunction) {
   // Mostramos como máximo UN toast informativo de resumen, para no
   // saturar al usuario con una cascada. Si no hay nada relevante que
   // comunicar, no mostramos nada (el sileo.promise ya lanza el "éxito").

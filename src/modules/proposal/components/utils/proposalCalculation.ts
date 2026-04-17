@@ -1,8 +1,18 @@
 import { ExtractedBillData } from "@/src/services/geminiService";
 import { ApiInstallation, ValidationBillData } from "../types/proposal.types";
-import { buildPeriodPricesFromValidatedData } from "./extractionMappers";
+import { BillData } from "@/src/lib/validators";
+import {
+  buildPeriodConsumptionsFromValidatedData,
+  buildPeriodPricesFromValidatedData,
+  getInvoiceVariableEnergyAmountFromExtraction,
+} from "./extractionMappers";
 import { getFirstNumericField, parseNumericValue } from "./proposalNumbers";
-import { CalculationResult } from "@/src/modules/calculation/energyService";
+import {
+  CalculationResult,
+  calculateEnergyStudy,
+} from "@/src/modules/calculation/energyService";
+import { normalizeInstallationModalidad } from "./proposalModes";
+import { INVESTMENT_MAINTENANCE_EUR_PER_KWP_YEAR } from "../../constants/proposal.constants";
 
 export function getFixedInstallationPower(
   installation: ApiInstallation | null | undefined,

@@ -5311,15 +5311,7 @@ async function startServer() {
     }
   });
 
-  // [admin-only removed] POST/PUT/DELETE /api/installations se han eliminado.
-  // El CRUD de instalaciones se gestiona desde la aplicación de back-office.
-  // El flujo público solo consume GET /api/installations para mostrarlas en
-  // el mapa.
-
-  // NOTA: la ruta POST /api/geocode-address ya está registrada más arriba
-  // en este mismo archivo; la duplicación aquí era código muerto y se ha
-  // eliminado.
-
+  
   // =========================
   // VITE
   // =========================

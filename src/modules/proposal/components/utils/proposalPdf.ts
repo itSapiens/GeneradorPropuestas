@@ -1,9 +1,10 @@
 import { BillData } from "@/src/lib/validators";
 import { CalculationResult } from "@/src/modules/calculation/energyService";
 import { generateStudyPDF, ProposalPdfSummary } from "@/src/modules/pdf/pdfService";
-import { ApiInstallation, AppLanguage } from "../types/proposal.types";
+import { ApiInstallation, AppLanguage, ProposalCardData } from "../types/proposal.types";
 import { TFunction } from "i18next";
 import { getAvailableProposalModes, normalizeInstallationModalidad } from "./proposalModes";
+import { buildProposalCardData } from "./proposalCard";
 
 export type PdfArtifact =
   | Blob
@@ -77,7 +78,7 @@ function downloadBlob(blob: Blob, fileName: string) {
   URL.revokeObjectURL(url);
 }
 
-function savePdfArtifactLocally(pdfArtifact: PdfArtifact, fileName: string) {
+export function savePdfArtifactLocally(pdfArtifact: PdfArtifact, fileName: string) {
   if (!pdfArtifact) {
     throw new Error("No se pudo generar el PDF");
   }
@@ -109,7 +110,7 @@ function savePdfArtifactLocally(pdfArtifact: PdfArtifact, fileName: string) {
   throw new Error("Formato de PDF no soportado");
 }
 
-function pdfArtifactToBlob(pdfArtifact: PdfArtifact): Blob {
+export function pdfArtifactToBlob(pdfArtifact: PdfArtifact): Blob {
   if (!pdfArtifact) {
     throw new Error("No se pudo generar el PDF");
   }
@@ -187,11 +188,3 @@ export function buildProposalPdfSummariesForInstallation(
   );
 }
 
-
-
-
-
-
-
-
-export 

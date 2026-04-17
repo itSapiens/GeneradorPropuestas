@@ -1,22 +1,25 @@
 import { formatCurrency, formatNumber } from "@/src/lib/utils";
+import { CalculationResult } from "@/src/modules/calculation/energyService";
 import { ApiInstallation, GeneratedContractResponse, ProposalCardData, ProposalMode, SignedContractResponse, StudyComparisonResult } from "@/src/modules/proposal/components/types/proposal.types";
 import { getAvailableProposalModes, getDefaultProposalMode, normalizeInstallationModalidad } from "@/src/modules/proposal/components/utils/proposalModes";
 import { formatPaybackYears } from "@/src/modules/proposal/components/utils/proposalNumbers";
+import type { Dispatch, SetStateAction } from "react";
+import type { TFunction } from "i18next";
 
 
 interface UseProposalResultStateParams {
   proposalResults: StudyComparisonResult | null;
   selectedInstallation: ApiInstallation | null;
   selectedProposalView: ProposalMode;
-  setSelectedProposalView: React.Dispatch<React.SetStateAction<ProposalMode>>;
+  setSelectedProposalView: Dispatch<SetStateAction<ProposalMode>>;
   signedContractResult: SignedContractResponse | null;
   generatedContract: GeneratedContractResponse | null;
-  t: (key: string, fallback?: string, options?: any) => string;
+  t: TFunction;
   buildProposalCardData: (
-    result: any,
+    result: CalculationResult | null,
     mode: ProposalMode,
     installation: ApiInstallation | null,
-    t: (key: string, fallback?: string, options?: any) => string,
+    t: TFunction,
   ) => ProposalCardData;
 }
 

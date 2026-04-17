@@ -1,14 +1,10 @@
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Icon } from "@iconify/react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
-import Button from "@/src/components/ui/Button";
 import { ResultStepProps } from "./ResultStepInterfaces";
-
-// import { Button } from "@/components/ui/button";
-// // ajusta esta ruta si tu cn está en otro sitio
-// import { cn } from "@/lib/utils";
-
+import ProposalModeCard from "./ProposalModeCard";
+import ResultActionsCard from "./ResultActionsCard";
 
 export function ResultStep({
   t,
@@ -387,341 +383,31 @@ export function ResultStep({
             : "grid-cols-1 xl:grid-cols-[minmax(0,1fr)_260px]",
         )}
       >
-        {visibleProposalPanels.map((proposal) => {
-          const isInvestment = proposal.id === "investment";
-          const normalizedValuePoints = normalizeFeatureList(
-            proposal.valuePoints,
-            4,
-          );
+        {visibleProposalPanels.map((proposal) => (
+          <ProposalModeCard
+            key={proposal.id}
+            proposal={proposal}
+            t={t}
+            formatCurrency={formatCurrency}
+            formatNumber={formatNumber}
+            normalizeFeatureList={normalizeFeatureList}
+          />
+        ))}
 
-          return (
-            <div
-              key={proposal.id}
-              className={cn(
-                "rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-7 border min-h-[760px] h-full flex flex-col",
-                isInvestment
-                  ? "bg-brand-navy text-white border-brand-navy shadow-2xl shadow-brand-navy/15"
-                  : "bg-white text-brand-navy border-brand-navy/5 shadow-2xl shadow-brand-navy/5",
-              )}
-            >
-              <div className="space-y-4">
-                <div
-                  className={cn(
-                    "inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
-                    isInvestment
-                      ? "bg-white/10 text-white"
-                      : "bg-brand-mint/10 text-brand-navy",
-                  )}
-                >
-                  <Icon
-                    icon={
-                      isInvestment
-                        ? "solar:wallet-money-bold-duotone"
-                        : "solar:bolt-bold-duotone"
-                    }
-                    className="h-4 w-4"
-                  />
-                  {t("result.cards.mode")} {proposal.title.toLowerCase()}
-                </div>
-
-                <div>
-                  <h3 className="text-3xl font-bold">{proposal.title}</h3>
-                  <p
-                    className={cn(
-                      "mt-2 text-sm leading-relaxed",
-                      isInvestment ? "text-white/75" : "text-brand-gray",
-                    )}
-                  >
-                    {proposal.description}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 min-h-[132px]">
-                  <div
-                    className={cn(
-                      "rounded-[1.2rem] p-4 border h-[132px] flex flex-col justify-between",
-                      isInvestment
-                        ? "bg-white/10 border-white/10"
-                        : "bg-brand-navy/[0.03] border-brand-navy/5",
-                    )}
-                  >
-                    <p
-                      className={cn(
-                        "text-[10px] uppercase tracking-[0.14em] font-bold",
-                        isInvestment
-                          ? "text-white/50"
-                          : "text-brand-navy/40",
-                      )}
-                    >
-                      {t("result.summary.annualSavings")}
-                    </p>
-                    <p className="mt-2 text-lg font-bold">
-                      {formatCurrency(proposal.annualSavings)}
-                    </p>
-                  </div>
-
-                  <div
-                    className={cn(
-                      "rounded-[1.2rem] p-4 border h-[132px] flex flex-col justify-between",
-                      isInvestment
-                        ? "bg-white/10 border-white/10"
-                        : "bg-brand-navy/[0.03] border-brand-navy/5",
-                    )}
-                  >
-                    <p
-                      className={cn(
-                        "text-[10px] uppercase tracking-[0.14em] font-bold",
-                        isInvestment
-                          ? "text-white/50"
-                          : "text-brand-navy/40",
-                      )}
-                    >
-                      {isInvestment ? "Coste inicial" : "Cuota mensual"}
-                    </p>
-                    <p className="mt-2 text-lg font-bold">
-                      {isInvestment ? (
-                        formatCurrency(proposal.upfrontCost)
-                      ) : proposal.monthlyFee && proposal.monthlyFee > 0 ? (
-                        <>
-                          {formatCurrency(proposal.monthlyFee)}
-                          <span className="ml-1 text-xs font-semibold opacity-70">
-                            / mes
-                          </span>
-                        </>
-                      ) : (
-                        "Sin cuota"
-                      )}
-                    </p>
-                  </div>
-
-                  <div
-                    className={cn(
-                      "rounded-[1.2rem] p-4 border h-[132px] flex flex-col justify-between",
-                      isInvestment
-                        ? "bg-white/10 border-white/10"
-                        : "bg-brand-navy/[0.03] border-brand-navy/5",
-                    )}
-                  >
-                    <p
-                      className={cn(
-                        "text-[10px] uppercase tracking-[0.14em] font-bold",
-                        isInvestment
-                          ? "text-white/50"
-                          : "text-brand-navy/40",
-                      )}
-                    >
-                      {t("result.summary.monthlySavings")}{" "}
-                    </p>
-                    <p className="mt-2 text-lg font-bold">
-                      {formatCurrency(proposal.annualSavings / 12)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 grid grid-rows-4 gap-3 min-h-[380px]">
-                {normalizedValuePoints.map((point, index) => (
-                  <div
-                    key={`${proposal.id}-${index}`}
-                    className={cn(
-                      "rounded-[1.2rem] p-4 border h-[86px] flex items-center gap-3",
-                      point
-                        ? isInvestment
-                          ? "bg-white/5 border-white/10"
-                          : "bg-brand-navy/[0.03] border-brand-navy/5"
-                        : "bg-transparent border-transparent opacity-0 pointer-events-none",
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-                        isInvestment
-                          ? "bg-white/10"
-                          : "brand-gradient shadow-md shadow-brand-mint/20",
-                      )}
-                    >
-                      <Icon
-                        icon="solar:check-circle-bold-duotone"
-                        className={cn(
-                          "h-5 w-5",
-                          isInvestment ? "text-white" : "text-brand-navy",
-                        )}
-                      />
-                    </div>
-
-                    <p className="font-semibold text-sm md:text-base leading-snug">
-                      {point}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              <div
-                className={cn(
-                  "mt-auto pt-6 text-sm",
-                  isInvestment ? "text-white/70" : "text-brand-gray",
-                )}
-              >
-                <p>
-                  {t("result.summary.recommendedPower")}:{" "}
-                  <span className="font-bold">
-                    {formatNumber(proposal.recommendedPowerKwp)} kWp
-                  </span>
-                </p>
-                <p className="mt-1">
-                  {t("result.summary.annualConsumptionEstimated")}:{" "}
-                  <span className="font-bold">
-                    {Math.round(proposal.annualConsumptionKwh)} kWh
-                  </span>
-                </p>
-              </div>
-            </div>
-          );
-        })}
-
-        {/* ACCIONES */}
-        <div className="rounded-[2rem] md:rounded-[2.5rem] bg-white border border-brand-navy/5 shadow-2xl shadow-brand-navy/5 p-5 md:p-6 flex flex-col gap-5 xl:min-h-[520px]">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-brand-navy/40">
-              {t("result.actions.title")}
-            </p>
-          </div>
-
-          <div className="rounded-[1.4rem] bg-brand-navy text-white p-4 border border-brand-navy">
-            <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/50">
-              {t("result.actions.youWillHire")}
-            </p>
-
-            <p className="mt-3 text-2xl font-bold">{activeProposal.title}</p>
-
-            <div className="mt-4 space-y-2 text-sm text-white/75">
-              <p>
-                {t("result.actions.mode")}:{" "}
-                <span className="font-bold text-white">
-                  {activeProposal.title}
-                </span>
-              </p>
-
-              <p>
-                {t("result.summary.annualSavings")}:{" "}
-                <span className="font-bold text-white">
-                  {formatCurrency(activeProposal.annualSavings)}
-                </span>
-              </p>
-
-              <p>
-                {activeProposal.id === "investment" ? (
-                  <>
-                    {t("result.summary.initialCost")}:{" "}
-                    <span className="font-bold text-white">
-                      {formatCurrency(activeProposal.upfrontCost)}
-                    </span>
-                  </>
-                ) : activeProposal.monthlyFee && activeProposal.monthlyFee > 0 ? (
-                  <>
-                    {t("result.summary.monthlyFee")}:{" "}
-                    <span className="font-bold text-white">
-                      {formatNumber(activeProposal.monthlyFee)} € /{" "}
-                      {t("result.units.month")}
-                    </span>
-                  </>
-                ) : (
-                  t("result.summary.noFee")
-                )}
-              </p>
-
-              <p>
-                {t("result.actions.power")}:{" "}
-                <span className="font-bold text-white">
-                  {formatNumber(activeProposal.recommendedPowerKwp)} kWp
-                </span>
-              </p>
-            </div>
-          </div>
-
-          {signedContractResult?.reservation ? (
-            <div className="rounded-[1.4rem] bg-brand-mint/10 border border-brand-mint/20 p-4 text-brand-navy">
-              <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-brand-navy/50">
-                {t("result.reserve.startedTitle")}
-              </p>
-
-              <div className="mt-3 space-y-2 text-sm leading-relaxed">
-                <p>
-                  <span className="font-bold">
-                    {signedContractResult.reservation.reservedKwp} kWp
-                  </span>{" "}
-                  {t("result.actions.reservedIn")}{" "}
-                  <span className="font-bold">
-                    {signedContractResult.reservation.installationName}
-                  </span>
-                  .
-                </p>
-
-                <p>
-                  {t("result.actions.paymentStatus")}:{" "}
-                  <span className="font-bold">
-                    {signedContractResult.reservation.paymentStatus}
-                  </span>
-                </p>
-
-                <p>
-                  {t("result.actions.pendingSignal")}:{" "}
-                  <span className="font-bold">
-                    {formatCurrency(signedContractResult.reservation.signalAmount)}
-                  </span>
-                </p>
-              </div>
-            </div>
-          ) : null}
-
-          <div className="mt-auto space-y-3">
-            <Button
-              className={cn(
-                "w-full py-5 rounded-[1.2rem] border-none",
-                contractAlreadySigned
-                  ? "bg-brand-navy/10 text-brand-navy/50 cursor-not-allowed"
-                  : "bg-brand-mint text-brand-navy hover:bg-brand-mint/90",
-              )}
-              onClick={handleGenerateContract}
-              disabled={
-                !savedStudy?.study?.id ||
-                isGeneratingContract ||
-                isSigningContract ||
-                contractAlreadySigned
-              }
-            >
-              <span className="inline-flex items-center justify-center">
-                <span className="mr-3 inline-flex h-6 w-6 items-center justify-center">
-                  {isGeneratingContract ? (
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  ) : contractAlreadySigned ? (
-                    <Icon
-                      icon="solar:shield-check-bold-duotone"
-                      className="h-6 w-6"
-                    />
-                  ) : (
-                    <Icon
-                      icon="solar:pen-new-square-bold-duotone"
-                      className="h-6 w-6"
-                    />
-                  )}
-                </span>
-                <span>{reserveButtonText}</span>
-              </span>
-            </Button>
-
-            <Button
-              className="w-full py-5 rounded-[1.2rem] brand-gradient text-brand-navy border-none"
-              onClick={handleDownloadPDF}
-            >
-              <Icon
-                icon="solar:download-minimalistic-bold-duotone"
-                className="mr-3 h-6 w-6"
-              />
-              {t("common.downloadPdf")}
-            </Button>
-          </div>
-        </div>
+        <ResultActionsCard
+          t={t}
+          activeProposal={activeProposal}
+          signedContractResult={signedContractResult}
+          savedStudy={savedStudy}
+          isGeneratingContract={isGeneratingContract}
+          isSigningContract={isSigningContract}
+          contractAlreadySigned={contractAlreadySigned}
+          reserveButtonText={reserveButtonText}
+          handleGenerateContract={handleGenerateContract}
+          handleDownloadPDF={handleDownloadPDF}
+          formatCurrency={formatCurrency}
+          formatNumber={formatNumber}
+        />
       </div>
     </motion.div>
   );

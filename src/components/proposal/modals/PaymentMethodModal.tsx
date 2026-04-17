@@ -1,6 +1,7 @@
 import Button from "@/src/components/ui/Button";
 import { AnimatePresence, motion } from "motion/react";
-import { Icon, Loader2 } from "lucide-react";
+import { Icon } from "@iconify/react";
+import { Loader2 } from "lucide-react";
 import { formatCurrency } from "@/src/lib/utils";
 import { AppLanguage, SignedContractResponse } from "@/src/modules/proposal/components/types/proposal.types";
 import { getDateLocale } from "@/src/modules/proposal/components/utils/proposalNumbers";
