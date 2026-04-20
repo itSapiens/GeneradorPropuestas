@@ -25,6 +25,7 @@ export async function confirmStudy({
   calculation,
   selectedInstallationId,
   selectedInstallationSnapshot,
+  assignedKwp,
   language = "ES",
   consentAccepted = true,
   status = "uploaded",
@@ -43,6 +44,10 @@ formData.append(
 
 if (selectedInstallationId) {
   formData.append("selected_installation_id", selectedInstallationId);
+}
+
+if (typeof assignedKwp === "number" && assignedKwp > 0) {
+  formData.append("assignedKwp", String(assignedKwp));
 }
 
 formData.append("language", language);

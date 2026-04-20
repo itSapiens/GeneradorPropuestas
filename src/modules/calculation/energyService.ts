@@ -106,6 +106,33 @@ export interface CalculationResult {
   formulaVersion: string;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CONSTANTES DE CÁLCULO — modifica aquí para ajustar el modelo económico
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Precio medio €/kWh usado cuando no se puede extraer de la factura */
+const DEFAULT_WEIGHTED_ENERGY_PRICE_KWH = 0.18;
+
+/** Coste de mantenimiento anual por kWp instalado (€/kWp/año) — modalidad inversión */
+const DEFAULT_MAINTENANCE_ANNUAL_PER_KWP = 36;
+
+/** IVA aplicado a la factura eléctrica en España */
+const DEFAULT_VAT_RATE = 0.21;
+
+/** Impuesto sobre la electricidad (Ley 38/1992) — se aplica sobre base antes del IVA */
+const ELECTRIC_TAX_RATE = 0.05113;
+
+/** Precio de compensación de excedentes por defecto (€/kWh). 0 = sin compensación */
+const DEFAULT_SURPLUS_COMPENSATION_PRICE_KWH = 0;
+
+/** IPC energético anual por defecto para proyección a 25 años (3%/año histórico España) */
+const DEFAULT_ENERGY_PRICE_INFLATION = 0.03;
+
+/** Años de proyección para el cálculo de ahorro acumulado */
+const PROJECTION_YEARS = 25;
+
+// ═══════════════════════════════════════════════════════════════════════════
+
 const PERIOD_PERCENTAGES: Record<BillType, Record<PeriodKey, number>> = {
   "2TD": {
     P1: 0.385,
@@ -127,15 +154,6 @@ const PERIOD_PERCENTAGES: Record<BillType, Record<PeriodKey, number>> = {
 
 const ALL_PERIODS: PeriodKey[] = ["P1", "P2", "P3", "P4", "P5", "P6"];
 
-const DEFAULT_WEIGHTED_ENERGY_PRICE_KWH = 0.18;
-const DEFAULT_MAINTENANCE_ANNUAL_PER_KWP = 36;
-const DEFAULT_VAT_RATE = 0.21;
-// Impuesto sobre la electricidad en España (Ley 38/1992, actualmente 5,113%)
-const ELECTRIC_TAX_RATE = 0.05113;
-// IPC energético por defecto: 3%/año (BOE histórico España 2010-2024 ≈ 3%)
-const DEFAULT_ENERGY_PRICE_INFLATION = 0.03;
-const DEFAULT_SURPLUS_COMPENSATION_PRICE_KWH = 0;
-const PROJECTION_YEARS = 25;
 
 function round(value: number, decimals = 2): number {
   if (!Number.isFinite(value)) return 0;
@@ -349,6 +367,7 @@ export const calculateEnergyStudy = (
   const recommendedPowerKwp =
     forcedPowerKwp > 0 ? round(forcedPowerKwp, 2) : calculatedPowerKwp;
 
+  // ── 1. PRECIO €/kWh DE LA FACTURA ─────────────────────────────────────
   // Precio medio detectado en factura
   const weightedEnergyPriceKwh = round(
     resolveWeightedEnergyPrice(
@@ -382,6 +401,7 @@ export const calculateEnergyStudy = (
     5,
   );
 
+  // ── 2. PRODUCCIÓN SOLAR Y AUTOCONSUMO ──────────────────────────────────
   // Producción anual estimada
   const estimatedAnnualProductionKwh = round(
     effectiveHours * recommendedPowerKwp,
@@ -411,7 +431,7 @@ export const calculateEnergyStudy = (
     annualSelfConsumptionValue + annualSurplusValue,
   );
 
-  // Costes anuales
+  // ── 3. COSTES ANUALES (mantenimiento / cuota servicio / inversión) ──────
   const maintenanceAnnualPerKwp = normalizePositive(
     input.maintenanceAnnualPerKwp,
     DEFAULT_MAINTENANCE_ANNUAL_PER_KWP,
@@ -445,6 +465,7 @@ export const calculateEnergyStudy = (
     annualConsumptionKwh * invoicePriceWithVatKwh,
   );
 
+  // ── 4. AHORRO ANUAL ──────────────────────────────────────────────────────
 // ----- AHORRO MODALIDAD INVERSIÓN -----
   // factura_sin_solar = consumo × precio
   // factura_con_solar = (consumo − autoconsumido) × precio − excedentes × comp + mantenimiento
@@ -469,7 +490,8 @@ export const calculateEnergyStudy = (
   const dailySavingsInvestment = round(annualSavingsInvestment / 365);
   const dailySavingsService = round(annualSavingsService / 365);
 
-  // Proyección a 25 años con IPC energético (crecimiento compuesto)
+  // ── 5. PROYECCIÓN A 25 AÑOS ───────────────────────────────────────────
+  // Proyección con IPC energético (crecimiento compuesto)
   const energyPriceInflation = normalizePositive(
     input.energyPriceInflation,
     DEFAULT_ENERGY_PRICE_INFLATION,

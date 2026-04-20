@@ -43,14 +43,23 @@ type ProposalAccessPreviewResponse = {
     language?: AppLanguage;
     assigned_kwp?: number | null;
     calculation?: {
+      // Ahorros anuales (campo real de CalculationResult)
+      annualSavingsInvestment?: number | null;
+      annualSavingsService?: number | null;
+      // Campos legacy/compatibilidad (por si hay estudios guardados con nombre distinto)
       annualSavingsEuro?: number | null;
       estimatedAnnualSavingsEuro?: number | null;
       totalSavingsEuro?: number | null;
-      investmentTotal?: number | null;
+      // Coste de inversión / servicio
       investmentCost?: number | null;
+      investmentTotal?: number | null;
+      serviceCost?: number | null;
       serviceMonthlyFee?: number | null;
       monthlyFee?: number | null;
-      estimatedMonthlySavingsEuro?: number | null;
+      // Potencia recomendada y precio €/kWh del cliente
+      recommendedPowerKwp?: number | null;
+      invoicePriceWithVatKwh?: number | null;
+      weightedEnergyPriceKwh?: number | null;
     } | null;
   };
 };
@@ -130,6 +139,8 @@ const [assignedKwp, setAssignedKwp] = useState<number | null>(null);
 const [estimatedSavings, setEstimatedSavings] = useState<number | null>(null);
 const [amountToPayInvestment, setAmountToPayInvestment] = useState<number | null>(null);
 const [amountToPayService, setAmountToPayService] = useState<number | null>(null);
+const [recommendedPowerKwp, setRecommendedPowerKwp] = useState<number | null>(null);
+const [clientPriceKwh, setClientPriceKwh] = useState<number | null>(null);
 
 
 
@@ -177,27 +188,52 @@ const nextAssignedKwp =
     ? data.study.assigned_kwp
     : null;
 
+// Resolución del ahorro: prioriza el campo real annualSavingsInvestment
 const nextEstimatedSavings =
-  typeof calculation?.annualSavingsEuro === "number"
-    ? calculation.annualSavingsEuro
-    : typeof calculation?.estimatedAnnualSavingsEuro === "number"
-      ? calculation.estimatedAnnualSavingsEuro
-      : typeof calculation?.totalSavingsEuro === "number"
-        ? calculation.totalSavingsEuro
-        : null;
+  typeof calculation?.annualSavingsInvestment === "number"
+    ? calculation.annualSavingsInvestment
+    : typeof calculation?.annualSavingsService === "number"
+      ? calculation.annualSavingsService
+      : typeof calculation?.annualSavingsEuro === "number"
+        ? calculation.annualSavingsEuro
+        : typeof calculation?.estimatedAnnualSavingsEuro === "number"
+          ? calculation.estimatedAnnualSavingsEuro
+          : typeof calculation?.totalSavingsEuro === "number"
+            ? calculation.totalSavingsEuro
+            : null;
 
+// Coste de inversión
 const nextAmountToPayInvestment =
-  typeof calculation?.investmentTotal === "number"
-    ? calculation.investmentTotal
-    : typeof calculation?.investmentCost === "number"
-      ? calculation.investmentCost
+  typeof calculation?.investmentCost === "number"
+    ? calculation.investmentCost
+    : typeof calculation?.investmentTotal === "number"
+      ? calculation.investmentTotal
       : null;
 
+// Cuota mensual servicio: serviceCost es el coste ANUAL → dividir entre 12
 const nextAmountToPayService =
-  typeof calculation?.serviceMonthlyFee === "number"
-    ? calculation.serviceMonthlyFee
-    : typeof calculation?.monthlyFee === "number"
-      ? calculation.monthlyFee
+  typeof calculation?.serviceCost === "number" && calculation.serviceCost > 0
+    ? Math.round((calculation.serviceCost / 12) * 100) / 100
+    : typeof calculation?.serviceMonthlyFee === "number"
+      ? calculation.serviceMonthlyFee
+      : typeof calculation?.monthlyFee === "number"
+        ? calculation.monthlyFee
+        : null;
+
+// Potencia recomendada
+const nextRecommendedPowerKwp =
+  typeof calculation?.recommendedPowerKwp === "number"
+    ? calculation.recommendedPowerKwp
+    : typeof data?.study?.assigned_kwp === "number"
+      ? data.study.assigned_kwp
+      : null;
+
+// Precio €/kWh que paga el cliente (con impuestos)
+const nextClientPriceKwh =
+  typeof calculation?.invoicePriceWithVatKwh === "number"
+    ? calculation.invoicePriceWithVatKwh
+    : typeof calculation?.weightedEnergyPriceKwh === "number"
+      ? calculation.weightedEnergyPriceKwh
       : null;
 
         setInstallationPreview(installation);
@@ -212,6 +248,8 @@ const nextAmountToPayService =
 setEstimatedSavings(nextEstimatedSavings);
 setAmountToPayInvestment(nextAmountToPayInvestment);
 setAmountToPayService(nextAmountToPayService);
+setRecommendedPowerKwp(nextRecommendedPowerKwp);
+setClientPriceKwh(nextClientPriceKwh);
       } catch (error: any) {
         const message =
           error?.response?.data?.error ||
@@ -602,76 +640,86 @@ setAmountToPayService(nextAmountToPayService);
                     </div>
                   </div>
 
-                 <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-  {typeof assignedKwp === "number" && (
-    <div className="rounded-2xl bg-white/70 border border-white p-4">
-      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
-        {t("continueContract.installation.assignedPower", "Potencia asignada")}
-      </p>
-      <p className="mt-2 text-lg font-black text-brand-navy">
-        {assignedKwp} kWp
-      </p>
-    </div>
-  )}
-
+                 <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+  {/* Ahorro anual del cliente */}
   {typeof estimatedSavings === "number" && (
-    <div className="rounded-2xl bg-white/70 border border-white p-4">
-      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
-        {t("continueContract.installation.estimatedSavings", "Ahorro estimado")}
+    <div className="rounded-2xl bg-brand-mint/20 border border-brand-mint/40 p-4">
+      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/55">
+        {t("continueContract.installation.annualSavings", "Ahorro anual")}
       </p>
-      <p className="mt-2 text-lg font-black text-brand-navy">
-        {formatCurrency(
-          estimatedSavings,
-          normalizeAppLanguage(i18n.language),
-        )}
+      <p className="mt-2 text-xl font-black text-brand-navy">
+        {formatCurrency(estimatedSavings, normalizeAppLanguage(i18n.language))}
+        <span className="ml-1 text-sm font-semibold text-brand-gray">/año</span>
       </p>
     </div>
   )}
 
-  {availableModes.includes("investment") &&
-    typeof amountToPayInvestment === "number" && (
-      <div className="rounded-2xl bg-white/70 border border-white p-4">
-        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
-          {t("continueContract.installation.investmentAmount", "Pago inversión")}
-        </p>
-        <p className="mt-2 text-lg font-black text-brand-navy">
-          {formatCurrency(
-            amountToPayInvestment,
-            normalizeAppLanguage(i18n.language),
-          )}
-        </p>
-      </div>
-    )}
-
-  {availableModes.includes("service") &&
-    typeof amountToPayService === "number" && (
-      <div className="rounded-2xl bg-white/70 border border-white p-4">
-        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
-          {t("continueContract.installation.serviceAmount", "Pago servicio")}
-        </p>
-        <p className="mt-2 text-lg font-black text-brand-navy">
-          {formatCurrency(
-            amountToPayService,
-            normalizeAppLanguage(i18n.language),
-          )}
-          <span className="ml-1 text-sm font-semibold text-brand-gray">
-            /mes
-          </span>
-        </p>
-      </div>
-    )}
-
-  {typeof installationPreview.potencia_instalada_kwp === "number" && (
+  {/* Potencia recomendada */}
+  {typeof recommendedPowerKwp === "number" && (
     <div className="rounded-2xl bg-white/70 border border-white p-4">
       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
-        {t("continueContract.installation.totalPlantPower", "Potencia planta")}
+        {t("continueContract.installation.recommendedPower", "Potencia recomendada")}
       </p>
-      <p className="mt-2 text-lg font-black text-brand-navy">
-        {installationPreview.potencia_instalada_kwp} kWp
+      <p className="mt-2 text-xl font-black text-brand-navy">
+        {recommendedPowerKwp} kWp
+      </p>
+    </div>
+  )}
+
+  {/* Precio €/kWh del cliente */}
+  {typeof clientPriceKwh === "number" && (
+    <div className="rounded-2xl bg-white/70 border border-white p-4">
+      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+        {t("continueContract.installation.clientPriceKwh", "Tu precio actual")}
+      </p>
+      <p className="mt-2 text-xl font-black text-brand-navy">
+        {clientPriceKwh.toFixed(4)}
+        <span className="ml-1 text-sm font-semibold text-brand-gray">€/kWh</span>
       </p>
     </div>
   )}
 </div>
+
+{/* Segunda fila: coste inversión / cuota servicio / potencia planta */}
+{(availableModes.includes("investment") && typeof amountToPayInvestment === "number") ||
+ (availableModes.includes("service") && typeof amountToPayService === "number") ||
+ typeof installationPreview.potencia_instalada_kwp === "number" ? (
+  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+    {availableModes.includes("investment") && typeof amountToPayInvestment === "number" && (
+      <div className="rounded-2xl bg-white/50 border border-white/80 p-3">
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/40">
+          {t("continueContract.installation.investmentAmount", "Inversión total")}
+        </p>
+        <p className="mt-1 text-base font-black text-brand-navy">
+          {formatCurrency(amountToPayInvestment, normalizeAppLanguage(i18n.language))}
+        </p>
+      </div>
+    )}
+
+    {availableModes.includes("service") && typeof amountToPayService === "number" && (
+      <div className="rounded-2xl bg-white/50 border border-white/80 p-3">
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/40">
+          {t("continueContract.installation.serviceAmount", "Cuota servicio")}
+        </p>
+        <p className="mt-1 text-base font-black text-brand-navy">
+          {formatCurrency(amountToPayService, normalizeAppLanguage(i18n.language))}
+          <span className="ml-1 text-xs font-semibold text-brand-gray">/mes</span>
+        </p>
+      </div>
+    )}
+
+    {typeof installationPreview.potencia_instalada_kwp === "number" && (
+      <div className="rounded-2xl bg-white/50 border border-white/80 p-3">
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/40">
+          {t("continueContract.installation.totalPlantPower", "Potencia planta")}
+        </p>
+        <p className="mt-1 text-base font-black text-brand-navy">
+          {installationPreview.potencia_instalada_kwp} kWp
+        </p>
+      </div>
+    )}
+  </div>
+) : null}
                 </div>
               ) : null}
 

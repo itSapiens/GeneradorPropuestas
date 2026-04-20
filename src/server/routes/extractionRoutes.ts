@@ -77,6 +77,38 @@ export function registerExtractionRoutes(app: Express, upload: multer.Multer) {
         fileName: uploadedFile.originalname,
       });
 
+      // ── LOGS DE EXTRACCIÓN IA ────────────────────────────────────────────
+      console.log(`[extract-bill] ✅ Extracción completada: ${uploadedFile.originalname}`);
+      console.log(`[extract-bill] ── CLIENTE ──────────────────────────────`);
+      console.log(`  Nombre:    ${result.customer.fullName ?? "(no detectado)"}`);
+      console.log(`  DNI/NIF:   ${result.customer.dni ?? "(no detectado)"}`);
+      console.log(`  CUPS:      ${result.customer.cups ?? "(no detectado)"}`);
+      console.log(`  IBAN:      ${result.customer.iban ?? "(no detectado)"}${result.customer.ibanNeedsCompletion ? " ⚠️ oculto" : ""}`);
+      console.log(`[extract-bill] ── LOCALIZACIÓN ─────────────────────────`);
+      console.log(`  Dirección: ${result.location.address ?? "(no detectada)"}`);
+      console.log(`[extract-bill] ── FACTURA ──────────────────────────────`);
+      console.log(`  Tarifa:    ${result.invoice_data.type ?? "(no detectada)"}`);
+      console.log(`  Días fac.: ${result.invoice_data.billedDays ?? "(no detectado)"}`);
+      console.log(`  Consumo factura (kWh): ${result.invoice_data.currentInvoiceConsumptionKwh ?? "(no detectado)"}`);
+      console.log(`  Consumo medio mensual (kWh): ${result.invoice_data.averageMonthlyConsumptionKwh ?? "(no calculado)"}`);
+      console.log(`  Importe energía variable (€): ${result.invoice_data.invoiceVariableEnergyAmountEur ?? "(no detectado)"}`);
+      console.log(`  Potencia contratada: ${result.invoice_data.contractedPowerText ?? `P1=${result.invoice_data.contractedPowerP1 ?? "?"} kW / P2=${result.invoice_data.contractedPowerP2 ?? "?"} kW`}`);
+      const p = result.invoice_data.periods;
+      console.log(`  Consumos por periodo (kWh): P1=${p.P1 ?? "-"} P2=${p.P2 ?? "-"} P3=${p.P3 ?? "-"} P4=${p.P4 ?? "-"} P5=${p.P5 ?? "-"} P6=${p.P6 ?? "-"}`);
+      const pr = result.invoice_data.periodPricesEurPerKwh;
+      console.log(`  Precios por periodo (€/kWh): P1=${pr.P1 ?? "-"} P2=${pr.P2 ?? "-"} P3=${pr.P3 ?? "-"} P4=${pr.P4 ?? "-"} P5=${pr.P5 ?? "-"} P6=${pr.P6 ?? "-"}`);
+      console.log(`[extract-bill] ── CALIDAD EXTRACCIÓN ───────────────────`);
+      console.log(`  Confianza: ${result.extraction.confidenceScore ?? "?"}`);
+      console.log(`  Método:    ${result.extraction.extractionMethod}, fallback=${result.extraction.fallbackUsed}`);
+      if (result.extraction.warnings.length > 0)
+        console.warn(`  Avisos:    ${result.extraction.warnings.join(" | ")}`);
+      if (result.extraction.missingFields.length > 0)
+        console.warn(`  Campos faltantes: ${result.extraction.missingFields.join(", ")}`);
+      if (result.extraction.manualReviewFields.length > 0)
+        console.warn(`  Revisar manualmente: ${result.extraction.manualReviewFields.join(", ")}`);
+      console.log(`[extract-bill] ────────────────────────────────────────`);
+      // ────────────────────────────────────────────────────────────────────
+
       extractionCacheSet(cacheKey, result);
 
       return res.json(result);
