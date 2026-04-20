@@ -198,7 +198,7 @@ export function getInvestmentRealCostFromFormula(
   const maintenance25Years =
     annualMaintenancePerKwp * recommendedPowerKwp * 25;
 
-  return Math.max(baseInvestmentCost - maintenance25Years, 0);
+  return Math.max(baseInvestmentCost, 0);
 }
 
 export function getServiceMonthlyFeeFromResult(

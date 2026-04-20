@@ -9,13 +9,12 @@ export const BillDataSchema = z.object({
   dni: z
     .string()
     .regex(
-      /^[0-9]{8}[TRWAGMYFPDXBNJZSQVHLCKE]$|^[XYZ][0-9]{7}[TRWAGMYFPDXBNJZSQVHLCKE]$/,
-      "DNI/NIE inválido",
+      /^([0-9]{8}[TRWAGMYFPDXBNJZSQVHLCKE]|[XYZ][0-9]{7}[TRWAGMYFPDXBNJZSQVHLCKE]|[ABCDEFGHJNPQRSUVW][0-9]{7}[0-9A-J])$/i,
+      "NIF inválido",
     ),
   cups: z.string().length(20, "CUPS debe tener 20 caracteres"),
   address: z.string().min(5, "Dirección requerida"),
 
-  // Permite IBAN normal o enmascarado con asteriscos
   iban: z
     .string()
     .regex(ibanVisibleOrMaskedRegex, "IBAN inválido"),
@@ -25,7 +24,6 @@ export const BillDataSchema = z.object({
   billType: z.enum(["2TD", "3TD"]),
   monthlyConsumption: z.number().positive("Consumo debe ser positivo"),
 
-  // Nuevos campos para PDF y extracción
   ibanMasked: z.string().optional(),
 
   contractedPowerText: z.string().optional(),
@@ -33,7 +31,6 @@ export const BillDataSchema = z.object({
   contractedPowerP1: z.number().nonnegative().optional(),
   contractedPowerP2: z.number().nonnegative().optional(),
 
-  // Previsión de incremento de consumo
   extraConsumptionHvacM2: z.number().nonnegative().optional(),
   extraConsumptionEvKmYear: z.number().nonnegative().optional(),
 });

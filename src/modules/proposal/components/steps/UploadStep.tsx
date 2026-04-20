@@ -27,7 +27,9 @@ export default function UploadStep({
       exit={{ opacity: 0, y: -30 }}
       className="text-center"
     >
+      
       <div className="max-w-2xl mx-auto mb-8 text-left">
+        
         <label className="flex items-start gap-3 rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-sm">
           <input
             type="checkbox"
