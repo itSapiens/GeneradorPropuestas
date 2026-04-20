@@ -4,7 +4,7 @@ export const INSTALLATION_SEARCH_RADIUS_METERS = Number(
   import.meta.env.VITE_INSTALLATION_SEARCH_RADIUS_METERS || 5000,
 );
 
-export const INVESTMENT_MAINTENANCE_EUR_PER_KWP_YEAR = 36;
+export const INVESTMENT_MAINTENANCE_EUR_PER_KWP_YEAR = 0;
 
 
 export const chartPalette = {

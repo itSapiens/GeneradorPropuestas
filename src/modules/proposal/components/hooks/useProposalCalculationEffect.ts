@@ -87,6 +87,17 @@ export function useProposalCalculationEffect({
 
       const fixedPower = getFixedInstallationPower(selectedInstallation);
 
+      console.log("[calc] ── INPUTS ──────────────────────────────────────────");
+      console.log(`  monthlyConsumptionKwh:         ${validatedData.averageMonthlyConsumptionKwh ?? validatedData.monthlyConsumption ?? 0}`);
+      console.log(`  invoiceConsumptionKwh:          ${validatedData.currentInvoiceConsumptionKwh ?? validatedData.averageMonthlyConsumptionKwh ?? 0}`);
+      console.log(`  invoiceVariableEnergyAmountEur: ${invoiceVariableEnergyAmountEur ?? "(no extraído)"}`);
+      console.log(`  selfConsumptionRatio:           ${normalizeSelfConsumption(selectedInstallation.porcentaje_autoconsumo)}`);
+      console.log(`  effectiveHours:                 ${selectedInstallation.horas_efectivas}`);
+      console.log(`  maintenancePerKwp:              ${selectedInstallation.coste_anual_mantenimiento_por_kwp ?? INVESTMENT_MAINTENANCE_EUR_PER_KWP_YEAR}`);
+      console.log(`  periodPrices:                   P1=${validatedData.periodPriceP1 ?? "-"} P2=${validatedData.periodPriceP2 ?? "-"} P3=${validatedData.periodPriceP3 ?? "-"}`);
+      console.log(`  periodConsumptions:             P1=${validatedData.periodConsumptionP1 ?? "-"} P2=${validatedData.periodConsumptionP2 ?? "-"} P3=${validatedData.periodConsumptionP3 ?? "-"}`);
+      console.log("[calc] ────────────────────────────────────────────────────");
+
       const result = calculateEnergyStudy({
         monthlyConsumptionKwh:
           validatedData.averageMonthlyConsumptionKwh ??
@@ -119,6 +130,18 @@ export function useProposalCalculationEffect({
         vatRate: 0.21,
         forcedPowerKwp: fixedPower ?? undefined,
       });
+
+      console.log("[calc] ── RESULTADO ──────────────────────────────────────");
+      console.log(`  recommendedPowerKwp:      ${result.recommendedPowerKwp} kWp`);
+      console.log(`  weightedEnergyPriceKwh:   ${result.weightedEnergyPriceKwh} €/kWh (sin IVA)`);
+      console.log(`  invoicePriceWithVatKwh:   ${result.invoicePriceWithVatKwh} €/kWh (con IVA+IE)`);
+      console.log(`  annualSelfConsumedKwh:    ${result.annualSelfConsumedEnergyKwh} kWh`);
+      console.log(`  annualGrossSolarValue:    ${result.annualGrossSolarValue} €`);
+      console.log(`  annualMaintenanceCost:    ${result.annualMaintenanceCost} €`);
+      console.log(`  annualSavingsInvestment:  ${result.annualSavingsInvestment} €`);
+      console.log(`  investmentCost:           ${result.investmentCost} €`);
+      console.log(`  paybackYears:             ${result.paybackYears} años`);
+      console.log("[calc] ────────────────────────────────────────────────────");
 
       setProposalResults({
         investment: result,

@@ -113,8 +113,9 @@ export interface CalculationResult {
 /** Precio medio €/kWh usado cuando no se puede extraer de la factura */
 const DEFAULT_WEIGHTED_ENERGY_PRICE_KWH = 0.18;
 
-/** Coste de mantenimiento anual por kWp instalado (€/kWp/año) — modalidad inversión */
-const DEFAULT_MAINTENANCE_ANNUAL_PER_KWP = 36;
+/** Coste de mantenimiento anual por kWp instalado (€/kWp/año) — modalidad inversión.
+ *  0 = incluido en el precio de la instalación (no se descuenta del ahorro del cliente). */
+const DEFAULT_MAINTENANCE_ANNUAL_PER_KWP = 0;
 
 /** IVA aplicado a la factura eléctrica en España */
 const DEFAULT_VAT_RATE = 0.21;
