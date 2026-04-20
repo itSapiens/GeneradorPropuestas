@@ -445,7 +445,7 @@ export const calculateEnergyStudy = (
     annualConsumptionKwh * invoicePriceWithVatKwh,
   );
 
-  // ----- AHORRO MODALIDAD INVERSIÓN -----
+// ----- AHORRO MODALIDAD INVERSIÓN -----
   // factura_sin_solar = consumo × precio
   // factura_con_solar = (consumo − autoconsumido) × precio − excedentes × comp + mantenimiento
   // ahorro = autoconsumido × precio + excedentes × comp − mantenimiento

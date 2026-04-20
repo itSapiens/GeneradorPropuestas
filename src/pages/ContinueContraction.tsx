@@ -18,6 +18,42 @@ import {
 
 type ProposalMode = "investment" | "service";
 type AppLanguage = "es" | "ca" | "val" | "gl";
+type InstallationModalidad = "inversion" | "servicio" | "ambas";
+
+type InstallationPreview = {
+  id: string;
+  nombre_instalacion: string;
+  direccion: string | null;
+  modalidad: InstallationModalidad;
+  potencia_instalada_kwp?: number | null;
+  horas_efectivas?: number | null;
+  porcentaje_autoconsumo?: number | null;
+  coste_kwh_inversion?: number | null;
+  coste_kwh_servicio?: number | null;
+  availableProposalModes: ProposalMode[];
+  defaultProposalMode: ProposalMode;
+};
+
+type ProposalAccessPreviewResponse = {
+  success: boolean;
+  language?: AppLanguage;
+  installation?: InstallationPreview;
+  study?: {
+    id: string;
+    language?: AppLanguage;
+    assigned_kwp?: number | null;
+    calculation?: {
+      annualSavingsEuro?: number | null;
+      estimatedAnnualSavingsEuro?: number | null;
+      totalSavingsEuro?: number | null;
+      investmentTotal?: number | null;
+      investmentCost?: number | null;
+      serviceMonthlyFee?: number | null;
+      monthlyFee?: number | null;
+      estimatedMonthlySavingsEuro?: number | null;
+    } | null;
+  };
+};
 
 function normalizeAppLanguage(value?: string | null): AppLanguage {
   const lang = String(value || "")
@@ -30,6 +66,46 @@ function normalizeAppLanguage(value?: string | null): AppLanguage {
   return "es";
 }
 
+function formatModeLabel(
+  mode: ProposalMode,
+  t: ReturnType<typeof useTranslation>["t"],
+) {
+  return mode === "investment"
+    ? t("result.modes.investment", "Inversión")
+    : t("result.modes.service", "Servicio");
+}
+
+function formatInstallationModalidad(
+  modalidad: InstallationModalidad,
+  t: ReturnType<typeof useTranslation>["t"],
+) {
+  if (modalidad === "inversion") {
+    return t("result.modes.investment", "Inversión");
+  }
+
+  if (modalidad === "servicio") {
+    return t("result.modes.service", "Servicio");
+  }
+
+  return t(
+    "continueContract.installation.bothModes",
+    "Inversión y servicio",
+  );
+}
+function formatCurrency(value: number, language: AppLanguage = "es") {
+  const localeMap: Record<AppLanguage, string> = {
+    es: "es-ES",
+    ca: "ca-ES",
+    val: "ca-ES",
+    gl: "gl-ES",
+  };
+
+  return new Intl.NumberFormat(localeMap[language] || "es-ES", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 2,
+  }).format(value);
+}
 export default function ContinuarContratacionPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -46,13 +122,122 @@ export default function ContinuarContratacionPage() {
   const [apellidos, setApellidos] = useState("");
   const [selectedMode, setSelectedMode] = useState<ProposalMode>("investment");
   const [loading, setLoading] = useState(false);
+  const [loadingPreview, setLoadingPreview] = useState(true);
+  const [installationPreview, setInstallationPreview] =
+    useState<InstallationPreview | null>(null);
+  const [availableModes, setAvailableModes] = useState<ProposalMode[]>([]);
+const [assignedKwp, setAssignedKwp] = useState<number | null>(null);
+const [estimatedSavings, setEstimatedSavings] = useState<number | null>(null);
+const [amountToPayInvestment, setAmountToPayInvestment] = useState<number | null>(null);
+const [amountToPayService, setAmountToPayService] = useState<number | null>(null);
 
+
+
+  
   useEffect(() => {
-
     if (langFromUrl && i18n.language !== langFromUrl) {
       i18n.changeLanguage(langFromUrl);
     }
   }, [langFromUrl, i18n]);
+
+  useEffect(() => {
+    const loadPreview = async () => {
+      if (!token) {
+        setLoadingPreview(false);
+        return;
+      }
+
+      try {
+        const { data } = await axios.get<ProposalAccessPreviewResponse>(
+          `/api/contracts/proposal-access/preview?token=${encodeURIComponent(token)}`,
+        );
+
+        if (!data?.success || !data?.installation) {
+          throw new Error("No se pudo cargar la información de la instalación");
+        }
+
+        const resolvedLanguage = normalizeAppLanguage(
+          data?.study?.language || data?.language || langFromUrl,
+        );
+
+        if (i18n.language !== resolvedLanguage) {
+          await i18n.changeLanguage(resolvedLanguage);
+        }
+
+        const installation = data.installation;
+        const nextAvailableModes =
+          installation.availableProposalModes?.length > 0
+            ? installation.availableProposalModes
+            : [installation.defaultProposalMode];
+
+            const calculation = data?.study?.calculation ?? null;
+
+const nextAssignedKwp =
+  typeof data?.study?.assigned_kwp === "number"
+    ? data.study.assigned_kwp
+    : null;
+
+const nextEstimatedSavings =
+  typeof calculation?.annualSavingsEuro === "number"
+    ? calculation.annualSavingsEuro
+    : typeof calculation?.estimatedAnnualSavingsEuro === "number"
+      ? calculation.estimatedAnnualSavingsEuro
+      : typeof calculation?.totalSavingsEuro === "number"
+        ? calculation.totalSavingsEuro
+        : null;
+
+const nextAmountToPayInvestment =
+  typeof calculation?.investmentTotal === "number"
+    ? calculation.investmentTotal
+    : typeof calculation?.investmentCost === "number"
+      ? calculation.investmentCost
+      : null;
+
+const nextAmountToPayService =
+  typeof calculation?.serviceMonthlyFee === "number"
+    ? calculation.serviceMonthlyFee
+    : typeof calculation?.monthlyFee === "number"
+      ? calculation.monthlyFee
+      : null;
+
+        setInstallationPreview(installation);
+        setAvailableModes(nextAvailableModes);
+        setSelectedMode(
+          nextAvailableModes.includes(installation.defaultProposalMode)
+            ? installation.defaultProposalMode
+            : nextAvailableModes[0] ?? "investment",
+            
+        );
+        setAssignedKwp(nextAssignedKwp);
+setEstimatedSavings(nextEstimatedSavings);
+setAmountToPayInvestment(nextAmountToPayInvestment);
+setAmountToPayService(nextAmountToPayService);
+      } catch (error: any) {
+        const message =
+          error?.response?.data?.error ||
+          error?.response?.data?.details ||
+          t(
+            "continueContract.toasts.couldNotLoadPreviewDescription",
+            "No se pudo cargar la información de la instalación.",
+          );
+
+        setInstallationPreview(null);
+        setAvailableModes([]);
+
+        sileo.error({
+          title: t(
+            "continueContract.toasts.couldNotLoadPreviewTitle",
+            "No se pudo cargar la propuesta",
+          ),
+          description: message,
+        });
+      } finally {
+        setLoadingPreview(false);
+      }
+    };
+
+    loadPreview();
+  }, [token, langFromUrl, i18n, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +251,34 @@ export default function ContinuarContratacionPage() {
         description: t(
           "continueContract.toasts.invalidLinkDescription",
           "No se ha encontrado el token de acceso.",
+        ),
+      });
+      return;
+    }
+
+    if (availableModes.length === 0) {
+      sileo.error({
+        title: t(
+          "continueContract.toasts.invalidModeTitle",
+          "Modalidad no disponible",
+        ),
+        description: t(
+          "continueContract.toasts.invalidModeDescription",
+          "La instalación seleccionada no permite continuar con ninguna modalidad disponible.",
+        ),
+      });
+      return;
+    }
+
+    if (!availableModes.includes(selectedMode)) {
+      sileo.error({
+        title: t(
+          "continueContract.toasts.invalidModeTitle",
+          "Modalidad no disponible",
+        ),
+        description: t(
+          "continueContract.toasts.invalidModeDescription",
+          "La instalación seleccionada no permite continuar con esta modalidad.",
         ),
       });
       return;
@@ -85,15 +298,33 @@ export default function ContinuarContratacionPage() {
     setLoading(true);
 
     try {
-      const { data } = await axios.post("/api/contracts/proposal-access/validate", {
-        token,
-        dni: dni.trim().toUpperCase(),
-        nombre: nombre.trim(),
-        apellidos: apellidos.trim(),
-      });
+      const { data } = await axios.post(
+        "/api/contracts/proposal-access/validate",
+        {
+          token,
+          dni: dni.trim().toUpperCase(),
+          nombre: nombre.trim(),
+          apellidos: apellidos.trim(),
+        },
+      );
 
       if (!data?.success || !data?.resumeToken) {
         throw new Error("No se pudo validar el acceso");
+      }
+
+      const backendAllowedModes: ProposalMode[] =
+        data?.installation?.availableProposalModes ?? [];
+
+      if (
+        backendAllowedModes.length > 0 &&
+        !backendAllowedModes.includes(selectedMode)
+      ) {
+        throw new Error(
+          t(
+            "continueContract.toasts.invalidModeDescription",
+            "La instalación seleccionada no permite continuar con esta modalidad.",
+          ),
+        );
       }
 
       const resolvedLanguage = normalizeAppLanguage(
@@ -129,6 +360,7 @@ export default function ContinuarContratacionPage() {
       const message =
         error?.response?.data?.error ||
         error?.response?.data?.details ||
+        error?.message ||
         t(
           "continueContract.toasts.couldNotValidateDescription",
           "No se pudo validar tu acceso.",
@@ -175,6 +407,10 @@ export default function ContinuarContratacionPage() {
     },
   ];
 
+  const visibleModeCards = modeCards.filter((mode) =>
+    availableModes.includes(mode.id),
+  );
+
   return (
     <div className="min-h-screen bg-slate-50 relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(87,217,211,0.18),transparent_30%),radial-gradient(circle_at_top_right,rgba(148,194,255,0.18),transparent_28%),linear-gradient(to_bottom,rgba(7,0,95,0.02),rgba(7,0,95,0.01))]" />
@@ -188,10 +424,7 @@ export default function ContinuarContratacionPage() {
               <div className="relative z-10">
                 <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/90">
                   <Sparkles className="h-4 w-4" />
-                  {t(
-                    "continueContract.badge",
-                    "Continuar contratación",
-                  )}
+                  {t("continueContract.badge", "Continuar contratación")}
                 </div>
 
                 <h1 className="mt-5 text-3xl md:text-4xl font-black leading-tight">
@@ -285,7 +518,10 @@ export default function ContinuarContratacionPage() {
                           "continueContract.linkStatus.valid",
                           "Token detectado correctamente",
                         )
-                      : t("continueContract.linkStatus.missing", "Falta token")}
+                      : t(
+                          "continueContract.linkStatus.missing",
+                          "Falta token",
+                        )}
                   </p>
                 </div>
               </div>
@@ -299,7 +535,7 @@ export default function ContinuarContratacionPage() {
                 </div>
 
                 <h2 className="mt-4 text-3xl md:text-4xl font-black tracking-tight text-brand-navy">
-                  {t("continueContract.form.title", "Confirma tus datss")}
+                  {t("continueContract.form.title", "Confirma tus datos")}
                 </h2>
 
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-brand-gray">
@@ -310,6 +546,135 @@ export default function ContinuarContratacionPage() {
                 </p>
               </div>
 
+              {loadingPreview ? (
+                <div className="mb-8 rounded-[2rem] border border-brand-navy/5 bg-brand-navy/[0.02] p-6">
+                  <div className="flex items-center gap-3 text-brand-navy">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <p className="text-sm font-semibold">
+                      {t(
+                        "continueContract.loadingPreview",
+                        "Cargando información de la instalación...",
+                      )}
+                    </p>
+                  </div>
+                </div>
+              ) : installationPreview ? (
+                <div className="mb-8 rounded-[2rem] border border-brand-navy/5 bg-[linear-gradient(135deg,rgba(87,217,211,0.10),rgba(148,194,255,0.10))] p-5 md:p-6">
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-navy/50">
+                        {t(
+                          "continueContract.installation.label",
+                          "Instalación seleccionada",
+                        )}
+                      </p>
+
+                      <h3 className="mt-2 text-xl md:text-2xl font-black text-brand-navy">
+                        {installationPreview.nombre_instalacion ||
+                          t(
+                            "continueContract.installation.fallbackName",
+                            "Instalación asignada",
+                          )}
+                      </h3>
+
+                      <p className="mt-2 text-sm leading-6 text-brand-gray">
+                        {installationPreview.direccion ||
+                          t(
+                            "continueContract.installation.noAddress",
+                            "Dirección no disponible",
+                          )}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl bg-white/80 border border-white px-4 py-3 min-w-[180px]">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+                        {t(
+                          "continueContract.installation.modeLabel",
+                          "Modalidad disponible",
+                        )}
+                      </p>
+                      <p className="mt-2 text-sm font-bold text-brand-navy">
+                        {formatInstallationModalidad(
+                          installationPreview.modalidad,
+                          t,
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                 <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+  {typeof assignedKwp === "number" && (
+    <div className="rounded-2xl bg-white/70 border border-white p-4">
+      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+        {t("continueContract.installation.assignedPower", "Potencia asignada")}
+      </p>
+      <p className="mt-2 text-lg font-black text-brand-navy">
+        {assignedKwp} kWp
+      </p>
+    </div>
+  )}
+
+  {typeof estimatedSavings === "number" && (
+    <div className="rounded-2xl bg-white/70 border border-white p-4">
+      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+        {t("continueContract.installation.estimatedSavings", "Ahorro estimado")}
+      </p>
+      <p className="mt-2 text-lg font-black text-brand-navy">
+        {formatCurrency(
+          estimatedSavings,
+          normalizeAppLanguage(i18n.language),
+        )}
+      </p>
+    </div>
+  )}
+
+  {availableModes.includes("investment") &&
+    typeof amountToPayInvestment === "number" && (
+      <div className="rounded-2xl bg-white/70 border border-white p-4">
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+          {t("continueContract.installation.investmentAmount", "Pago inversión")}
+        </p>
+        <p className="mt-2 text-lg font-black text-brand-navy">
+          {formatCurrency(
+            amountToPayInvestment,
+            normalizeAppLanguage(i18n.language),
+          )}
+        </p>
+      </div>
+    )}
+
+  {availableModes.includes("service") &&
+    typeof amountToPayService === "number" && (
+      <div className="rounded-2xl bg-white/70 border border-white p-4">
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+          {t("continueContract.installation.serviceAmount", "Pago servicio")}
+        </p>
+        <p className="mt-2 text-lg font-black text-brand-navy">
+          {formatCurrency(
+            amountToPayService,
+            normalizeAppLanguage(i18n.language),
+          )}
+          <span className="ml-1 text-sm font-semibold text-brand-gray">
+            /mes
+          </span>
+        </p>
+      </div>
+    )}
+
+  {typeof installationPreview.potencia_instalada_kwp === "number" && (
+    <div className="rounded-2xl bg-white/70 border border-white p-4">
+      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+        {t("continueContract.installation.totalPlantPower", "Potencia planta")}
+      </p>
+      <p className="mt-2 text-lg font-black text-brand-navy">
+        {installationPreview.potencia_instalada_kwp} kWp
+      </p>
+    </div>
+  )}
+</div>
+                </div>
+              ) : null}
+
               <form onSubmit={handleSubmit} className="space-y-7">
                 <div className="space-y-3">
                   <p className="text-sm font-bold text-brand-navy">
@@ -319,8 +684,47 @@ export default function ContinuarContratacionPage() {
                     )}
                   </p>
 
+                  {!loadingPreview && availableModes.length === 0 && (
+                    <div className="rounded-[1.4rem] border border-red-200 bg-red-50 p-4">
+                      <p className="text-sm font-semibold text-red-700">
+                        {t(
+                          "continueContract.modeUnavailable.title",
+                          "No hay modalidades disponibles",
+                        )}
+                      </p>
+                      <p className="mt-1 text-sm text-red-600">
+                        {t(
+                          "continueContract.modeUnavailable.description",
+                          "No hemos podido determinar una modalidad válida para esta instalación.",
+                        )}
+                      </p>
+                    </div>
+                  )}
+
+                  {!loadingPreview && availableModes.length === 1 && (
+                    <div className="rounded-[1.4rem] border border-brand-mint/30 bg-brand-mint/10 p-4">
+                      <p className="text-sm font-semibold text-brand-navy">
+                        {t(
+                          "continueContract.onlyOneMode.title",
+                          "Modalidad disponible para esta instalación",
+                        )}
+                      </p>
+                      <p className="mt-1 text-sm text-brand-gray">
+                        {availableModes[0] === "investment"
+                          ? t(
+                              "continueContract.onlyOneMode.investment",
+                              "Esta instalación solo permite contratación en modalidad inversión.",
+                            )
+                          : t(
+                              "continueContract.onlyOneMode.service",
+                              "Esta instalación solo permite contratación en modalidad servicio.",
+                            )}
+                      </p>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {modeCards.map((mode) => {
+                    {visibleModeCards.map((mode) => {
                       const Icon = mode.icon;
                       const isActive = selectedMode === mode.id;
 
@@ -408,7 +812,10 @@ export default function ContinuarContratacionPage() {
                         type="text"
                         value={nombre}
                         onChange={(e) => setNombre(e.target.value)}
-                        placeholder={t("continueContract.form.namePlaceholder", "Tu nombre")}
+                        placeholder={t(
+                          "continueContract.form.namePlaceholder",
+                          "Tu nombre",
+                        )}
                         className="w-full rounded-2xl border border-brand-navy/10 bg-white px-12 py-4 text-brand-navy outline-none transition placeholder:text-brand-navy/35 focus:border-brand-mint focus:ring-4 focus:ring-brand-mint/10"
                       />
                     </div>
@@ -434,48 +841,53 @@ export default function ContinuarContratacionPage() {
                   </div>
                 </div>
 
-                <div className="rounded-[1.6rem] border border-brand-navy/5 bg-brand-navy/[0.02] p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-11 h-11 rounded-2xl bg-brand-mint/15 flex items-center justify-center text-brand-navy shrink-0">
-                      {selectedMode === "investment" ? (
-                        <Wallet className="h-5 w-5" />
-                      ) : (
-                        <Zap className="h-5 w-5" />
-                      )}
-                    </div>
-
-                    <div>
-                      <p className="text-sm font-bold text-brand-navy">
-                        {t(
-                          "continueContract.selectedMode.title",
-                          "Modalidad seleccionada:",
-                        )}{" "}
-                        {selectedMode === "investment"
-                          ? t("result.modes.investment", "Inversión")
-                          : t("result.modes.service", "Servicio")}
-                      </p>
-                      <p className="mt-1 text-sm leading-6 text-brand-gray">
-                        {t(
-                          "continueContract.selectedMode.description",
-                          "Continuarás el flujo con esta modalidad para generar el contrato correspondiente.",
+                {availableModes.length > 0 && (
+                  <div className="rounded-[1.6rem] border border-brand-navy/5 bg-brand-navy/[0.02] p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-11 h-11 rounded-2xl bg-brand-mint/15 flex items-center justify-center text-brand-navy shrink-0">
+                        {selectedMode === "investment" ? (
+                          <Wallet className="h-5 w-5" />
+                        ) : (
+                          <Zap className="h-5 w-5" />
                         )}
-                      </p>
+                      </div>
+
+                      <div>
+                        <p className="text-sm font-bold text-brand-navy">
+                          {t(
+                            "continueContract.selectedMode.title",
+                            "Modalidad seleccionada:",
+                          )}{" "}
+                          {formatModeLabel(selectedMode, t)}
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-brand-gray">
+                          {t(
+                            "continueContract.selectedMode.description",
+                            "Continuarás el flujo con esta modalidad para generar el contrato correspondiente.",
+                          )}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || loadingPreview || availableModes.length === 0}
                   className="group mt-2 inline-flex w-full items-center justify-center rounded-[1.4rem] brand-gradient px-5 py-4 text-base font-bold text-brand-navy shadow-lg shadow-brand-mint/20 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {loading ? (
+                  {loading || loadingPreview ? (
                     <>
                       <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                      {t(
-                        "continueContract.actions.validating",
-                        "Validando acceso...",
-                      )}
+                      {loadingPreview
+                        ? t(
+                            "continueContract.actions.checkingInstallation",
+                            "Comprobando instalación...",
+                          )
+                        : t(
+                            "continueContract.actions.validating",
+                            "Validando acceso...",
+                          )}
                     </>
                   ) : (
                     <>

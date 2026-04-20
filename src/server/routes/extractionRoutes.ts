@@ -91,7 +91,7 @@ export function registerExtractionRoutes(app: Express, upload: multer.Multer) {
 
       return res.status(isQuota ? 429 : 500).json({
         error: isQuota
-          ? "Hemos alcanzado el límite de uso de la IA. Inténtalo de nuevo en unos minutos."
+          ? " Inténtalo de nuevo en unos minutos."
           : "No se pudo extraer la información de la factura",
         details: message,
       });

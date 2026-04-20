@@ -602,6 +602,143 @@ export async function startServer() {
   // aplicación de back-office. El flujo público usa
   // POST /api/studies/:id/auto-assign-installation tras confirmar el estudio.
 
+app.get("/api/contracts/proposal-access/preview", async (req, res) => {
+  try {
+    const token = String(req.query?.token || "").trim();
+
+    if (!token) {
+      return res.status(400).json({
+        error: "Falta token",
+      });
+    }
+
+    const tokenHash = sha256(token);
+
+    const { data: accessToken, error: accessError } = await supabase
+      .from("contract_access_tokens")
+      .select("*")
+      .eq("token_hash", tokenHash)
+      .eq("purpose", "proposal_continue")
+      .is("revoked_at", null)
+      .maybeSingle();
+
+    if (accessError) {
+      console.error(
+        "Error consultando contract_access_tokens en proposal-access/preview:",
+        accessError,
+      );
+
+      return res.status(500).json({
+        error: "No se pudo validar el acceso",
+        details: accessError.message,
+      });
+    }
+
+    if (!accessToken) {
+      return res.status(404).json({
+        error: "Enlace no válido",
+      });
+    }
+
+    if (
+      accessToken.expires_at &&
+      new Date(accessToken.expires_at).getTime() < Date.now()
+    ) {
+      return res.status(410).json({
+        error: "El enlace ha caducado",
+      });
+    }
+
+    const { data: study, error: studyError } = await supabase
+      .from("studies")
+      .select("*")
+      .eq("id", accessToken.study_id)
+      .single();
+
+    if (studyError || !study) {
+      console.error(
+        "Error obteniendo estudio en proposal-access/preview:",
+        studyError,
+      );
+
+      return res.status(404).json({
+        error: "No se encontró el estudio asociado",
+        details: studyError?.message ?? "Estudio no encontrado",
+      });
+    }
+
+    if (!study.selected_installation_id) {
+      return res.status(400).json({
+        error: "El estudio no tiene instalación asociada",
+      });
+    }
+
+    const { data: installation, error: installationError } = await supabase
+      .from("installations")
+      .select("*")
+      .eq("id", study.selected_installation_id)
+      .single();
+
+    if (installationError || !installation) {
+      console.error(
+        "Error obteniendo instalación en proposal-access/preview:",
+        installationError,
+      );
+
+      return res.status(404).json({
+        error: "No se encontró la instalación asociada al estudio",
+        details: installationError?.message ?? "Instalación no encontrada",
+      });
+    }
+
+    const language = normalizeAppLanguage(study.language);
+    const allowedModes = getAllowedProposalModes(installation.modalidad);
+
+    return res.json({
+      success: true,
+      language,
+      access: {
+        studyId: study.id,
+        clientId: accessToken.client_id,
+        installationId: installation.id,
+        expiresAt: accessToken.expires_at ?? null,
+      },
+      study: {
+        id: study.id,
+        language,
+        status: study.status ?? null,
+        email_status: study.email_status ?? null,
+        assigned_kwp: study.assigned_kwp ?? null,
+        calculation: study.calculation ?? null,
+        selected_installation_id: study.selected_installation_id ?? null,
+        selected_installation_snapshot:
+          study.selected_installation_snapshot ?? null,
+      },
+      installation: {
+        id: installation.id,
+        nombre_instalacion: installation.nombre_instalacion,
+        direccion: installation.direccion,
+        modalidad: installation.modalidad,
+        horas_efectivas: installation.horas_efectivas ?? null,
+        porcentaje_autoconsumo: installation.porcentaje_autoconsumo ?? null,
+        coste_kwh_inversion: installation.coste_kwh_inversion ?? null,
+        coste_kwh_servicio: installation.coste_kwh_servicio ?? null,
+        availableProposalModes: allowedModes,
+        defaultProposalMode: allowedModes[0] ?? "investment",
+      },
+    });
+  } catch (error: any) {
+    console.error("Error en /api/contracts/proposal-access/preview:", error);
+
+    return res.status(500).json({
+      error: "No se pudo obtener la vista previa del acceso",
+      details: error?.message || "Error desconocido",
+    });
+  }
+});
+
+
+
   //Ruta acceso contrato desde mail
   app.post("/api/contracts/proposal-access/validate", async (req, res) => {
     try {
