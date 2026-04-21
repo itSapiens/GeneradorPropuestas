@@ -408,13 +408,9 @@ export const calculateEnergyStudy = (
     effectiveHours * recommendedPowerKwp,
   );
 
-  // Self-consumption ratio = % del consumo del cliente cubierto por solar.
-  // Se limita por la producción disponible (no puedes autoconsumirr más de lo que produces).
+  // Energía solar que el cliente consume directamente (no se vierte a red)
   const annualSelfConsumedEnergyKwh = round(
-    Math.min(
-      annualConsumptionKwh * selfConsumptionRatio,
-      estimatedAnnualProductionKwh,
-    ),
+    recommendedPowerKwp * effectiveHours * selfConsumptionRatio,
   );
 
   const annualSurplusEnergyKwh = round(
@@ -470,12 +466,9 @@ export const calculateEnergyStudy = (
 
   // ── 4. AHORRO ANUAL ──────────────────────────────────────────────────────
   // ----- AHORRO MODALIDAD INVERSIÓN -----
-  // El CapEx ya incluye el mantenimiento a lo largo de la vida útil del sistema.
-  // El ahorro del cliente = lo que deja de pagar en factura eléctrica (valor bruto solar).
-  // annualMaintenanceCost se mantiene disponible para desglose interno, pero NO se
-  // descuenta del ahorro headline para evitar doble contabilización con el CapEx.
+  // Bruto = autoconsumo + excedentes; Neto = bruto − mantenimiento anual
   const annualSavingsInvestment = round(
-    Math.max(annualGrossSolarValue, 0),
+    Math.max(annualGrossSolarValue - annualMaintenanceCost, 0),
   );
 
   // ----- AHORRO MODALIDAD SERVICIO (PPA) -----

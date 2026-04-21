@@ -96,28 +96,19 @@ export function resolveAssignedKwpForInstallation(params: {
   };
 }
 
+/** Importe por defecto cuando la instalación no tiene reserva_fija_eur */
+export const DEFAULT_RESERVATION_AMOUNT_EUR = 500;
+
 export function resolveReservationAmountForInstallation(params: {
   installation: any;
   assignedKwp: number;
   fallbackAmount?: unknown;
 }) {
-  const calculoMode = String(params.installation?.calculo_estudios ?? "")
-    .toLowerCase()
-    .trim();
-  const fixedKwp =
-    toNullableNumber(params.installation?.potencia_fija_kwp) ?? 0;
   const fixedReservationAmount = toPositiveNumber(
     params.installation?.reserva_fija_eur,
   );
 
-  // Solo se usa la reserva fija cuando calculo_estudios === "fijo"
-  if (calculoMode === "fijo" && fixedKwp > 0) {
-    if (fixedReservationAmount === null) {
-      throw new Error(
-        "La instalación tiene potencia fija pero no tiene reserva_fija_eur válida",
-      );
-    }
-
+  if (fixedReservationAmount !== null) {
     return {
       reservationMode: "fija" as const,
       signalAmount: fixedReservationAmount,
@@ -125,18 +116,12 @@ export function resolveReservationAmountForInstallation(params: {
     };
   }
 
-  // Si potencia fija es 0, usar el cálculo de siempre
-  const fallbackAmount = toPositiveNumber(params.fallbackAmount);
-
-  if (fallbackAmount !== null) {
-    return {
-      reservationMode: "segun_potencia" as const,
-      signalAmount: fallbackAmount,
-      source: "fallback" as const,
-    };
-  }
-
-  throw new Error("No se ha podido determinar el importe de la reserva");
+  // reserva_fija_eur es null → reserva según potencia → 500 € por defecto
+  return {
+    reservationMode: "segun_potencia" as const,
+    signalAmount: DEFAULT_RESERVATION_AMOUNT_EUR,
+    source: "default" as const,
+  };
 }
 
 export function resolveInstallationBankIban(installation: any): string {
