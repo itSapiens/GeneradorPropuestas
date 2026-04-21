@@ -161,7 +161,7 @@ export default function FileUploader({
                 ? "border-brand-navy/10 bg-brand-navy/[0.02] cursor-not-allowed opacity-70"
                 : isDragging
                   ? "group cursor-pointer border-brand-mint bg-brand-mint/5 scale-[1.02] shadow-2xl shadow-brand-mint/10"
-                  : "group cursor-pointer border-brand-navy/10 hover:border-brand-sky hover:bg-brand-sky/5 bg-white shadow-sm",
+                  : "group cursor-pointer border-brand-navy/10 hover:border-brand-sky hover:bg-brand-sky/5 bg-[#F8FAFC] shadow-sm",
             )}
           >
             {!disabled && (
@@ -223,7 +223,7 @@ export default function FileUploader({
             key="file-preview"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="rounded-3xl border border-brand-navy/10 bg-white p-8 flex items-center gap-6 shadow-xl shadow-brand-navy/5"
+            className="rounded-3xl border border-brand-navy/10 bg-[#F8FAFC] p-8 flex items-center gap-6 shadow-xl shadow-brand-navy/5"
           >
             <div className="w-16 h-16 brand-gradient text-brand-navy rounded-2xl flex items-center justify-center shadow-lg shadow-brand-mint/20">
               <FileText className="w-8 h-8" />

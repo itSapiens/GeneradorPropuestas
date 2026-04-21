@@ -44,7 +44,7 @@ export default function ReservationCancelledPage() {
   return (
     <Layout>
       <div className="max-w-2xl mx-auto py-12 px-4">
-        <div className="bg-white rounded-[2rem] border border-brand-navy/5 shadow-xl p-8 md:p-10 text-center">
+        <div className="bg-[#F8FAFC] rounded-[2rem] border border-brand-navy/5 shadow-xl p-8 md:p-10 text-center">
           <AlertTriangle className="w-14 h-14 mx-auto text-amber-500 mb-4" />
           <h1 className="text-3xl font-bold text-brand-navy">
             Pago cancelado

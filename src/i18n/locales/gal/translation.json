@@ -1,4 +1,10 @@
 {
+  "hero": {
+    "titleLine1": "Descobre canto podes aforrar",
+    "titleLine2": "coa túa proposta",
+    "titleHighlight": "gratis",
+    "subtitle": "En menos de 2 minutos, xera un informe detallado para optimizar o teu consumo enerxético."
+  },
   "extraConsumption": {
     "badge": "Previsión de consumo",
     "title": "Tes pensado incrementar o teu consumo eléctrico?",

@@ -47,7 +47,7 @@ export default function PaymentMethodModal({
               initial={{ opacity: 0, y: 24, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 12, scale: 0.98 }}
-              className="w-full max-w-3xl rounded-[2rem] md:rounded-[2.5rem] bg-white border border-brand-navy/5 shadow-2xl overflow-hidden"
+              className="w-full max-w-3xl rounded-[2rem] md:rounded-[2.5rem] bg-[#F8FAFC] border border-brand-navy/5 shadow-2xl overflow-hidden"
             >
               <div className="p-5 md:p-8 border-b border-brand-navy/5 flex items-center justify-between gap-4">
                 <div>
@@ -74,7 +74,7 @@ export default function PaymentMethodModal({
               </div>
 
               <div className="p-5 md:p-8 space-y-6 bg-brand-navy/[0.02]">
-                <div className="rounded-[1.4rem] bg-white border border-brand-navy/5 p-5">
+                <div className="rounded-[1.4rem] bg-[#F8FAFC] border border-brand-navy/5 p-5">
                   <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40 mb-3">
                     {t(
                       "contractFlow.modal.reservationSummary",
@@ -123,7 +123,7 @@ export default function PaymentMethodModal({
                     type="button"
                     onClick={onSelectBankTransferPayment}
                     disabled={isSelectingPaymentMethod}
-                    className="rounded-[1.5rem] border border-brand-navy/10 bg-white p-6 text-left shadow-sm hover:shadow-md transition disabled:opacity-60"
+                    className="rounded-[1.5rem] border border-brand-navy/10 bg-[#F8FAFC] p-6 text-left shadow-sm hover:shadow-md transition disabled:opacity-60"
                   >
                     <div className="w-12 h-12 rounded-2xl bg-brand-navy/5 flex items-center justify-center mb-4">
                       <Icon

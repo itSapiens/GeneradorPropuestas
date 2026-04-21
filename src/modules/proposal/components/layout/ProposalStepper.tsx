@@ -42,7 +42,7 @@ export default function ProposalStepper({
                   "w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center transition-all duration-700 shadow-lg",
                   isActive
                     ? "brand-gradient text-brand-navy scale-110 shadow-brand-mint/20"
-                    : "bg-white border-2 border-brand-navy/5 text-brand-navy/20",
+                    : "bg-[#F8FAFC] border-2 border-brand-navy/5 text-brand-navy/20",
                 )}
               >
                 {isActive && i < currentIndex ? (

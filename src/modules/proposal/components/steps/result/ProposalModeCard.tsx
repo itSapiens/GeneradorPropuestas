@@ -29,14 +29,14 @@ export default function ProposalModeCard({
         "rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-7 border min-h-[760px] h-full flex flex-col",
         isInvestment
           ? "bg-brand-navy text-white border-brand-navy shadow-2xl shadow-brand-navy/15"
-          : "bg-white text-brand-navy border-brand-navy/5 shadow-2xl shadow-brand-navy/5",
+          : "bg-[#F8FAFC] text-brand-navy border-brand-navy/5 shadow-2xl shadow-brand-navy/5",
       )}
     >
       <div className="space-y-4">
         <div
           className={cn(
             "inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
-            isInvestment ? "bg-white/10 text-white" : "bg-brand-mint/10 text-brand-navy",
+            isInvestment ? "bg-[#F8FAFC]/10 text-white" : "bg-brand-mint/10 text-brand-navy",
           )}
         >
           <Icon
@@ -67,7 +67,7 @@ export default function ProposalModeCard({
             className={cn(
               "rounded-[1.2rem] p-4 border h-[132px] flex flex-col justify-between",
               isInvestment
-                ? "bg-white/10 border-white/10"
+                ? "bg-[#F8FAFC]/10 border-white/10"
                 : "bg-brand-navy/[0.03] border-brand-navy/5",
             )}
           >
@@ -88,7 +88,7 @@ export default function ProposalModeCard({
             className={cn(
               "rounded-[1.2rem] p-4 border h-[132px] flex flex-col justify-between",
               isInvestment
-                ? "bg-white/10 border-white/10"
+                ? "bg-[#F8FAFC]/10 border-white/10"
                 : "bg-brand-navy/[0.03] border-brand-navy/5",
             )}
           >
@@ -120,7 +120,7 @@ export default function ProposalModeCard({
             className={cn(
               "rounded-[1.2rem] p-4 border h-[132px] flex flex-col justify-between",
               isInvestment
-                ? "bg-white/10 border-white/10"
+                ? "bg-[#F8FAFC]/10 border-white/10"
                 : "bg-brand-navy/[0.03] border-brand-navy/5",
             )}
           >
@@ -147,7 +147,7 @@ export default function ProposalModeCard({
               "rounded-[1.2rem] p-4 border h-[86px] flex items-center gap-3",
               point
                 ? isInvestment
-                  ? "bg-white/5 border-white/10"
+                  ? "bg-[#F8FAFC]/5 border-white/10"
                   : "bg-brand-navy/[0.03] border-brand-navy/5"
                 : "bg-transparent border-transparent opacity-0 pointer-events-none",
             )}
@@ -156,7 +156,7 @@ export default function ProposalModeCard({
               className={cn(
                 "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
                 isInvestment
-                  ? "bg-white/10"
+                  ? "bg-[#F8FAFC]/10"
                   : "brand-gradient shadow-md shadow-brand-mint/20",
               )}
             >

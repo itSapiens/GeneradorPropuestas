@@ -50,7 +50,7 @@ export default function ValidationStep({
         <p className="text-brand-gray">{t("validation.description")}</p>
       </div>
 
-      <div className="bg-white rounded-[2.5rem] p-10 border border-brand-navy/5 shadow-2xl shadow-brand-navy/5">
+      <div className="bg-[#F8FAFC] rounded-[2.5rem] p-10 border border-brand-navy/5 shadow-2xl shadow-brand-navy/5">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
           <FormSection
             title={t("validation.ownerSection.title")}
@@ -113,7 +113,7 @@ export default function ValidationStep({
                       id="address"
                       name="address"
                       inputClassName={cn(
-                        "w-full px-4 py-3 rounded-xl border border-brand-navy/10 bg-white text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-sky/20 focus:border-brand-sky placeholder:text-brand-navy/20",
+                        "w-full px-4 py-3 rounded-xl border border-brand-navy/10 bg-[#F8FAFC] text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-sky/20 focus:border-brand-sky placeholder:text-brand-navy/20",
                         errors.address?.message &&
                           "border-red-500 focus:ring-red-500/20 focus:border-red-500",
                       )}

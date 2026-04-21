@@ -60,10 +60,10 @@ export default function ContractSigningModal({
               initial={{ opacity: 0, y: 24, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 12, scale: 0.98 }}
-              className="w-full max-w-5xl rounded-[2rem] md:rounded-[2.5rem] bg-white border border-brand-navy/5 shadow-2xl overflow-hidden"
+              className="w-full max-w-5xl rounded-[2rem] md:rounded-[2.5rem] bg-[#F8FAFC] border border-brand-navy/5 shadow-2xl overflow-hidden"
             >
               <div className="max-h-[calc(100vh-2rem)] md:max-h-[92vh] overflow-y-auto">
-                <div className="sticky top-0 z-20 px-5 md:px-8 py-5 border-b border-brand-navy/5 bg-white/95 backdrop-blur-md flex items-center justify-between gap-4">
+                <div className="sticky top-0 z-20 px-5 md:px-8 py-5 border-b border-brand-navy/5 bg-[#F8FAFC]/95 backdrop-blur-md flex items-center justify-between gap-4">
                   <div>
                     <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40 mb-1">
                       {t("contractFlow.modal.badge", "Contratación")}
@@ -93,13 +93,13 @@ export default function ContractSigningModal({
                           "Vista previa del contrato",
                         )}
                         srcDoc={generatedContract.previewHtml}
-                        className="w-full h-[320px] sm:h-[420px] md:h-[560px] bg-white"
+                        className="w-full h-[320px] sm:h-[420px] md:h-[560px] bg-[#F8FAFC]"
                       />
                     </div>
                   </div>
 
                   <div className="p-4 md:p-6 space-y-5 bg-brand-navy/[0.02]">
-                    <div className="rounded-[1.4rem] bg-white border border-brand-navy/5 p-4">
+                    <div className="rounded-[1.4rem] bg-[#F8FAFC] border border-brand-navy/5 p-4">
                       <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40 mb-2">
                         {t("contractFlow.contractCard.title", "Contrato")}
                       </p>
@@ -116,7 +116,7 @@ export default function ContractSigningModal({
                       </p>
                     </div>
 
-                    <div className="rounded-[1.4rem] bg-white border border-brand-navy/5 p-4">
+                    <div className="rounded-[1.4rem] bg-[#F8FAFC] border border-brand-navy/5 p-4">
                       <div className="flex items-center justify-between mb-3">
                         <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40">
                           {t("contractFlow.signature.title", "Firma")}
@@ -135,7 +135,7 @@ export default function ContractSigningModal({
                         ref={signatureCanvasRef}
                         width={600}
                         height={180}
-                        className="w-full h-40 rounded-[1.2rem] border border-dashed border-brand-navy/20 bg-white touch-none"
+                        className="w-full h-40 rounded-[1.2rem] border border-dashed border-brand-navy/20 bg-[#F8FAFC] touch-none"
                         onMouseDown={onStartSignatureDraw}
                         onMouseMove={onMoveSignatureDraw}
                         onMouseUp={onEndSignatureDraw}

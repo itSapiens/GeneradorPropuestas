@@ -66,7 +66,7 @@ export default function SelectField({
           disabled={disabled}
           onClick={() => !disabled && setOpen((prev) => !prev)}
           className={cn(
-            "w-full h-[58px] rounded-2xl border bg-white px-5 text-left",
+            "w-full h-[58px] rounded-2xl border bg-[#F8FAFC] px-5 text-left",
             "flex items-center justify-between gap-3",
             "transition-all duration-200 outline-none shadow-sm",
             "border-brand-navy/10 hover:border-brand-mint/50",
@@ -92,7 +92,7 @@ export default function SelectField({
         </button>
 
         {open && !disabled && (
-          <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-50 overflow-hidden rounded-2xl border border-brand-navy/10 bg-white shadow-2xl shadow-brand-navy/10">
+          <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-50 overflow-hidden rounded-2xl border border-brand-navy/10 bg-[#F8FAFC] shadow-2xl shadow-brand-navy/10">
             <div className="p-2">
               {options.map((option) => {
                 const isActive = option.value === value;

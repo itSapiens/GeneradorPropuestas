@@ -143,7 +143,7 @@ export default function ExtraConsumptionModal({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 12, scale: 0.98 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
-              className="w-full max-w-lg rounded-[2rem] md:rounded-[2.5rem] bg-white border border-brand-navy/5 shadow-2xl overflow-hidden"
+              className="w-full max-w-lg rounded-[2rem] md:rounded-[2.5rem] bg-[#F8FAFC] border border-brand-navy/5 shadow-2xl overflow-hidden"
             >
               {/* Header */}
               <div className="px-6 md:px-8 pt-8 pb-2 text-center relative">

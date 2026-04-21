@@ -20,7 +20,7 @@ export default function CalculationStep({ t }: CalculationStepProps) {
       animate={{ opacity: 1 }}
       className="flex flex-col items-center justify-center py-32 text-center"
     >
-      <div className="w-32 h-32 bg-white rounded-[2.5rem] shadow-2xl shadow-brand-navy/5 flex items-center justify-center mb-12 relative">
+      <div className="w-32 h-32 bg-[#F8FAFC] rounded-[2.5rem] shadow-2xl shadow-brand-navy/5 flex items-center justify-center mb-12 relative">
         <Zap className="w-12 h-12 text-brand-navy animate-pulse" />
         <div className="absolute -inset-4 border-4 border-brand-mint border-t-transparent rounded-[3rem] animate-spin" />
       </div>
@@ -41,7 +41,7 @@ export default function CalculationStep({ t }: CalculationStepProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.5 }}
-            className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-brand-navy/5 shadow-sm"
+            className="flex items-center gap-4 p-4 rounded-2xl bg-[#F8FAFC] border border-brand-navy/5 shadow-sm"
           >
             <div className="w-6 h-6 rounded-full brand-gradient flex items-center justify-center shrink-0">
               <Check className="w-4 h-4 text-brand-navy" />

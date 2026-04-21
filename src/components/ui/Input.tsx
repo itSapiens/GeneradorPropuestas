@@ -16,7 +16,7 @@ export default function Input({ className, label, error, ...props }: InputProps)
       )}
       <input
         className={cn(
-          "w-full px-4 py-3 rounded-xl border border-brand-navy/10 bg-white text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-sky/20 focus:border-brand-sky placeholder:text-brand-navy/20",
+          "w-full px-4 py-3 rounded-xl border border-brand-navy/10 bg-[#F8FAFC] text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-sky/20 focus:border-brand-sky placeholder:text-brand-navy/20",
           error && "border-red-500 focus:ring-red-500/20 focus:border-red-500",
           className
         )}

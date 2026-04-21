@@ -189,6 +189,16 @@ export default function ProposalWorkflow({
     <Layout>
       <LanguageSwitcher />
 
+      {currentStep === "upload" && (
+        <div className="wrapper-titulo-ayto">
+          <h1 className="titulo-trazo">
+            {t("hero.titleLine1")} <br className="pc-only" />
+            {t("hero.titleLine2")} <span className="palabra-trazo">{t("hero.titleHighlight")}</span>
+          </h1>
+          <div className="subtitulo-trazo">{t("hero.subtitle")}</div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto">
         <div
           className={cn(

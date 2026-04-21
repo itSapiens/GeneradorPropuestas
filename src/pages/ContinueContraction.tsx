@@ -460,7 +460,7 @@ setClientPriceKwh(nextClientPriceKwh);
               <div className="absolute top-0 right-0 w-48 h-48 bg-brand-mint/20 blur-3xl rounded-full -mr-16 -mt-16" />
 
               <div className="relative z-10">
-                <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/90">
+                <div className="inline-flex items-center gap-2 rounded-full bg-[#F8FAFC]/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/90">
                   <Sparkles className="h-4 w-4" />
                   {t("continueContract.badge", "Continuar contratación")}
                 </div>
@@ -479,9 +479,9 @@ setClientPriceKwh(nextClientPriceKwh);
                 </p>
 
                 <div className="mt-8 space-y-4">
-                  <div className="rounded-[1.5rem] bg-white/10 border border-white/10 p-4">
+                  <div className="rounded-[1.5rem] bg-[#F8FAFC]/10 border border-white/10 p-4">
                     <div className="flex items-start gap-3">
-                      <div className="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
+                      <div className="w-11 h-11 rounded-2xl bg-[#F8FAFC]/10 flex items-center justify-center shrink-0">
                         <ShieldCheck className="h-5 w-5" />
                       </div>
                       <div>
@@ -501,9 +501,9 @@ setClientPriceKwh(nextClientPriceKwh);
                     </div>
                   </div>
 
-                  <div className="rounded-[1.5rem] bg-white/10 border border-white/10 p-4">
+                  <div className="rounded-[1.5rem] bg-[#F8FAFC]/10 border border-white/10 p-4">
                     <div className="flex items-start gap-3">
-                      <div className="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
+                      <div className="w-11 h-11 rounded-2xl bg-[#F8FAFC]/10 flex items-center justify-center shrink-0">
                         <FileText className="h-5 w-5" />
                       </div>
                       <div>
@@ -523,9 +523,9 @@ setClientPriceKwh(nextClientPriceKwh);
                     </div>
                   </div>
 
-                  <div className="rounded-[1.5rem] bg-white/10 border border-white/10 p-4">
+                  <div className="rounded-[1.5rem] bg-[#F8FAFC]/10 border border-white/10 p-4">
                     <div className="flex items-start gap-3">
-                      <div className="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
+                      <div className="w-11 h-11 rounded-2xl bg-[#F8FAFC]/10 flex items-center justify-center shrink-0">
                         <ArrowRight className="h-5 w-5" />
                       </div>
                       <div>
@@ -546,7 +546,7 @@ setClientPriceKwh(nextClientPriceKwh);
                   </div>
                 </div>
 
-                <div className="mt-8 rounded-[1.4rem] bg-white/10 border border-white/10 p-4">
+                <div className="mt-8 rounded-[1.4rem] bg-[#F8FAFC]/10 border border-white/10 p-4">
                   <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/55">
                     {t("continueContract.linkStatus.label", "Estado del enlace")}
                   </p>
@@ -565,7 +565,7 @@ setClientPriceKwh(nextClientPriceKwh);
               </div>
             </div>
 
-            <div className="rounded-[2.5rem] border border-brand-navy/5 bg-white p-6 md:p-8 shadow-2xl shadow-brand-navy/5">
+            <div className="rounded-[2.5rem] border border-brand-navy/5 bg-[#F8FAFC] p-6 md:p-8 shadow-2xl shadow-brand-navy/5">
               <div className="mb-8">
                 <div className="inline-flex items-center gap-2 rounded-full bg-brand-mint/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-navy">
                   <Sparkles className="h-4 w-4 text-brand-mint" />
@@ -624,7 +624,7 @@ setClientPriceKwh(nextClientPriceKwh);
                       </p>
                     </div>
 
-                    <div className="rounded-2xl bg-white/80 border border-white px-4 py-3 min-w-[180px]">
+                    <div className="rounded-2xl bg-[#F8FAFC]/80 border border-white px-4 py-3 min-w-[180px]">
                       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
                         {t(
                           "continueContract.installation.modeLabel",
@@ -656,7 +656,7 @@ setClientPriceKwh(nextClientPriceKwh);
 
   {/* Potencia recomendada */}
   {typeof recommendedPowerKwp === "number" && (
-    <div className="rounded-2xl bg-white/70 border border-white p-4">
+    <div className="rounded-2xl bg-[#F8FAFC]/70 border border-white p-4">
       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
         {t("continueContract.installation.recommendedPower", "Potencia recomendada")}
       </p>
@@ -668,7 +668,7 @@ setClientPriceKwh(nextClientPriceKwh);
 
   {/* Precio €/kWh del cliente */}
   {typeof clientPriceKwh === "number" && (
-    <div className="rounded-2xl bg-white/70 border border-white p-4">
+    <div className="rounded-2xl bg-[#F8FAFC]/70 border border-white p-4">
       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
         {t("continueContract.installation.clientPriceKwh", "Tu precio actual")}
       </p>
@@ -686,7 +686,7 @@ setClientPriceKwh(nextClientPriceKwh);
  typeof installationPreview.potencia_instalada_kwp === "number" ? (
   <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
     {availableModes.includes("investment") && typeof amountToPayInvestment === "number" && (
-      <div className="rounded-2xl bg-white/50 border border-white/80 p-3">
+      <div className="rounded-2xl bg-[#F8FAFC]/50 border border-white/80 p-3">
         <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/40">
           {t("continueContract.installation.investmentAmount", "Inversión total")}
         </p>
@@ -697,7 +697,7 @@ setClientPriceKwh(nextClientPriceKwh);
     )}
 
     {availableModes.includes("service") && typeof amountToPayService === "number" && (
-      <div className="rounded-2xl bg-white/50 border border-white/80 p-3">
+      <div className="rounded-2xl bg-[#F8FAFC]/50 border border-white/80 p-3">
         <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/40">
           {t("continueContract.installation.serviceAmount", "Cuota servicio")}
         </p>
@@ -709,7 +709,7 @@ setClientPriceKwh(nextClientPriceKwh);
     )}
 
     {typeof installationPreview.potencia_instalada_kwp === "number" && (
-      <div className="rounded-2xl bg-white/50 border border-white/80 p-3">
+      <div className="rounded-2xl bg-[#F8FAFC]/50 border border-white/80 p-3">
         <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/40">
           {t("continueContract.installation.totalPlantPower", "Potencia planta")}
         </p>
@@ -784,7 +784,7 @@ setClientPriceKwh(nextClientPriceKwh);
                           className={`rounded-[1.7rem] border p-5 text-left transition-all ${
                             isActive
                               ? "border-brand-mint bg-[linear-gradient(135deg,rgba(87,217,211,0.18),rgba(148,194,255,0.18))] shadow-lg shadow-brand-mint/10"
-                              : "border-brand-navy/5 bg-white hover:border-brand-mint/40 hover:shadow-md"
+                              : "border-brand-navy/5 bg-[#F8FAFC] hover:border-brand-mint/40 hover:shadow-md"
                           }`}
                         >
                           <div className="flex items-start justify-between gap-4">
@@ -845,7 +845,7 @@ setClientPriceKwh(nextClientPriceKwh);
                         value={dni}
                         onChange={(e) => setDni(e.target.value.toUpperCase())}
                         placeholder={t("placeholders.dni", "12345678A")}
-                        className="w-full rounded-2xl border border-brand-navy/10 bg-white px-12 py-4 text-brand-navy outline-none transition placeholder:text-brand-navy/35 focus:border-brand-mint focus:ring-4 focus:ring-brand-mint/10"
+                        className="w-full rounded-2xl border border-brand-navy/10 bg-[#F8FAFC] px-12 py-4 text-brand-navy outline-none transition placeholder:text-brand-navy/35 focus:border-brand-mint focus:ring-4 focus:ring-brand-mint/10"
                       />
                     </div>
                   </div>
@@ -864,7 +864,7 @@ setClientPriceKwh(nextClientPriceKwh);
                           "continueContract.form.namePlaceholder",
                           "Tu nombre",
                         )}
-                        className="w-full rounded-2xl border border-brand-navy/10 bg-white px-12 py-4 text-brand-navy outline-none transition placeholder:text-brand-navy/35 focus:border-brand-mint focus:ring-4 focus:ring-brand-mint/10"
+                        className="w-full rounded-2xl border border-brand-navy/10 bg-[#F8FAFC] px-12 py-4 text-brand-navy outline-none transition placeholder:text-brand-navy/35 focus:border-brand-mint focus:ring-4 focus:ring-brand-mint/10"
                       />
                     </div>
                   </div>
@@ -883,7 +883,7 @@ setClientPriceKwh(nextClientPriceKwh);
                           "continueContract.form.lastNamePlaceholder",
                           "Tus apellidos",
                         )}
-                        className="w-full rounded-2xl border border-brand-navy/10 bg-white px-12 py-4 text-brand-navy outline-none transition placeholder:text-brand-navy/35 focus:border-brand-mint focus:ring-4 focus:ring-brand-mint/10"
+                        className="w-full rounded-2xl border border-brand-navy/10 bg-[#F8FAFC] px-12 py-4 text-brand-navy outline-none transition placeholder:text-brand-navy/35 focus:border-brand-mint focus:ring-4 focus:ring-brand-mint/10"
                       />
                     </div>
                   </div>

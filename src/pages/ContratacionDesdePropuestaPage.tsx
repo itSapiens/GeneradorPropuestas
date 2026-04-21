@@ -863,7 +863,7 @@ writeParagraph(
       <div className="min-h-screen bg-slate-50 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(87,217,211,0.16),transparent_28%),radial-gradient(circle_at_top_right,rgba(148,194,255,0.16),transparent_24%)]" />
         <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
-          <div className="rounded-[2rem] border border-brand-navy/5 bg-white px-8 py-10 shadow-2xl shadow-brand-navy/5 text-center">
+          <div className="rounded-[2rem] border border-brand-navy/5 bg-[#F8FAFC] px-8 py-10 shadow-2xl shadow-brand-navy/5 text-center">
             <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 text-brand-navy" />
             <p className="font-bold text-brand-navy">
               {t("contractFlow.loading.title", "Preparando tu contrato...")}
@@ -914,7 +914,7 @@ writeParagraph(
               <div className="absolute top-0 right-0 w-44 h-44 bg-brand-mint/20 blur-3xl rounded-full -mr-14 -mt-14" />
 
               <div className="relative z-10">
-                <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/90">
+                <div className="inline-flex items-center gap-2 rounded-full bg-[#F8FAFC]/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/90">
                   <FileSignature className="h-4 w-4" />
                   {t(
                     "contractFlow.leftPanel.badge",
@@ -936,7 +936,7 @@ writeParagraph(
                 </p>
 
                 <div className="mt-7 space-y-4">
-                  <div className="rounded-[1.5rem] bg-white/10 border border-white/10 p-4">
+                  <div className="rounded-[1.5rem] bg-[#F8FAFC]/10 border border-white/10 p-4">
                     <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/55">
                       {t("contractFlow.leftPanel.holder", "Titular")}
                     </p>
@@ -950,7 +950,7 @@ writeParagraph(
                     </p>
                   </div>
 
-                  <div className="rounded-[1.5rem] bg-white/10 border border-white/10 p-4">
+                  <div className="rounded-[1.5rem] bg-[#F8FAFC]/10 border border-white/10 p-4">
                     <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/55">
                       {t("contractFlow.leftPanel.installation", "Instalación")}
                     </p>
@@ -962,7 +962,7 @@ writeParagraph(
                     </p>
                   </div>
 
-                  <div className="rounded-[1.5rem] bg-white/10 border border-white/10 p-4">
+                  <div className="rounded-[1.5rem] bg-[#F8FAFC]/10 border border-white/10 p-4">
                     <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/55">
                       {t(
                         "contractFlow.leftPanel.assignedPower",
@@ -992,8 +992,8 @@ writeParagraph(
               </div>
             </div>
 
-            <div className="rounded-[2rem] md:rounded-[2.5rem] bg-white border border-brand-navy/5 shadow-2xl shadow-brand-navy/5 overflow-hidden">
-              <div className="border-b border-brand-navy/5 px-5 py-5 md:px-8 md:py-6 bg-white/95 backdrop-blur-md">
+            <div className="rounded-[2rem] md:rounded-[2.5rem] bg-[#F8FAFC] border border-brand-navy/5 shadow-2xl shadow-brand-navy/5 overflow-hidden">
+              <div className="border-b border-brand-navy/5 px-5 py-5 md:px-8 md:py-6 bg-[#F8FAFC]/95 backdrop-blur-md">
                 <div className="rounded-[1.3rem] bg-brand-mint/10 border border-brand-mint/20 p-4 flex items-start gap-3">
                   <div className="w-11 h-11 rounded-2xl bg-brand-navy text-white flex items-center justify-center shrink-0">
                     {effectiveMode === "investment" ? (
@@ -1030,13 +1030,13 @@ writeParagraph(
                         "Vista previa del contrato",
                       )}
                       srcDoc={generatedContract.previewHtml}
-                      className="w-full h-[360px] sm:h-[460px] md:h-[620px] bg-white"
+                      className="w-full h-[360px] sm:h-[460px] md:h-[620px] bg-[#F8FAFC]"
                     />
                   </div>
                 </div>
 
                 <div className="p-4 md:p-6 space-y-5 bg-brand-navy/[0.02]">
-                  <div className="rounded-[1.4rem] bg-white border border-brand-navy/5 p-4">
+                  <div className="rounded-[1.4rem] bg-[#F8FAFC] border border-brand-navy/5 p-4">
                     <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40 mb-2">
                       {t("contractFlow.contractCard.title", "Contrato")}
                     </p>
@@ -1053,7 +1053,7 @@ writeParagraph(
                     </p>
                   </div>
 
-                  <div className="rounded-[1.4rem] bg-white border border-brand-navy/5 p-4">
+                  <div className="rounded-[1.4rem] bg-[#F8FAFC] border border-brand-navy/5 p-4">
                     <div className="flex items-center justify-between mb-3">
                       <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40">
                         {t("contractFlow.signature.title", "Firma")}
@@ -1072,7 +1072,7 @@ writeParagraph(
                       ref={signatureCanvasRef}
                       width={600}
                       height={180}
-                      className="w-full h-40 rounded-[1.2rem] border border-dashed border-brand-navy/20 bg-white touch-none"
+                      className="w-full h-40 rounded-[1.2rem] border border-dashed border-brand-navy/20 bg-[#F8FAFC] touch-none"
                       onMouseDown={startSignatureDraw}
                       onMouseMove={moveSignatureDraw}
                       onMouseUp={endSignatureDraw}
@@ -1146,7 +1146,7 @@ writeParagraph(
                     <button
                       type="button"
                       onClick={goHome}
-                      className="w-full rounded-[1.2rem] border border-brand-navy/10 bg-white px-4 py-4 text-sm font-bold text-brand-navy transition hover:bg-brand-navy/[0.02]"
+                      className="w-full rounded-[1.2rem] border border-brand-navy/10 bg-[#F8FAFC] px-4 py-4 text-sm font-bold text-brand-navy transition hover:bg-brand-navy/[0.02]"
                     >
                       {t("common.cancel", "Cancelar")}
                     </button>
@@ -1173,7 +1173,7 @@ writeParagraph(
       {isPaymentMethodModalOpen && signedContractResult?.reservation ? (
         <div className="fixed inset-0 z-[210] bg-brand-navy/50 backdrop-blur-sm overflow-y-auto">
           <div className="min-h-full px-4 py-4 md:px-8 md:py-8 flex items-start md:items-center justify-center">
-            <div className="w-full max-w-3xl rounded-[2rem] md:rounded-[2.5rem] bg-white border border-brand-navy/5 shadow-2xl overflow-hidden">
+            <div className="w-full max-w-3xl rounded-[2rem] md:rounded-[2.5rem] bg-[#F8FAFC] border border-brand-navy/5 shadow-2xl overflow-hidden">
               <div className="p-5 md:p-8 border-b border-brand-navy/5 flex items-center justify-between gap-4">
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40 mb-1">
@@ -1198,7 +1198,7 @@ writeParagraph(
               </div>
 
               <div className="p-5 md:p-8 space-y-6 bg-brand-navy/[0.02]">
-                <div className="rounded-[1.4rem] bg-white border border-brand-navy/5 p-5">
+                <div className="rounded-[1.4rem] bg-[#F8FAFC] border border-brand-navy/5 p-5">
                   <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40 mb-3">
                     {t(
                       "contractFlow.modal.reservationSummary",
@@ -1252,7 +1252,7 @@ writeParagraph(
                     type="button"
                     onClick={handleSelectBankTransferPayment}
                     disabled={isSelectingPaymentMethod}
-                    className="rounded-[1.5rem] border border-brand-navy/10 bg-white p-6 text-left shadow-sm hover:shadow-md transition disabled:opacity-60"
+                    className="rounded-[1.5rem] border border-brand-navy/10 bg-[#F8FAFC] p-6 text-left shadow-sm hover:shadow-md transition disabled:opacity-60"
                   >
                     <div className="w-12 h-12 rounded-2xl bg-brand-navy/5 flex items-center justify-center mb-4">
                       <Icon
@@ -1306,7 +1306,7 @@ writeParagraph(
                 <div className="pt-2">
                   <button
                     type="button"
-                    className="w-full rounded-[1.2rem] border border-brand-navy/10 bg-white px-4 py-4 text-sm font-bold text-brand-navy transition hover:bg-brand-navy/[0.02] disabled:opacity-60"
+                    className="w-full rounded-[1.2rem] border border-brand-navy/10 bg-[#F8FAFC] px-4 py-4 text-sm font-bold text-brand-navy transition hover:bg-brand-navy/[0.02] disabled:opacity-60"
                     onClick={() => setIsPaymentMethodModalOpen(false)}
                     disabled={isSelectingPaymentMethod}
                   >

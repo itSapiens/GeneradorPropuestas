@@ -51,7 +51,7 @@ export default function MapStep({
       </div>
 
       <div className="flex flex-col lg:flex-row gap-10 h-[700px]">
-        <div className="flex-1 bg-white rounded-[3rem] overflow-hidden relative border border-brand-navy/5 shadow-2xl shadow-brand-navy/5">
+        <div className="flex-1 bg-[#F8FAFC] rounded-[3rem] overflow-hidden relative border border-brand-navy/5 shadow-2xl shadow-brand-navy/5">
           {clientCoords ? (
             <ClientInstallationsMap
               clientLat={clientCoords.lat}
@@ -170,7 +170,7 @@ export default function MapStep({
                   transition={{ delay: i * 0.1 }}
                   onClick={() => onSelectInstallation(inst)}
                   className={cn(
-                    "w-full text-left p-8 rounded-[2rem] border transition-all bg-white",
+                    "w-full text-left p-8 rounded-[2rem] border transition-all bg-[#F8FAFC]",
                     isSelected
                       ? "border-brand-mint shadow-xl shadow-brand-mint/10"
                       : "border-brand-navy/5 hover:border-brand-mint/40 hover:shadow-xl hover:shadow-brand-navy/5",

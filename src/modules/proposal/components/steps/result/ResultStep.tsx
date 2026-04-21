@@ -42,13 +42,13 @@ export function ResultStep({
     >
       {/* BLOQUE SUPERIOR */}
       <div className="rounded-[2rem] md:rounded-[3rem] brand-gradient p-5 md:p-8 shadow-2xl shadow-brand-mint/20 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-56 h-56 md:w-80 md:h-80 bg-white/10 blur-3xl rounded-full -mr-20 -mt-20" />
+        <div className="absolute top-0 right-0 w-56 h-56 md:w-80 md:h-80 bg-[#F8FAFC]/10 blur-3xl rounded-full -mr-20 -mt-20" />
 
         <div className="relative z-10 grid grid-cols-1 xl:grid-cols-[minmax(0,1.15fr)_430px] gap-6">
           {/* IZQUIERDA */}
           <div className="space-y-5">
             <div className="space-y-3">
-              <div className="inline-flex w-fit items-center gap-2 px-3 py-1.5 rounded-full bg-white/25 border border-white/20 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-navy">
+              <div className="inline-flex w-fit items-center gap-2 px-3 py-1.5 rounded-full bg-[#F8FAFC]/25 border border-white/20 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-navy">
                 <Icon
                   icon="solar:check-circle-bold-duotone"
                   className="h-4 w-4"
@@ -74,7 +74,7 @@ export function ResultStep({
             </div>
 
             {hasMultipleProposalModes ? (
-              <div className="inline-flex w-full rounded-[1.25rem] bg-white/35 p-1.5 backdrop-blur-xl border border-white/30 shadow-lg shadow-brand-navy/5">
+              <div className="inline-flex w-full rounded-[1.25rem] bg-[#F8FAFC]/35 p-1.5 backdrop-blur-xl border border-white/30 shadow-lg shadow-brand-navy/5">
                 <button
                   type="button"
                   onClick={() => setSelectedProposalView("investment")}
@@ -110,7 +110,7 @@ export function ResultStep({
                 </button>
               </div>
             ) : (
-              <div className="rounded-[1.3rem] bg-white/35 backdrop-blur-xl border border-white/25 p-4 shadow-md shadow-brand-navy/5">
+              <div className="rounded-[1.3rem] bg-[#F8FAFC]/35 backdrop-blur-xl border border-white/25 p-4 shadow-md shadow-brand-navy/5">
                 <div className="flex items-center gap-3">
                   <div className="w-11 h-11 rounded-2xl bg-brand-navy text-white flex items-center justify-center">
                     <Icon
@@ -135,7 +135,7 @@ export function ResultStep({
               </div>
             )}
 
-            <div className="rounded-[1.6rem] bg-white/20 border border-white/20 backdrop-blur-xl p-4 md:p-5 shadow-lg shadow-brand-navy/5">
+            <div className="rounded-[1.6rem] bg-[#F8FAFC]/20 border border-white/20 backdrop-blur-xl p-4 md:p-5 shadow-lg shadow-brand-navy/5">
               <div className="flex items-center gap-2 mb-4">
                 <Icon
                   icon={
@@ -151,7 +151,7 @@ export function ResultStep({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-4 md:gap-5">
-                <div className="rounded-[1.4rem] bg-white/35 border border-white/25 p-4">
+                <div className="rounded-[1.4rem] bg-[#F8FAFC]/35 border border-white/25 p-4">
                   <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-brand-navy/40">
                     {t("result.selectedMode")}{" "}
                   </p>
@@ -167,7 +167,7 @@ export function ResultStep({
                   {topActiveMetrics.map((item) => (
                     <div
                       key={item.label}
-                      className="rounded-[1.2rem] bg-white/35 backdrop-blur-xl border border-white/25 p-3.5 shadow-md shadow-brand-navy/5"
+                      className="rounded-[1.2rem] bg-[#F8FAFC]/35 backdrop-blur-xl border border-white/25 p-3.5 shadow-md shadow-brand-navy/5"
                     >
                       <div className="flex items-center gap-2 mb-2">
                         <Icon
@@ -195,7 +195,7 @@ export function ResultStep({
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, ease: "easeOut" }}
-              className="relative overflow-hidden rounded-[1.9rem] border border-white/30 bg-white/26 p-6 text-[#000054] shadow-xl backdrop-blur-xl min-h-[210px]"
+              className="relative overflow-hidden rounded-[1.9rem] border border-white/30 bg-[#F8FAFC]/26 p-6 text-[#000054] shadow-xl backdrop-blur-xl min-h-[210px]"
             >
               <motion.div
                 className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(148,194,255,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(84,217,199,0.14),transparent_30%)]"
@@ -285,7 +285,7 @@ export function ResultStep({
               className={cn(
                 "group relative w-full min-h-[210px] overflow-hidden rounded-[1.9rem] border p-6 text-left shadow-xl transition-all backdrop-blur-xl",
                 contractAlreadySigned
-                  ? "cursor-not-allowed border-white/20 bg-white/20 opacity-70"
+                  ? "cursor-not-allowed border-white/20 bg-[#F8FAFC]/20 opacity-70"
                   : "border-white/30 bg-[linear-gradient(135deg,rgba(0,0,84,0.98),rgba(28,78,216,0.88))] hover:shadow-[0_18px_45px_rgba(0,0,84,0.22)]",
               )}
             >
@@ -354,7 +354,7 @@ export function ResultStep({
                 </p>
 
                 {!contractAlreadySigned ? (
-                  <div className="mt-12 inline-flex items-center gap-2 rounded-full border border-[#000054]/10 bg-white/70 px-5 py-2 text-sm font-bold text-[#000054]">
+                  <div className="mt-12 inline-flex items-center gap-2 rounded-full border border-[#000054]/10 bg-[#F8FAFC]/70 px-5 py-2 text-sm font-bold text-[#000054]">
                     {`Continuar con ${activeModeLabelLower}`}
                     <motion.span
                       animate={{ x: [0, 2, 0] }}

@@ -37,7 +37,7 @@ export default function ResultActionsCard({
   formatNumber,
 }: ResultActionsCardProps) {
   return (
-    <div className="rounded-[2rem] md:rounded-[2.5rem] bg-white border border-brand-navy/5 shadow-2xl shadow-brand-navy/5 p-5 md:p-6 flex flex-col gap-5 xl:min-h-[520px]">
+    <div className="rounded-[2rem] md:rounded-[2.5rem] bg-[#F8FAFC] border border-brand-navy/5 shadow-2xl shadow-brand-navy/5 p-5 md:p-6 flex flex-col gap-5 xl:min-h-[520px]">
       <div>
         <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-brand-navy/40">
           {t("result.actions.title")}

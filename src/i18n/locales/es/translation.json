@@ -1,4 +1,10 @@
 {
+  "hero": {
+    "titleLine1": "Descubre cuánto puedes ahorrar",
+    "titleLine2": "con tu propuesta",
+    "titleHighlight": "gratis",
+    "subtitle": "En menos de 2 minutos, genera un informe detallado para optimizar tu consumo energético."
+  },
   "extraConsumption": {
     "badge": "Previsión de consumo",
     "title": "¿Tienes pensado incrementar tu consumo eléctrico?",

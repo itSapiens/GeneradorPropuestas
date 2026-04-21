@@ -162,7 +162,7 @@ export default function ReservationConfirmedPage() {
   return (
     <Layout>
       <div className="max-w-3xl mx-auto py-12 px-4">
-        <div className="bg-white rounded-[2rem] border border-brand-navy/5 shadow-xl p-8 md:p-10">
+        <div className="bg-[#F8FAFC] rounded-[2rem] border border-brand-navy/5 shadow-xl p-8 md:p-10">
           {loading ? (
             <div className="text-center py-12">
               <Loader2 className="w-10 h-10 animate-spin mx-auto text-brand-navy mb-4" />
