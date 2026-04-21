@@ -453,10 +453,10 @@ setClientPriceKwh(nextClientPriceKwh);
     <div className="min-h-screen bg-slate-50 relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(87,217,211,0.18),transparent_30%),radial-gradient(circle_at_top_right,rgba(148,194,255,0.18),transparent_28%),linear-gradient(to_bottom,rgba(7,0,95,0.02),rgba(7,0,95,0.01))]" />
 
-      <div className="relative z-10 px-4 py-8 md:py-12">
+      <div className="relative z-10 px-4 py-4 md:py-6">
         <div className="mx-auto max-w-6xl">
-          <div className="grid grid-cols-1 xl:grid-cols-[420px_minmax(0,1fr)] gap-8 items-start">
-            <div className="rounded-[2.5rem] border border-brand-navy/5 bg-brand-navy text-white p-7 md:p-8 shadow-2xl shadow-brand-navy/15 overflow-hidden relative">
+          <div className="grid grid-cols-1 xl:grid-cols-[420px_minmax(0,1fr)] gap-6 items-start">
+            <div className="rounded-[2.5rem] border border-brand-navy/5 bg-brand-navy text-white p-7 md:p-8 shadow-2xl shadow-brand-navy/15 overflow-hidden relative xl:sticky xl:top-6">
               <div className="absolute top-0 right-0 w-48 h-48 bg-brand-mint/20 blur-3xl rounded-full -mr-16 -mt-16" />
 
               <div className="relative z-10">
@@ -598,50 +598,33 @@ setClientPriceKwh(nextClientPriceKwh);
                 </div>
               ) : installationPreview ? (
                 <div className="mb-8 rounded-[2rem] border border-brand-navy/5 bg-[linear-gradient(135deg,rgba(87,217,211,0.10),rgba(148,194,255,0.10))] p-5 md:p-6">
-                  <div className="flex items-start justify-between gap-4 flex-wrap">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-navy/50">
-                        {t(
-                          "continueContract.installation.label",
-                          "Instalación seleccionada",
-                        )}
-                      </p>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-navy/50">
+                      {t(
+                        "continueContract.installation.label",
+                        "Instalación seleccionada",
+                      )}
+                    </p>
 
-                      <h3 className="mt-2 text-xl md:text-2xl font-black text-brand-navy">
-                        {installationPreview.nombre_instalacion ||
-                          t(
-                            "continueContract.installation.fallbackName",
-                            "Instalación asignada",
-                          )}
-                      </h3>
-
-                      <p className="mt-2 text-sm leading-6 text-brand-gray">
-                        {installationPreview.direccion ||
-                          t(
-                            "continueContract.installation.noAddress",
-                            "Dirección no disponible",
-                          )}
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl bg-[#F8FAFC]/80 border border-white px-4 py-3 min-w-[180px]">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
-                        {t(
-                          "continueContract.installation.modeLabel",
-                          "Modalidad disponible",
+                    <h3 className="mt-2 text-xl md:text-2xl font-black text-brand-navy">
+                      {installationPreview.nombre_instalacion ||
+                        t(
+                          "continueContract.installation.fallbackName",
+                          "Instalación asignada",
                         )}
-                      </p>
-                      <p className="mt-2 text-sm font-bold text-brand-navy">
-                        {formatInstallationModalidad(
-                          installationPreview.modalidad,
-                          t,
+                    </h3>
+
+                    <p className="mt-2 text-sm leading-6 text-brand-gray">
+                      {installationPreview.direccion ||
+                        t(
+                          "continueContract.installation.noAddress",
+                          "Dirección no disponible",
                         )}
-                      </p>
-                    </div>
+                    </p>
                   </div>
 
-                 <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-  {/* Ahorro anual del cliente */}
+                 <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+  {/* Ahorro anual */}
   {typeof estimatedSavings === "number" && (
     <div className="rounded-2xl bg-brand-mint/20 border border-brand-mint/40 p-4">
       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/55">
@@ -666,60 +649,29 @@ setClientPriceKwh(nextClientPriceKwh);
     </div>
   )}
 
-  {/* Precio €/kWh del cliente */}
-  {typeof clientPriceKwh === "number" && (
+  {/* Inversión total (inversión) o cuota mensual (servicio) */}
+  {availableModes.includes("investment") && typeof amountToPayInvestment === "number" && (
     <div className="rounded-2xl bg-[#F8FAFC]/70 border border-white p-4">
       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
-        {t("continueContract.installation.clientPriceKwh", "Tu precio actual")}
+        {t("continueContract.installation.investmentAmount", "Inversión")}
       </p>
       <p className="mt-2 text-xl font-black text-brand-navy">
-        {clientPriceKwh.toFixed(4)}
-        <span className="ml-1 text-sm font-semibold text-brand-gray">€/kWh</span>
+        {formatCurrency(amountToPayInvestment, normalizeAppLanguage(i18n.language))}
+      </p>
+    </div>
+  )}
+  {!availableModes.includes("investment") && availableModes.includes("service") && typeof amountToPayService === "number" && (
+    <div className="rounded-2xl bg-[#F8FAFC]/70 border border-white p-4">
+      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+        {t("continueContract.installation.serviceAmount", "Cuota mensual")}
+      </p>
+      <p className="mt-2 text-xl font-black text-brand-navy">
+        {formatCurrency(amountToPayService, normalizeAppLanguage(i18n.language))}
+        <span className="ml-1 text-sm font-semibold text-brand-gray">/mes</span>
       </p>
     </div>
   )}
 </div>
-
-{/* Segunda fila: coste inversión / cuota servicio / potencia planta */}
-{(availableModes.includes("investment") && typeof amountToPayInvestment === "number") ||
- (availableModes.includes("service") && typeof amountToPayService === "number") ||
- typeof installationPreview.potencia_instalada_kwp === "number" ? (
-  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-    {availableModes.includes("investment") && typeof amountToPayInvestment === "number" && (
-      <div className="rounded-2xl bg-[#F8FAFC]/50 border border-white/80 p-3">
-        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/40">
-          {t("continueContract.installation.investmentAmount", "Inversión total")}
-        </p>
-        <p className="mt-1 text-base font-black text-brand-navy">
-          {formatCurrency(amountToPayInvestment, normalizeAppLanguage(i18n.language))}
-        </p>
-      </div>
-    )}
-
-    {availableModes.includes("service") && typeof amountToPayService === "number" && (
-      <div className="rounded-2xl bg-[#F8FAFC]/50 border border-white/80 p-3">
-        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/40">
-          {t("continueContract.installation.serviceAmount", "Cuota servicio")}
-        </p>
-        <p className="mt-1 text-base font-black text-brand-navy">
-          {formatCurrency(amountToPayService, normalizeAppLanguage(i18n.language))}
-          <span className="ml-1 text-xs font-semibold text-brand-gray">/mes</span>
-        </p>
-      </div>
-    )}
-
-    {typeof installationPreview.potencia_instalada_kwp === "number" && (
-      <div className="rounded-2xl bg-[#F8FAFC]/50 border border-white/80 p-3">
-        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/40">
-          {t("continueContract.installation.totalPlantPower", "Potencia planta")}
-        </p>
-        <p className="mt-1 text-base font-black text-brand-navy">
-          {installationPreview.potencia_instalada_kwp} kWp
-        </p>
-      </div>
-    )}
-  </div>
-) : null}
                 </div>
               ) : null}
 
