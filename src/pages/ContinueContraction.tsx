@@ -202,22 +202,6 @@ const nextEstimatedSavings =
             ? calculation.totalSavingsEuro
             : null;
 
-// Inversión real = coste_kwh_inversion × kWp × horas_efectivas × 25 años
-// (mismo cálculo que proposalCalculation.ts / proposalCard.ts que usa el ResultStep)
-const nextAmountToPayInvestment = (() => {
-  const kwh = installation.coste_kwh_inversion;
-  const kwp = nextRecommendedPowerKwp;
-  const hours = installation.horas_efectivas;
-  if (typeof kwh === "number" && typeof kwp === "number" && typeof hours === "number" && kwh > 0 && kwp > 0 && hours > 0) {
-    return Math.round(kwh * kwp * hours * 25 * 100) / 100;
-  }
-  return typeof calculation?.investmentTotal === "number"
-    ? calculation.investmentTotal
-    : typeof calculation?.investmentCost === "number"
-      ? calculation.investmentCost
-      : null;
-})();
-
 // Cuota mensual servicio: serviceCost es el coste ANUAL → dividir entre 12
 const nextAmountToPayService =
   typeof calculation?.serviceCost === "number" && calculation.serviceCost > 0
@@ -235,6 +219,22 @@ const nextRecommendedPowerKwp =
     : typeof data?.study?.assigned_kwp === "number"
       ? data.study.assigned_kwp
       : null;
+
+// Inversión real = coste_kwh_inversion × kWp × horas_efectivas × 25 años
+// (mismo cálculo que proposalCalculation.ts / proposalCard.ts que usa el ResultStep)
+const nextAmountToPayInvestment = (() => {
+  const kwh = installation.coste_kwh_inversion;
+  const kwp = nextRecommendedPowerKwp;
+  const hours = installation.horas_efectivas;
+  if (typeof kwh === "number" && typeof kwp === "number" && typeof hours === "number" && kwh > 0 && kwp > 0 && hours > 0) {
+    return Math.round(kwh * kwp * hours * 25 * 100) / 100;
+  }
+  return typeof calculation?.investmentTotal === "number"
+    ? calculation.investmentTotal
+    : typeof calculation?.investmentCost === "number"
+      ? calculation.investmentCost
+      : null;
+})();
 
 // Precio €/kWh que paga el cliente (con impuestos)
 const nextClientPriceKwh =
