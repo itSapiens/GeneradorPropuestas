@@ -33,21 +33,21 @@ export interface ProposalPdfSummary {
 }
 
 const COLORS = {
-  bg: [248, 249, 251] as [number, number, number],
+  bg: [250, 250, 247] as [number, number, number],
   white: [255, 255, 255] as [number, number, number],
-  navy: [0, 0, 84] as [number, number, number],
-  navyLight: [0, 0, 110] as [number, number, number],
+  navy: [11, 25, 87] as [number, number, number],
+  navyLight: [58, 67, 110] as [number, number, number],
   cyan: [84, 217, 199] as [number, number, number],
   sky: [148, 194, 255] as [number, number, number],
-  mintSoft: [236, 250, 247] as [number, number, number],
-  soft: [241, 246, 255] as [number, number, number],
-  border: [222, 229, 238] as [number, number, number],
+  mintSoft: [232, 251, 246] as [number, number, number],
+  soft: [243, 241, 235] as [number, number, number],
+  border: [220, 224, 228] as [number, number, number],
   text: [28, 28, 48] as [number, number, number],
-  muted: [115, 113, 113] as [number, number, number],
+  muted: [112, 111, 111] as [number, number, number],
   success: [84, 217, 199] as [number, number, number],
   warning: [255, 214, 102] as [number, number, number],
   shadow: [220, 228, 240] as [number, number, number],
-  heroText: [220, 235, 250] as [number, number, number],
+  heroText: [168, 177, 219] as [number, number, number],
 } as const;
 
 type AnyRecord = Record<string, unknown>;
@@ -1124,75 +1124,64 @@ function renderPageChrome(
   const PH = doc.internal.pageSize.getHeight();
   const margin = 10;
 
+  // Cream background
   setFill(doc, COLORS.bg);
   doc.rect(0, 0, PW, PH, "F");
 
-  setFill(doc, COLORS.navy);
-  doc.rect(0, 0, PW, 2.5, "F");
+  // Brand: cyan dot + "SAPIENS ENERGÍA"
+  setFill(doc, COLORS.cyan);
+  doc.circle(margin + 2.5, 7.5, 2.5, "F");
 
-  writeText(doc, "SAPIENS ENERGÍA", margin, 11, {
-    size: 6.8,
-    color: COLORS.muted,
-    fontStyle: "bold",
-  });
-
-  writeText(doc, title, margin, 18, {
-    size: 12,
-    color: COLORS.navy,
-    fontStyle: "bold",
-  });
-
-  drawCard(doc, 163, 8, 37, 12, COLORS.white, COLORS.border, 4);
-  writeText(doc, tPdf(language, "header.date", "FECHA"), 181.5, 12.5, {
-    size: 5.5,
-    color: COLORS.muted,
-    fontStyle: "bold",
-    align: "center",
-  });
-  writeText(doc, formatDate(language), 181.5, 17.5, {
+  writeText(doc, "SAPIENS ENERGÍA", margin + 7, 9.2, {
     size: 7.5,
     color: COLORS.navy,
     fontStyle: "bold",
-    align: "center",
   });
 
-  if (totalPages > 1) {
-    drawCard(doc, 136, 8, 23, 12, COLORS.mintSoft, COLORS.border, 4);
-    writeText(doc, `${pageIndex + 1}/${totalPages}`, 147.5, 15.5, {
-      size: 7,
-      color: COLORS.navy,
-      fontStyle: "bold",
-      align: "center",
-    });
-  }
+  // Page title top-right
+  writeText(doc, title, PW - margin, 9.2, {
+    size: 6.5,
+    color: COLORS.muted,
+    fontStyle: "bold",
+    align: "right",
+  });
 
+  // Top divider
   setDraw(doc, COLORS.border);
-  doc.setLineWidth(0.3);
-  doc.line(margin, 23, PW - margin, 23);
+  doc.setLineWidth(0.25);
+  doc.line(margin, 13.5, PW - margin, 13.5);
 
-  setFill(doc, COLORS.navy);
-  doc.rect(0, PH - 2.5, PW, 2.5, "F");
+  // Footer divider
+  doc.line(margin, PH - 12, PW - margin, PH - 12);
 
-  setDraw(doc, COLORS.border);
-  doc.setLineWidth(0.3);
-  doc.line(margin, PH - 14, PW - margin, PH - 14);
-
+  // Footer left: document label
   writeText(
     doc,
-    tPdf(
-      language,
-      "footer.note",
-      "Propuesta generada automáticamente por Sapiens Energía a partir del análisis documental de la factura del cliente.",
-    ),
-    PW / 2,
-    PH - 9,
+    tPdf(language, "footer.docType", "INFORME · PROPUESTA ENERGÉTICA"),
+    margin,
+    PH - 7,
     {
-      size: 5.6,
+      size: 5.8,
       color: COLORS.muted,
-      align: "center",
-      maxWidth: 160,
+      fontStyle: "bold",
     },
   );
+
+  // Footer right: page number
+  if (totalPages > 1) {
+    writeText(
+      doc,
+      `${tPdf(language, "footer.pageAbbr", "PÁG.")} ${pageIndex + 1} / ${totalPages}`,
+      PW - margin,
+      PH - 7,
+      {
+        size: 5.8,
+        color: COLORS.muted,
+        fontStyle: "bold",
+        align: "right",
+      },
+    );
+  }
 }
 
 function renderStudyPdfPage(
@@ -1215,8 +1204,6 @@ function renderStudyPdfPage(
         ? tPdf(language, "viability.medium", "Media")
         : tPdf(language, "viability.low", "Baja");
 
-  const modeAccent = getModeAccent(proposal.mode);
-
   renderPageChrome(
     doc,
     tPdf(language, "pageTitle", "PROPUESTA ENERGÉTICA"),
@@ -1225,268 +1212,227 @@ function renderStudyPdfPage(
     language,
   );
 
-  const heroY = 26;
-  const heroH = 34;
-
-  drawShadow(doc, margin, heroY, innerW, heroH, 7);
-  drawCard(doc, margin, heroY, innerW, heroH, COLORS.white, COLORS.border, 7);
+  // ── INFO BAR (navy) ───────────────────────────────────────────────
+  const infoBarY = 16;
+  const infoBarH = 22;
 
   setFill(doc, COLORS.navy);
-  doc.roundedRect(margin, heroY, 76, heroH, 7, 7, "F");
-  doc.rect(margin + 70, heroY, 6, heroH, "F");
+  doc.roundedRect(margin, infoBarY, innerW, infoBarH, 5, 5, "F");
 
+  // Badge "INFORME PERSONALIZADO"
+  setFill(doc, COLORS.cyan);
+  doc.roundedRect(margin + 4, infoBarY + 3, 44, 4.5, 2, 2, "F");
   writeText(
     doc,
-    tPdf(language, "hero.executiveReport", "INFORME EJECUTIVO"),
-    margin + 5,
-    heroY + 7.5,
-    {
-      size: 6.5,
-      color: COLORS.sky,
-      fontStyle: "bold",
-    },
+    tPdf(language, "labels.personalizedReport", "INFORME PERSONALIZADO"),
+    margin + 26,
+    infoBarY + 6.3,
+    { size: 3.8, color: COLORS.navy, fontStyle: "bold", align: "center" },
   );
+
+  // Client name + tariff/date
+  writeText(doc, getCustomerFullName(data, language), margin + 4, infoBarY + 13, {
+    size: 8,
+    color: COLORS.white,
+    fontStyle: "bold",
+    maxWidth: 62,
+  });
+  writeText(
+    doc,
+    `${data.billType || "-"} · ${formatDate(language)}`,
+    margin + 4,
+    infoBarY + 18.5,
+    { size: 5.2, color: COLORS.heroText, maxWidth: 64 },
+  );
+
+  // Right columns: TARIFA | VIABILIDAD | POTENCIA | CONSUMO
+  const infoCols = [
+    {
+      label: tPdf(language, "supply.tariff", "Tarifa").toUpperCase(),
+      value: data.billType || "-",
+    },
+    {
+      label: tPdf(language, "labels.solarViability", "VIABILIDAD SOLAR").replace("VIABILIDADE", "VIABILIDAD"),
+      value: `${result.viabilityScore} · ${viabilityLabel}`,
+    },
+    {
+      label: translate(language, "result.summary.recommendedPower", "Potencia").toUpperCase(),
+      value: `${formatNumber(proposal.recommendedPowerKwp, language, 1)} kWp`,
+    },
+    {
+      label: translate(language, "result.summary.annualConsumption", "Consumo anual").toUpperCase(),
+      value: `${formatNumber(proposal.annualConsumptionKwh, language, 0)} kWh`,
+    },
+  ];
+
+  const colsStartX = margin + 72;
+  const colW = (innerW - 72) / 4;
+
+  infoCols.forEach((col, i) => {
+    const cx = colsStartX + i * colW + colW / 2;
+    if (i > 0) {
+      setDraw(doc, COLORS.navyLight);
+      doc.setLineWidth(0.2);
+      doc.line(colsStartX + i * colW, infoBarY + 5, colsStartX + i * colW, infoBarY + infoBarH - 4);
+    }
+    writeText(doc, col.label, cx, infoBarY + 8, {
+      size: 3.8,
+      color: COLORS.heroText,
+      fontStyle: "bold",
+      align: "center",
+      maxWidth: colW - 2,
+    });
+    writeText(doc, col.value, cx, infoBarY + 16, {
+      size: 6.2,
+      color: COLORS.white,
+      fontStyle: "bold",
+      align: "center",
+      maxWidth: colW - 2,
+    });
+  });
+
+  // ── HERO TEXT ─────────────────────────────────────────────────────
+  const heroY = infoBarY + infoBarH + 6;
 
   const heroTitle =
     proposal.mode === "service"
-      ? tPdf(
-          language,
-          "hero.serviceTitle",
-          "Propuesta energética\nmodalidad servicio",
-        )
-      : tPdf(
-          language,
-          "hero.investmentTitle",
-          "Propuesta energética\nmodalidad inversión",
-        );
+      ? tPdf(language, "hero.serviceTitle", "Propuesta energética\nmodalidad servicio")
+      : tPdf(language, "hero.investmentTitle", "Propuesta energética\nmodalidad inversión");
 
-  writeText(doc, heroTitle, margin + 5, heroY + 14, {
-    size: 13,
-    color: COLORS.white,
+  writeText(doc, heroTitle, margin, heroY + 11, {
+    size: 18,
+    color: COLORS.navy,
     fontStyle: "bold",
-    maxWidth: 64,
+    maxWidth: 140,
   });
 
-  writeText(
-    doc,
-    getHeroSubtitle(proposal.mode, language),
-    margin + 5,
-    heroY + 27,
-    {
-      size: 5.7,
+  writeText(doc, getHeroSubtitle(proposal.mode, language), margin, heroY + 25, {
+    size: 6.2,
+    color: COLORS.muted,
+    maxWidth: 128,
+  });
+
+  // Extra consumption badges (HVAC / EV) shown top-right of hero
+  const hvacM2: number = Number(data.extraConsumptionHvacM2 ?? 0);
+  const evKmYear: number = Number(data.extraConsumptionEvKmYear ?? 0);
+  let badgeX = margin + 135;
+  if (hvacM2 > 0) {
+    const hvacAnnualKwh = Math.round(hvacM2 * HVAC_KWH_PER_M2_YEAR);
+    drawExtraConsumptionBadge(
+      doc, badgeX, heroY + 8,
+      "Climatización",
+      `${formatNumber(hvacM2, language, 0)} m² (+${formatNumber(hvacAnnualKwh, language, 0)} kWh/año)`,
+      "hvac",
+    );
+    badgeX += 37;
+  }
+  if (evKmYear > 0) {
+    const evAnnualKwh = Math.round(evKmYear * EV_KWH_PER_KM);
+    drawExtraConsumptionBadge(
+      doc, badgeX, heroY + 8,
+      "Vehículo eléct.",
+      `${formatNumber(evKmYear, language, 0)} km (+${formatNumber(evAnnualKwh, language, 0)} kWh/año)`,
+      "ev",
+    );
+  }
+
+  // ── KPI BAR (navy) ────────────────────────────────────────────────
+  const kpiY = heroY + 32;
+  const kpiH = 22;
+
+  setFill(doc, COLORS.navy);
+  doc.roundedRect(margin, kpiY, innerW, kpiH, 5, 5, "F");
+
+  const kpiCols =
+    proposal.mode === "investment"
+      ? [
+          {
+            label: translate(language, "result.summary.initialCost", "Coste inicial").toUpperCase(),
+            value: formatCurrency(proposal.upfrontCost, language),
+            accent: false,
+          },
+          {
+            label: translate(language, "result.summary.return", "Retorno").toUpperCase(),
+            value:
+              proposal.paybackYears > 0
+                ? `${formatNumber(proposal.paybackYears, language, 1)} ${translate(language, "result.units.years", "años")}`
+                : tPdf(language, "common.notAvailable", "N/D"),
+            accent: false,
+          },
+          {
+            label: translate(language, "result.summary.annualSavings", "Ahorro anual").toUpperCase(),
+            value: formatCurrency(proposal.annualSavings, language),
+            accent: true,
+          },
+          {
+            label: translate(language, "result.summary.savings25Years", "Ahorro 25 años").toUpperCase(),
+            value: formatCurrency(proposal.totalSavings25Years, language),
+            accent: false,
+          },
+        ]
+      : [
+          {
+            label: translate(language, "result.summary.monthlyFee", "Cuota mensual").toUpperCase(),
+            value:
+              proposal.monthlyFee && proposal.monthlyFee > 0
+                ? `${formatCurrency(proposal.monthlyFee, language)} / ${translate(language, "result.units.month", "mes")}`
+                : tPdf(language, "common.consult", "Consultar"),
+            accent: true,
+          },
+          {
+            label: translate(language, "result.summary.annualSavings", "Ahorro anual").toUpperCase(),
+            value: formatCurrency(proposal.annualSavings, language),
+            accent: false,
+          },
+          {
+            label: translate(language, "result.summary.savings25Years", "Ahorro 25 años").toUpperCase(),
+            value: formatCurrency(proposal.totalSavings25Years, language),
+            accent: false,
+          },
+          {
+            label: translate(language, "result.summary.recommendedPower", "Potencia").toUpperCase(),
+            value: `${formatNumber(proposal.recommendedPowerKwp, language, 1)} kWp`,
+            accent: false,
+          },
+        ];
+
+  const kpiColW = innerW / 4;
+  kpiCols.forEach((col, i) => {
+    const cx = margin + i * kpiColW + kpiColW / 2;
+    if (i > 0) {
+      setDraw(doc, COLORS.navyLight);
+      doc.setLineWidth(0.2);
+      doc.line(margin + i * kpiColW, kpiY + 4, margin + i * kpiColW, kpiY + kpiH - 4);
+    }
+    writeText(doc, col.label, cx, kpiY + 7, {
+      size: 3.8,
       color: COLORS.heroText,
-      maxWidth: 64,
-    },
-  );
-
-  // Pills del hero
-  const heroPillW = 34;
-  const heroPillH = 9.6;
-  const heroPillGap = 3;
-  const heroPillX1 = 88;
-  const heroPillX2 = heroPillX1 + heroPillW + heroPillGap;
-  const heroPillX3 = heroPillX2 + heroPillW + heroPillGap;
-
-  const heroTopPillY = heroY + 5;
-  const heroBottomPillY = heroY + 18.5;
-
-  // fila superior
-  drawChip(doc, heroPillX1, heroTopPillY, data.billType || "2TD", heroPillW);
-  drawChip(doc, heroPillX2, heroTopPillY, proposal.title, heroPillW);
-  drawChip(
-    doc,
-    heroPillX3,
-    heroTopPillY,
-    proposal.badge || "Ahorro",
-    heroPillW,
-    COLORS.mintSoft,
-  );
-
-const hvacM2: number = Number(data.extraConsumptionHvacM2 ?? 0);
-const evKmYear: number = Number(data.extraConsumptionEvKmYear ?? 0);
-
-const hasHvac = hvacM2 > 0;
-const hasEv = evKmYear > 0;
-
-const visibleBottomPills: Array<{
-  type: "hvac" | "ev" | "viability";
-  label?: string;
-  value?: string;
-}> = [];
-
-if (hasHvac) {
-  const hvacAnnualKwh = Math.round(hvacM2 * HVAC_KWH_PER_M2_YEAR);
-
-  visibleBottomPills.push({
-    type: "hvac",
-    label: "Climatización",
-    value: `${formatNumber(hvacM2, language, 0)} m² (+${formatNumber(hvacAnnualKwh, language, 0)} kWh/año)`,
+      fontStyle: "bold",
+      align: "center",
+      maxWidth: kpiColW - 4,
+    });
+    writeText(doc, col.value, cx, kpiY + 17, {
+      size: col.accent ? 9.5 : 8,
+      color: col.accent ? COLORS.cyan : COLORS.white,
+      fontStyle: "bold",
+      align: "center",
+      maxWidth: kpiColW - 4,
+    });
   });
-}
 
-if (hasEv) {
-  const evAnnualKwh = Math.round(evKmYear * EV_KWH_PER_KM);
-
-  visibleBottomPills.push({
-    type: "ev",
-    label: "Vehículo eléct.",
-    value: `${formatNumber(evKmYear, language, 0)} km (+${formatNumber(evAnnualKwh, language, 0)} kWh/año)`,
-  });
-}
-
-visibleBottomPills.push({
-  type: "viability",
-});
-
-const pillXs = [heroPillX1, heroPillX2, heroPillX3];
-
-visibleBottomPills.forEach((pill, index) => {
-  const x = pillXs[index];
-  const y = heroBottomPillY;
-
-  if (pill.type === "hvac") {
-    drawExtraConsumptionBadge(doc, x, y, pill.label!, pill.value!, "hvac");
-    return;
-  }
-
-  if (pill.type === "ev") {
-    drawExtraConsumptionBadge(doc, x, y, pill.label!, pill.value!, "ev");
-    return;
-  }
-
-  drawInfoPill(doc, x, y, heroPillW, heroPillH, {
-    title: tPdf(language, "labels.solarViability", "VIABILIDADE SOLAR"),
-    value: String(result.viabilityScore),
-    subtitle: viabilityLabel,
-    fill: COLORS.mintSoft,
-    titleColor: COLORS.muted,
-    valueColor: COLORS.navy,
-    subtitleColor: COLORS.success,
-  });
-});
-
-  const kpiY = heroY + heroH + 5;
-  const kpiH = 17;
-  const kpiW = 45;
-  const kpiGap = (innerW - kpiW * 4) / 3;
-
-  if (proposal.mode === "investment") {
-    drawMetricCard(
-      doc,
-      margin,
-      kpiY,
-      kpiW,
-      kpiH,
-      translate(language, "result.summary.initialCost", "Coste inicial"),
-      formatCurrency(proposal.upfrontCost, language),
-      modeAccent,
-    );
-
-    drawMetricCard(
-      doc,
-      margin + kpiW + kpiGap,
-      kpiY,
-      kpiW,
-      kpiH,
-      translate(language, "result.summary.return", "Retorno"),
-      proposal.paybackYears > 0
-        ? `${formatNumber(proposal.paybackYears, language, 1)} ${translate(language, "result.units.years", "años")}`
-        : tPdf(language, "common.notAvailable", "N/D"),
-      modeAccent,
-    );
-
-    drawMetricCard(
-      doc,
-      margin + (kpiW + kpiGap) * 2,
-      kpiY,
-      kpiW,
-      kpiH,
-      translate(language, "result.summary.recommendedPower", "Potencia recom."),
-      `${formatNumber(proposal.recommendedPowerKwp, language, 1)} kWp`,
-      modeAccent,
-    );
-
-    drawMetricCard(
-      doc,
-      margin + (kpiW + kpiGap) * 3,
-      kpiY,
-      kpiW,
-      kpiH,
-      translate(language, "result.summary.annualConsumption", "Consumo anual"),
-      `${formatNumber(proposal.annualConsumptionKwh, language, 0)} kWh`,
-      COLORS.sky,
-    );
-  } else {
-    drawMetricCard(
-      doc,
-      margin,
-      kpiY,
-      kpiW,
-      kpiH,
-      translate(language, "result.summary.monthlyFee", "Cuota mensual"),
-      proposal.monthlyFee && proposal.monthlyFee > 0
-        ? `${formatCurrency(proposal.monthlyFee, language)} / ${translate(language, "result.units.month", "mes")}`
-        : tPdf(language, "common.consult", "Consultar"),
-      modeAccent,
-    );
-
-    drawMetricCard(
-      doc,
-      margin + kpiW + kpiGap,
-      kpiY,
-      kpiW,
-      kpiH,
-      translate(language, "result.summary.annualSavings", "Ahorro anual"),
-      formatCurrency(proposal.annualSavings, language),
-      modeAccent,
-    );
-
-    drawMetricCard(
-      doc,
-      margin + (kpiW + kpiGap) * 2,
-      kpiY,
-      kpiW,
-      kpiH,
-      translate(language, "result.summary.recommendedPower", "Potencia recom."),
-      `${formatNumber(proposal.recommendedPowerKwp, language, 1)} kWp`,
-      modeAccent,
-    );
-
-    drawMetricCard(
-      doc,
-      margin + (kpiW + kpiGap) * 3,
-      kpiY,
-      kpiW,
-      kpiH,
-      translate(language, "result.summary.annualConsumption", "Consumo anual"),
-      `${formatNumber(proposal.annualConsumptionKwh, language, 0)} kWh`,
-      COLORS.sky,
-    );
-  }
-
+  // ── 2-COLUMN GRID (top row) ───────────────────────────────────────
   const gridY = kpiY + kpiH + 5;
   const gridGap = 4;
   const gridCardW = (innerW - gridGap) / 2;
-  const gridCardH = 65;
+  const gridCardH = 63;
 
-  drawShadow(doc, margin, gridY, gridCardW, gridCardH);
-  drawCard(
-    doc,
-    margin,
-    gridY,
-    gridCardW,
-    gridCardH,
-    COLORS.white,
-    COLORS.border,
-    6,
-  );
+  drawCard(doc, margin, gridY, gridCardW, gridCardH, COLORS.white, COLORS.border, 6);
   drawSectionTitle(
     doc,
     margin + 4,
     gridY + 8,
     tPdf(language, "sections.supplyData", "DATOS DEL SUMINISTRO"),
   );
-
   drawInfoRows(
     doc,
     margin + 4,
@@ -1494,98 +1440,42 @@ visibleBottomPills.forEach((pill, index) => {
     getSupplyRows(data, result, proposal, language),
     22,
     gridCardW - 32,
-{
-  labelSize: 5.4,
-  valueSize: 5.4,
-  minValueSize: 4.8,
-  lineHeight: 2.4,
-  minRowHeight: 5.1,
-},
+    {
+      labelSize: 5.4,
+      valueSize: 5.4,
+      minValueSize: 4.8,
+      lineHeight: 2.4,
+      minRowHeight: 5.1,
+    },
   );
 
   const rightX = margin + gridCardW + gridGap;
-  drawShadow(doc, rightX, gridY, gridCardW, gridCardH);
-  drawCard(
-    doc,
-    rightX,
-    gridY,
-    gridCardW,
-    gridCardH,
-    COLORS.white,
-    COLORS.border,
-    6,
-  );
+  drawCard(doc, rightX, gridY, gridCardW, gridCardH, COLORS.white, COLORS.border, 6);
   drawSectionTitle(
     doc,
     rightX + 4,
     gridY + 8,
-    tPdf(
-      language,
-      "sections.priorityRecommendations",
-      "RECOMENDACIONES PRIORITARIAS",
-    ),
+    tPdf(language, "sections.priorityRecommendations", "RECOMENDACIONES PRIORITARIAS"),
   );
 
   const recs = getRecommendationItems(proposal.mode, language);
-  drawRecommendationItem(
-    doc,
-    rightX + 4,
-    gridY + 16,
-    gridCardW - 8,
-    recs[0].title,
-    recs[0].description,
-    1,
-    20,
-  );
-  drawRecommendationItem(
-    doc,
-    rightX + 4,
-    gridY + 39,
-    gridCardW - 8,
-    recs[1].title,
-    recs[1].description,
-    2,
-    20,
-  );
+  drawRecommendationItem(doc, rightX + 4, gridY + 16, gridCardW - 8, recs[0].title, recs[0].description, 1, 20);
+  drawRecommendationItem(doc, rightX + 4, gridY + 39, gridCardW - 8, recs[1].title, recs[1].description, 2, 20);
 
+  // ── 2-COLUMN GRID (bottom row) ────────────────────────────────────
   const bottomY = gridY + gridCardH + gridGap;
-  drawShadow(doc, margin, bottomY, gridCardW, gridCardH);
-  drawCard(
-    doc,
-    margin,
-    bottomY,
-    gridCardW,
-    gridCardH,
-    COLORS.white,
-    COLORS.border,
-    6,
-  );
+  const bottomCardH = 62;
+
+  drawCard(doc, margin, bottomY, gridCardW, bottomCardH, COLORS.white, COLORS.border, 6);
   drawSectionTitle(
     doc,
     margin + 4,
     bottomY + 8,
     tPdf(language, "sections.economicSummary", "RESUMEN ECONÓMICO"),
   );
-  drawEconomicSummary(
-    doc,
-    margin + 4,
-    bottomY + 16,
-    gridCardW - 8,
-    proposal,
-    language,
-  );
+  drawEconomicSummary(doc, margin + 4, bottomY + 16, gridCardW - 8, proposal, language);
 
-  drawShadow(doc, rightX, bottomY, gridCardW, gridCardH);
-  drawCard(
-    doc,
-    rightX,
-    bottomY,
-    gridCardW,
-    gridCardH,
-    COLORS.white,
-    COLORS.border,
-    6,
-  );
+  drawCard(doc, rightX, bottomY, gridCardW, bottomCardH, COLORS.white, COLORS.border, 6);
   drawSectionTitle(
     doc,
     rightX + 4,
@@ -1595,105 +1485,52 @@ visibleBottomPills.forEach((pill, index) => {
 
   writeText(
     doc,
-    tPdf(
-      language,
-      "labels.consumptionDistribution",
-      "Distribución del consumo",
-    ),
+    tPdf(language, "labels.consumptionDistribution", "Distribución del consumo"),
     rightX + 4,
     bottomY + 16,
-    {
-      size: 5.8,
-      color: COLORS.muted,
-      fontStyle: "bold",
-    },
+    { size: 5.8, color: COLORS.muted, fontStyle: "bold" },
   );
-
-  drawPeriodDistribution(
-    doc,
-    rightX + 4,
-    bottomY + 20,
-    38,
-    result.charts.periodDistribution,
-    language,
-    {
-      maxItems: 3,
-      barHeight: 4,
-      rowGap: 7.1,
-    },
-  );
+  drawPeriodDistribution(doc, rightX + 4, bottomY + 20, 38, result.charts.periodDistribution, language, {
+    maxItems: 3,
+    barHeight: 4,
+    rowGap: 7.1,
+  });
 
   writeText(
     doc,
     tPdf(language, "labels.powerAndProduction", "Potencia y producción"),
     rightX + 48,
     bottomY + 16,
-    {
-      size: 5.8,
-      color: COLORS.muted,
-      fontStyle: "bold",
-    },
+    { size: 5.8, color: COLORS.muted, fontStyle: "bold" },
   );
-
   drawInfoRows(
     doc,
     rightX + 48,
     bottomY + 22,
     [
-      [
-        translate(language, "result.summary.recommendedPower", "Potencia"),
-        `${formatNumber(proposal.recommendedPowerKwp, language, 1)} kWp`,
-      ],
-      [
-        translate(language, "result.summary.annualConsumption", "Cons. anual"),
-        `${formatNumber(proposal.annualConsumptionKwh, language, 0)} kWh`,
-      ],
-      [
-        tPdf(language, "labels.annualProduction", "Prod. anual"),
-        `${formatNumber(result.estimatedAnnualProductionKwh, language, 0)} kWh`,
-      ],
-      [
-        tPdf(language, "labels.selfConsumption", "Autocons."),
-        `${formatNumber(result.selfConsumptionRatio * 100, language, 0)} %`,
-      ],
+      [translate(language, "result.summary.recommendedPower", "Potencia"), `${formatNumber(proposal.recommendedPowerKwp, language, 1)} kWp`],
+      [translate(language, "result.summary.annualConsumption", "Cons. anual"), `${formatNumber(proposal.annualConsumptionKwh, language, 0)} kWh`],
+      [tPdf(language, "labels.annualProduction", "Prod. anual"), `${formatNumber(result.estimatedAnnualProductionKwh, language, 0)} kWh`],
+      [tPdf(language, "labels.selfConsumption", "Autocons."), `${formatNumber(result.selfConsumptionRatio * 100, language, 0)} %`],
     ],
     17,
     22,
-    {
-      labelSize: 5.8,
-      valueSize: 5.8,
-      minValueSize: 5.2,
-      lineHeight: 2.9,
-      minRowHeight: 6.5,
-    },
+    { labelSize: 5.8, valueSize: 5.8, minValueSize: 5.2, lineHeight: 2.9, minRowHeight: 6.5 },
   );
 
-  const concY = bottomY + gridCardH + 5;
-  const concH = 42;
+  // ── EXECUTIVE CONCLUSION ──────────────────────────────────────────
+  const concY = bottomY + bottomCardH + gridGap;
+  const concH = 40;
 
-  drawShadow(doc, margin, concY, innerW, concH, 7);
   drawCard(doc, margin, concY, innerW, concH, COLORS.white, COLORS.border, 7);
   drawSectionTitle(
     doc,
     margin + 4,
     concY + 8,
-    tPdf(
-      language,
-      "sections.executiveConclusion",
-      "CONCLUSIÓN EJECUTIVA",
-    ),
+    tPdf(language, "sections.executiveConclusion", "CONCLUSIÓN EJECUTIVA"),
   );
 
-  drawCard(
-    doc,
-    margin + 4,
-    concY + 14,
-    85,
-    22,
-    COLORS.soft,
-    COLORS.border,
-    5,
-  );
+  drawCard(doc, margin + 4, concY + 14, 85, 20, COLORS.soft, COLORS.border, 5);
   writeText(doc, tPdf(language, "labels.summary", "Resumen"), margin + 8, concY + 19.5, {
     size: 7,
     color: COLORS.navy,
@@ -1705,16 +1542,7 @@ visibleBottomPills.forEach((pill, index) => {
     maxWidth: 75,
   });
 
-  drawCard(
-    doc,
-    margin + 94,
-    concY + 14,
-    45,
-    22,
-    COLORS.mintSoft,
-    COLORS.border,
-    5,
-  );
+  drawCard(doc, margin + 94, concY + 14, 45, 20, COLORS.mintSoft, COLORS.border, 5);
   writeText(
     doc,
     proposal.mode === "service"
@@ -1722,12 +1550,7 @@ visibleBottomPills.forEach((pill, index) => {
       : translate(language, "result.summary.annualSavings", "Ahorro anual"),
     margin + 116.5,
     concY + 20,
-    {
-      size: 5.8,
-      color: COLORS.muted,
-      fontStyle: "bold",
-      align: "center",
-    },
+    { size: 5.8, color: COLORS.muted, fontStyle: "bold", align: "center" },
   );
   writeText(
     doc,
@@ -1737,44 +1560,29 @@ visibleBottomPills.forEach((pill, index) => {
         : tPdf(language, "common.consult", "Consultar")
       : formatCurrency(proposal.annualSavings, language),
     margin + 116.5,
-    concY + 28.2,
-    {
-      size: 8.7,
-      color: COLORS.navy,
-      fontStyle: "bold",
-      align: "center",
-      maxWidth: 39,
-    },
+    concY + 27.5,
+    { size: 8.5, color: COLORS.navy, fontStyle: "bold", align: "center", maxWidth: 39 },
   );
-  writeText(doc, tPdf(language, "labels.estimated", "estimado"), margin + 116.5, concY + 32.8, {
+  writeText(doc, tPdf(language, "labels.estimated", "estimado"), margin + 116.5, concY + 32, {
     size: 5.5,
     color: COLORS.muted,
     align: "center",
   });
 
-  drawCard(
-    doc,
-    margin + 143,
-    concY + 14,
-    47,
-    22,
-    COLORS.white,
-    COLORS.border,
-    5,
-  );
+  drawCard(doc, margin + 143, concY + 14, 47, 20, COLORS.white, COLORS.border, 5);
   writeText(doc, tPdf(language, "labels.modality", "Modalidad"), margin + 166.5, concY + 20, {
     size: 5.8,
     color: COLORS.muted,
     fontStyle: "bold",
     align: "center",
   });
-  writeText(doc, proposal.title, margin + 166.5, concY + 28.2, {
-    size: 8.7,
+  writeText(doc, proposal.title, margin + 166.5, concY + 27.5, {
+    size: 8.5,
     color: COLORS.navy,
     fontStyle: "bold",
     align: "center",
   });
-  writeText(doc, proposal.badge || viabilityLabel, margin + 166.5, concY + 32.8, {
+  writeText(doc, proposal.badge || viabilityLabel, margin + 166.5, concY + 32, {
     size: 5.8,
     color: COLORS.success,
     fontStyle: "bold",
@@ -2046,60 +1854,63 @@ function renderRecommendationPage(
   const recommended = getRecommendedProposal(proposals);
   const reason = getRecommendationReason(recommended, proposals, language);
 
-  const heroY = 28;
-  drawShadow(doc, margin, heroY, innerW, 48, 8);
-  drawCard(doc, margin, heroY, innerW, 48, COLORS.white, COLORS.border, 8);
+  // ── INFO BAR (navy) ───────────────────────────────────────────────
+  const infoBarY = 16;
+  const infoBarH = 22;
 
   setFill(doc, COLORS.navy);
-  doc.roundedRect(margin, heroY, innerW, 17, 8, 8, "F");
-  doc.rect(margin, heroY + 9, innerW, 8, "F");
+  doc.roundedRect(margin, infoBarY, innerW, infoBarH, 5, 5, "F");
 
+  // Badge
+  setFill(doc, COLORS.cyan);
+  doc.roundedRect(margin + 4, infoBarY + 3, 50, 4.5, 2, 2, "F");
   writeText(
     doc,
     tPdf(language, "recommendation.header", "RECOMENDACIÓN SAPIENS"),
-    margin + 6,
-    heroY + 9,
-    {
-      size: 8,
-      color: COLORS.sky,
-      fontStyle: "bold",
-    },
+    margin + 29,
+    infoBarY + 6.3,
+    { size: 3.8, color: COLORS.navy, fontStyle: "bold", align: "center" },
   );
 
-  writeText(doc, reason.title, margin + 6, heroY + 23, {
-    size: 16,
-    color: COLORS.navy,
+  // Recommendation title
+  writeText(doc, reason.title, margin + 4, infoBarY + 14, {
+    size: 8,
+    color: COLORS.white,
     fontStyle: "bold",
-    maxWidth: 120,
+    maxWidth: 140,
   });
 
-  writeText(doc, reason.description, margin + 6, heroY + 33, {
-    size: 7,
-    color: COLORS.text,
-    maxWidth: 120,
-  });
+  // Modality badge (right)
+  if (recommended) {
+    const badgeX = margin + innerW - 48;
+    setFill(doc, COLORS.navyLight);
+    doc.roundedRect(badgeX, infoBarY + 4, 44, 14, 4, 4, "F");
+    writeText(
+      doc,
+      tPdf(language, "labels.modalityUpper", "MODALIDAD"),
+      badgeX + 22,
+      infoBarY + 9.5,
+      { size: 4, color: COLORS.heroText, fontStyle: "bold", align: "center" },
+    );
+    writeText(doc, recommended.title, badgeX + 22, infoBarY + 15.5, {
+      size: 7.5,
+      color: COLORS.white,
+      fontStyle: "bold",
+      align: "center",
+      maxWidth: 40,
+    });
+  }
 
-  drawCard(doc, 150, heroY + 8, 40, 26, COLORS.mintSoft, COLORS.border, 6);
-  writeText(doc, tPdf(language, "labels.modalityUpper", "MODALIDAD"), 170, heroY + 15, {
-    size: 6,
+  // ── REASON DESCRIPTION ────────────────────────────────────────────
+  const reasonY = infoBarY + infoBarH + 4;
+  writeText(doc, reason.description, margin, reasonY + 6, {
+    size: 6.5,
     color: COLORS.muted,
-    fontStyle: "bold",
-    align: "center",
-  });
-  writeText(doc, recommended?.title || "N/D", 170, heroY + 24.5, {
-    size: 11,
-    color: COLORS.navy,
-    fontStyle: "bold",
-    align: "center",
-  });
-  writeText(doc, recommended?.badge || "Recomendación", 170, heroY + 29.8, {
-    size: 6,
-    color: COLORS.success,
-    fontStyle: "bold",
-    align: "center",
+    maxWidth: innerW,
   });
 
-  const cardsY = 84;
+  // ── PROPOSAL SUMMARY CARDS ────────────────────────────────────────
+  const cardsY = reasonY + 22;
   const gap = 4;
   const cardW = (innerW - gap) / 2;
   const cardH = 78;
@@ -2108,147 +1919,59 @@ function renderRecommendationPage(
   const service = proposals.find((p) => p.mode === "service");
 
   if (investment) {
-    drawRecommendationSummaryCard(
-      doc,
-      margin,
-      cardsY,
-      cardW,
-      cardH,
-      investment,
-      language,
-    );
+    drawRecommendationSummaryCard(doc, margin, cardsY, cardW, cardH, investment, language);
   }
-
   if (service) {
-    drawRecommendationSummaryCard(
-      doc,
-      margin + cardW + gap,
-      cardsY,
-      cardW,
-      cardH,
-      service,
-      language,
-    );
+    drawRecommendationSummaryCard(doc, margin + cardW + gap, cardsY, cardW, cardH, service, language);
   }
-
   if (!investment && recommended) {
-    drawRecommendationSummaryCard(
-      doc,
-      margin,
-      cardsY,
-      innerW,
-      cardH,
-      recommended,
-      language,
-    );
+    drawRecommendationSummaryCard(doc, margin, cardsY, innerW, cardH, recommended, language);
   }
 
+  // ── CONCLUSION ────────────────────────────────────────────────────
   const conclusionY = cardsY + cardH + 6;
-  drawShadow(doc, margin, conclusionY, innerW, 72, 7);
   drawCard(doc, margin, conclusionY, innerW, 72, COLORS.white, COLORS.border, 7);
   drawSectionTitle(
     doc,
     margin + 4,
     conclusionY + 8,
-    tPdf(
-      language,
-      "recommendation.conclusionAndNextStep",
-      "CONCLUSIÓN Y SIGUIENTE PASO",
-    ),
+    tPdf(language, "recommendation.conclusionAndNextStep", "CONCLUSIÓN Y SIGUIENTE PASO"),
   );
 
-  drawCard(
-    doc,
-    margin + 4,
-    conclusionY + 14,
-    innerW - 8,
-    24,
-    COLORS.soft,
-    COLORS.border,
-    5,
-  );
+  drawCard(doc, margin + 4, conclusionY + 14, innerW - 8, 24, COLORS.soft, COLORS.border, 5);
   writeText(
     doc,
-    tPdf(
-      language,
-      "recommendation.executiveConclusionTitle",
-      "Conclusión ejecutiva",
-    ),
+    tPdf(language, "recommendation.executiveConclusionTitle", "Conclusión ejecutiva"),
     margin + 8,
     conclusionY + 20,
-    {
-      size: 7,
-      color: COLORS.navy,
-      fontStyle: "bold",
-    },
+    { size: 7, color: COLORS.navy, fontStyle: "bold" },
   );
   writeText(
     doc,
     recommended
       ? recommended.mode === "investment"
-        ? tPdf(
-            language,
-            "recommendation.executiveInvestment",
-            "Por perfil económico y ahorro acumulado, recomendamos avanzar con la modalidad de inversión. Es la opción que mejor capitaliza el consumo detectado y ofrece una rentabilidad más sólida en el horizonte analizado.",
-          )
-        : tPdf(
-            language,
-            "recommendation.executiveService",
-            "Por flexibilidad de entrada y equilibrio entre ahorro y facilidad de contratación, recomendamos valorar la modalidad de servicio como la vía más cómoda para iniciar el proyecto.",
-          )
-      : tPdf(
-          language,
-          "recommendation.executivePending",
-          "No se ha podido establecer una recomendación final automática.",
-        ),
+        ? tPdf(language, "recommendation.executiveInvestment", "Por perfil económico y ahorro acumulado, recomendamos avanzar con la modalidad de inversión. Es la opción que mejor capitaliza el consumo detectado y ofrece una rentabilidad más sólida en el horizonte analizado.")
+        : tPdf(language, "recommendation.executiveService", "Por flexibilidad de entrada y equilibrio entre ahorro y facilidad de contratación, recomendamos valorar la modalidad de servicio como la vía más cómoda para iniciar el proyecto.")
+      : tPdf(language, "recommendation.executivePending", "No se ha podido establecer una recomendación final automática."),
     margin + 8,
     conclusionY + 27,
-    {
-      size: 6.2,
-      color: COLORS.text,
-      maxWidth: innerW - 16,
-    },
+    { size: 6.2, color: COLORS.text, maxWidth: innerW - 16 },
   );
 
-  drawCard(
-    doc,
-    margin + 4,
-    conclusionY + 42,
-    innerW - 8,
-    22,
-    COLORS.mintSoft,
-    COLORS.border,
-    5,
-  );
+  drawCard(doc, margin + 4, conclusionY + 42, innerW - 8, 22, COLORS.mintSoft, COLORS.border, 5);
   writeText(
     doc,
-    tPdf(
-      language,
-      "recommendation.nextStepTitle",
-      "Siguiente paso recomendado",
-    ),
+    tPdf(language, "recommendation.nextStepTitle", "Siguiente paso recomendado"),
     margin + 8,
     conclusionY + 48,
-    {
-      size: 7,
-      color: COLORS.navy,
-      fontStyle: "bold",
-    },
+    { size: 7, color: COLORS.navy, fontStyle: "bold" },
   );
   writeText(
     doc,
-    tPdf(
-      language,
-      "recommendation.nextStepDescription",
-      "Validar la propuesta seleccionada, revisar los datos del suministro y continuar con la reserva o contratación según la modalidad elegida.",
-    ),
+    tPdf(language, "recommendation.nextStepDescription", "Validar la propuesta seleccionada, revisar los datos del suministro y continuar con la reserva o contratación según la modalidad elegida."),
     margin + 8,
     conclusionY + 55,
-    {
-      size: 6.2,
-      color: COLORS.text,
-      maxWidth: innerW - 16,
-    },
+    { size: 6.2, color: COLORS.text, maxWidth: innerW - 16 },
   );
 }
 
