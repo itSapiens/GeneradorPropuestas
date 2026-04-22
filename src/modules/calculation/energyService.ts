@@ -394,10 +394,10 @@ export const calculateEnergyStudy = (
     5,
   );
 
-  // Precio excedentes
+  // Precio excedentes — si BD envía 0 (no configurado), usar el default regulado
   const surplusCompensationPriceKwh = round(
     normalizePositive(
-      input.surplusCompensationPriceKwh,
+      input.surplusCompensationPriceKwh || undefined,
       DEFAULT_SURPLUS_COMPENSATION_PRICE_KWH,
     ),
     5,
