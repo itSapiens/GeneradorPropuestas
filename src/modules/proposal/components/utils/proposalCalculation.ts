@@ -12,7 +12,10 @@ import {
   calculateEnergyStudy,
 } from "@/src/modules/calculation/energyService";
 import { normalizeInstallationModalidad } from "./proposalModes";
-import { INVESTMENT_MAINTENANCE_EUR_PER_KWP_YEAR } from "../../constants/proposal.constants";
+import {
+  DEFAULT_SURPLUS_COMPENSATION_EUR_KWH,
+  INVESTMENT_MAINTENANCE_EUR_PER_KWP_YEAR,
+} from "../../constants/proposal.constants";
 
 export function getFixedInstallationPower(
   installation: ApiInstallation | null | undefined,
@@ -101,7 +104,8 @@ export function calculateRequiredKwpForInstallation(
     periodConsumptions,
     invoiceVariableEnergyAmountEur,
 
-    surplusCompensationPriceKwh: installation.precio_excedentes_eur_kwh ?? 0,
+    // Precio excedentes: valor de BD si existe, si no el precio regulado por defecto (0.05 €/kWh)
+    surplusCompensationPriceKwh: installation.precio_excedentes_eur_kwh ?? DEFAULT_SURPLUS_COMPENSATION_EUR_KWH,
 
     maintenanceAnnualPerKwp:
       installation.coste_anual_mantenimiento_por_kwp ??

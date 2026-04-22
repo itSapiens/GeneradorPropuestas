@@ -123,8 +123,9 @@ const DEFAULT_VAT_RATE = 0.21;
 /** Impuesto sobre la electricidad (Ley 38/1992) — se aplica sobre base antes del IVA */
 const ELECTRIC_TAX_RATE = 0.05113;
 
-/** Precio de compensación de excedentes por defecto (€/kWh). 0 = sin compensación */
-const DEFAULT_SURPLUS_COMPENSATION_PRICE_KWH = 0;
+/** Precio de compensación de excedentes por defecto (€/kWh).
+ *  Valor regulado PVPC España 2024. La instalación puede sobreescribirlo via BD. */
+const DEFAULT_SURPLUS_COMPENSATION_PRICE_KWH = 0.05;
 
 /** IPC energético anual por defecto para proyección a 25 años (3%/año histórico España) */
 const DEFAULT_ENERGY_PRICE_INFLATION = 0.03;
@@ -403,29 +404,36 @@ export const calculateEnergyStudy = (
   );
 
   // ── 2. PRODUCCIÓN SOLAR Y AUTOCONSUMO ──────────────────────────────────
-  // Producción anual estimada
+
+  // Producción anual total = horas_efectivas × potencia_instalada (kWh/año)
   const estimatedAnnualProductionKwh = round(
     effectiveHours * recommendedPowerKwp,
   );
 
-  // Energía solar que el cliente consume directamente (no se vierte a red)
+  // Energía autoconsumida = producción × ratio_autoconsumo
+  // Es la parte que el cliente consume directamente sin pasar por red
   const annualSelfConsumedEnergyKwh = round(
     recommendedPowerKwp * effectiveHours * selfConsumptionRatio,
   );
 
+  // Excedentes = producción - autoconsumida (energía vertida a red)
   const annualSurplusEnergyKwh = round(
     Math.max(estimatedAnnualProductionKwh - annualSelfConsumedEnergyKwh, 0),
   );
 
-  // Valor económico bruto
+  // ── Ahorro Autoconsumo = kWh_autoconsumidos × precio_factura_con_IVA
+  // El cliente deja de comprar esta energía a la comercializadora
   const annualSelfConsumptionValue = round(
     annualSelfConsumedEnergyKwh * invoicePriceWithVatKwh,
   );
 
+  // ── Ahorro Excedentes = kWh_excedentes × precio_compensación (€/kWh)
+  // Compensación que la comercializadora paga por la energía vertida a red
   const annualSurplusValue = round(
     annualSurplusEnergyKwh * surplusCompensationPriceKwh,
   );
 
+  // ── Ahorro Bruto = Ahorro Autoconsumo + Ahorro Excedentes
   const annualGrossSolarValue = round(
     annualSelfConsumptionValue + annualSurplusValue,
   );
@@ -436,6 +444,8 @@ export const calculateEnergyStudy = (
     DEFAULT_MAINTENANCE_ANNUAL_PER_KWP,
   );
 
+  // ── Mantenimiento anual = coste_mantenimiento_por_kWp × potencia_instalada
+  // Viene de BD (coste_anual_mantenimiento_por_kwp); 0 si está incluido en la instalación
   const annualMaintenanceCost = round(
     maintenanceAnnualPerKwp * recommendedPowerKwp,
   );
@@ -466,7 +476,7 @@ export const calculateEnergyStudy = (
 
   // ── 4. AHORRO ANUAL ──────────────────────────────────────────────────────
   // ----- AHORRO MODALIDAD INVERSIÓN -----
-  // Bruto = autoconsumo + excedentes; Neto = bruto − mantenimiento anual
+  // ── Ahorro Neto = Ahorro Bruto − Mantenimiento anual
   const annualSavingsInvestment = round(
     Math.max(annualGrossSolarValue - annualMaintenanceCost, 0),
   );

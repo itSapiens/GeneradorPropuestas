@@ -6,6 +6,11 @@ export const INSTALLATION_SEARCH_RADIUS_METERS = Number(
 
 export const INVESTMENT_MAINTENANCE_EUR_PER_KWP_YEAR = 0;
 
+/** Precio de compensación de excedentes vertidos a red (€/kWh).
+ *  Valor regulado PVPC España 2024. Se usa como fallback si la instalación
+ *  no tiene precio_excedentes_eur_kwh configurado en BD. */
+export const DEFAULT_SURPLUS_COMPENSATION_EUR_KWH = 0.05;
+
 
 export const chartPalette = {
   navy: "#07005f",
