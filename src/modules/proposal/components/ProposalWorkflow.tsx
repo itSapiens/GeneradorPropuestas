@@ -206,9 +206,7 @@ export default function ProposalWorkflow({
             currentStep === "result" ? "max-w-[1380px]" : "max-w-5xl",
           )}
         >
-          <div className="mt-6">
-            <ProposalStepper currentStep={currentStep} t={t} />
-          </div>
+          <ProposalStepper currentStep={currentStep} t={t} />
           <AnimatePresence mode="wait">
             {currentStep === "upload" && (
               <UploadStep
