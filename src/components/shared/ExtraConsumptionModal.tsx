@@ -137,7 +137,7 @@ export default function ExtraConsumptionModal({
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[150] bg-brand-navy/50 backdrop-blur-sm overflow-y-auto"
         >
-          <div className="min-h-full px-4 py-4 md:py-6 flex items-start justify-center">
+          <div className="min-h-full px-4 pt-20 pb-6 md:pt-24 md:pb-8 flex items-start justify-center">
             <motion.div
               initial={{ opacity: 0, y: 24, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
