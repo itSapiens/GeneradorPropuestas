@@ -12,7 +12,7 @@ export default function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-white text-brand-navy font-sans selection:bg-brand-mint/20">
       <main className="container mx-auto px-4 pt-20 pb-12">{children}</main>
 
-      <Toaster position="top-center" theme="light" />
+      <Toaster position="top-center" theme="light" offset={{ top: "190px" }} />
     </div>
   );
 }

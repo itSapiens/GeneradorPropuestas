@@ -50,8 +50,9 @@ export default function MapStep({
         <p className="text-brand-gray">{t("map.description")}</p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-10 h-[700px]">
-        <div className="flex-1 bg-[#F8FAFC] rounded-[3rem] overflow-hidden relative border border-brand-navy/5 shadow-2xl shadow-brand-navy/5">
+      <div className="flex flex-col gap-8">
+        {/* Mapa: full width, visible en móvil y escritorio */}
+        <div className="w-full h-[380px] sm:h-[480px] lg:h-[540px] bg-[#F8FAFC] rounded-[3rem] overflow-hidden relative border border-brand-navy/5 shadow-2xl shadow-brand-navy/5">
           {clientCoords ? (
             <ClientInstallationsMap
               clientLat={clientCoords.lat}
@@ -81,24 +82,24 @@ export default function MapStep({
             </div>
           )}
 
-          <div className="absolute bottom-8 left-8 right-8 glass-card p-6 rounded-3xl flex items-center justify-between z-[400]">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-brand-navy rounded-2xl flex items-center justify-center text-white">
-                <MapPin className="w-6 h-6" />
+          <div className="absolute bottom-6 left-6 right-6 glass-card p-4 sm:p-6 rounded-3xl flex items-center justify-between z-[400]">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-brand-navy rounded-2xl flex items-center justify-center text-white shrink-0">
+                <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-widest text-brand-navy/40">
                   {t("map.yourLocation")}
                 </p>
-                <p className="font-bold text-brand-navy">
+                <p className="font-bold text-brand-navy text-sm sm:text-base truncate">
                   {extractedAddress ||
                     t("map.loadingAddress", "Cargando dirección...")}
                 </p>
               </div>
             </div>
 
-            <div className="hidden md:block px-4 py-2 bg-brand-mint/20 text-brand-navy text-[10px] font-bold rounded-full uppercase tracking-widest">
+            <div className="shrink-0 px-3 py-1.5 bg-brand-mint/20 text-brand-navy text-[10px] font-bold rounded-full uppercase tracking-widest">
               {t("map.availableInstallations", {
                 count: installations.length,
               })}
@@ -106,7 +107,8 @@ export default function MapStep({
           </div>
         </div>
 
-        <div className="w-full lg:w-96 flex flex-col gap-6 overflow-y-auto pr-4 custom-scrollbar">
+        {/* Lista de instalaciones: debajo del mapa */}
+        <div className="flex flex-col gap-4">
           <h3 className="font-bold text-xl text-brand-navy flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-brand-mint" />
             {t("map.recommendedPlants")}
@@ -151,71 +153,73 @@ export default function MapStep({
               </div>
             </div>
           ) : (
-            installations.map((inst, i) => {
-              const normalizedMode = normalizeInstallationModalidad(
-                inst.modalidad,
-              );
-              const isSelected = selectedInstallation?.id === inst.id;
-              const distanceKm =
-                typeof inst.distance_meters === "number"
-                  ? inst.distance_meters / 1000
-                  : null;
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {installations.map((inst, i) => {
+                const normalizedMode = normalizeInstallationModalidad(
+                  inst.modalidad,
+                );
+                const isSelected = selectedInstallation?.id === inst.id;
+                const distanceKm =
+                  typeof inst.distance_meters === "number"
+                    ? inst.distance_meters / 1000
+                    : null;
 
-              return (
-                <motion.button
-                  key={inst.id || i}
-                  type="button"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  onClick={() => onSelectInstallation(inst)}
-                  className={cn(
-                    "w-full text-left p-8 rounded-[2rem] border transition-all bg-[#F8FAFC]",
-                    isSelected
-                      ? "border-brand-mint shadow-xl shadow-brand-mint/10"
-                      : "border-brand-navy/5 hover:border-brand-mint/40 hover:shadow-xl hover:shadow-brand-navy/5",
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-lg font-bold text-brand-navy">
-                        {inst.nombre_instalacion}
-                      </p>
-                      <p className="text-sm text-brand-gray mt-1">
-                        {inst.direccion}
-                      </p>
+                return (
+                  <motion.button
+                    key={inst.id || i}
+                    type="button"
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.08 }}
+                    onClick={() => onSelectInstallation(inst)}
+                    className={cn(
+                      "w-full text-left p-6 rounded-[2rem] border transition-all bg-[#F8FAFC]",
+                      isSelected
+                        ? "border-brand-mint shadow-xl shadow-brand-mint/10"
+                        : "border-brand-navy/5 hover:border-brand-mint/40 hover:shadow-xl hover:shadow-brand-navy/5",
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-base font-bold text-brand-navy truncate">
+                          {inst.nombre_instalacion}
+                        </p>
+                        <p className="text-sm text-brand-gray mt-1 line-clamp-2">
+                          {inst.direccion}
+                        </p>
+                      </div>
+
+                      <div className="shrink-0 rounded-full bg-brand-navy/5 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-brand-navy">
+                        {getInstallationModeLabel(normalizedMode, t)}
+                      </div>
                     </div>
 
-                    <div className="shrink-0 rounded-full bg-brand-navy/5 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-brand-navy">
-                      {getInstallationModeLabel(normalizedMode, t)}
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                      <MetricChip
+                        label={t("map.card.distance", "Distancia")}
+                        value={
+                          distanceKm !== null
+                            ? `${distanceKm.toFixed(1)} km`
+                            : "-"
+                        }
+                      />
+                      <MetricChip
+                        label={t("map.card.availablePower", "Potencia disponible")}
+                        value={`${Math.round(Number(inst.available_kwp ?? 0))} kWp`}
+                      />
+                      <MetricChip
+                        label={t("map.card.requiredPower", "Potencia estimada")}
+                        value={`${Math.round(Number(inst.required_kwp ?? 0))} kWp`}
+                      />
+                      <MetricChip
+                        label={t("map.card.effectiveHours", "Horas efectivas")}
+                        value={`${Math.round(Number(inst.horas_efectivas ?? 0))} h`}
+                      />
                     </div>
-                  </div>
-
-                  <div className="mt-5 grid grid-cols-2 gap-3">
-                    <MetricChip
-                      label={t("map.card.distance", "Distancia")}
-                      value={
-                        distanceKm !== null
-                          ? `${distanceKm.toFixed(1)} km`
-                          : "-"
-                      }
-                    />
-                    <MetricChip
-                      label={t("map.card.availablePower", "Potencia disponible")}
-                      value={`${Math.round(Number(inst.available_kwp ?? 0))} kWp`}
-                    />
-                    <MetricChip
-                      label={t("map.card.requiredPower", "Potencia estimada")}
-                      value={`${Math.round(Number(inst.required_kwp ?? 0))} kWp`}
-                    />
-                    <MetricChip
-                      label={t("map.card.effectiveHours", "Horas efectivas")}
-                      value={`${Math.round(Number(inst.horas_efectivas ?? 0))} h`}
-                    />
-                  </div>
-                </motion.button>
-              );
-            })
+                  </motion.button>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>

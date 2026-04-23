@@ -14,6 +14,8 @@ interface ContractSigningModalProps {
   generatedContract: GeneratedContractResponse | null;
   isSigningContract: boolean;
   contractPreviewModeLabel: string;
+  signalAmount: number;
+  formatCurrency: (value: number) => string;
   signatureCanvasRef: React.RefObject<HTMLCanvasElement | null>;
   onClose: () => void;
   onClearSignature: () => void;
@@ -37,6 +39,8 @@ export default function ContractSigningModal({
   generatedContract,
   isSigningContract,
   contractPreviewModeLabel,
+  signalAmount,
+  formatCurrency,
   signatureCanvasRef,
   onClose,
   onClearSignature,
@@ -177,6 +181,15 @@ export default function ContractSigningModal({
                           },
                         )}
                       </p>
+
+                      <div className="mt-3 pt-3 border-t border-brand-mint/30 flex items-center justify-between">
+                        <p className="text-sm font-bold text-brand-navy/70">
+                          {t("contractFlow.reservation.signalLabel", "Pago de reserva")}
+                        </p>
+                        <p className="text-lg font-bold text-brand-navy">
+                          {formatCurrency(signalAmount)}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="sticky bottom-0 bg-brand-navy/[0.02] pt-2">

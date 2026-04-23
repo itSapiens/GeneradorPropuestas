@@ -282,6 +282,13 @@ export default function ProposalWorkflow({
           generatedContract={generatedContract}
           isSigningContract={isSigningContract}
           contractPreviewModeLabel={contractPreviewModeLabel}
+          signalAmount={
+            selectedInstallation?.reserva_fija_eur != null &&
+            selectedInstallation.reserva_fija_eur > 0
+              ? selectedInstallation.reserva_fija_eur
+              : 500
+          }
+          formatCurrency={formatCurrency}
           signatureCanvasRef={signatureCanvasRef}
           onClose={() => setIsContractModalOpen(false)}
           onClearSignature={clearSignature}
