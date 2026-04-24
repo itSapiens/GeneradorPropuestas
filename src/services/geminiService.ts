@@ -652,6 +652,116 @@ function formatSpanishPower(value: number): string {
   return value.toFixed(3).replace(".", ",");
 }
 
+const SPANISH_PROVINCES = [
+  "A Coruna",
+  "Alava",
+  "Albacete",
+  "Alicante",
+  "Almeria",
+  "Asturias",
+  "Avila",
+  "Badajoz",
+  "Barcelona",
+  "Bizkaia",
+  "Burgos",
+  "Caceres",
+  "Cadiz",
+  "Cantabria",
+  "Castellon",
+  "Ceuta",
+  "Ciudad Real",
+  "Cordoba",
+  "Cuenca",
+  "Girona",
+  "Granada",
+  "Guadalajara",
+  "Gipuzkoa",
+  "Huelva",
+  "Huesca",
+  "Illes Balears",
+  "Jaen",
+  "La Rioja",
+  "Las Palmas",
+  "Leon",
+  "Lleida",
+  "Lugo",
+  "Madrid",
+  "Malaga",
+  "Melilla",
+  "Murcia",
+  "Navarra",
+  "Ourense",
+  "Palencia",
+  "Pontevedra",
+  "Salamanca",
+  "Santa Cruz de Tenerife",
+  "Segovia",
+  "Sevilla",
+  "Soria",
+  "Tarragona",
+  "Teruel",
+  "Toledo",
+  "Valencia",
+  "Valladolid",
+  "Zamora",
+  "Zaragoza",
+] as const;
+
+function normalizeComparableText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s/-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toUpperCase();
+}
+
+function titleCaseProvince(value: string): string {
+  return value
+    .split(" ")
+    .filter(Boolean)
+    .map((part) =>
+      part.includes("/")
+        ? part
+            .split("/")
+            .map((piece) =>
+              piece ? piece[0]!.toUpperCase() + piece.slice(1).toLowerCase() : "",
+            )
+            .join("/")
+        : part[0]!.toUpperCase() + part.slice(1).toLowerCase(),
+    )
+    .join(" ");
+}
+
+function findProvinceInTail(value: string): string | null {
+  const comparable = normalizeComparableText(value);
+
+  for (const province of [...SPANISH_PROVINCES].sort((a, b) => b.length - a.length)) {
+    const comparableProvince = normalizeComparableText(province);
+    if (
+      comparable === comparableProvince ||
+      comparable.endsWith(` ${comparableProvince}`)
+    ) {
+      return titleCaseProvince(province);
+    }
+  }
+
+  return null;
+}
+
+function cleanAddressCandidate(value: string): string {
+  return normalizeWhitespace(
+    value
+      .replace(/Plan A Tu Medida Contratado:/gi, " ")
+      .replace(/\bPLAN ESTABLE\b/gi, " ")
+      .replace(/\bPLAN ONLINE\b/gi, " ")
+      .replace(/\bPLAN NOCHE\b/gi, " ")
+      .replace(/\bPLAN VEHICULO ELECTRICO\b/gi, " ")
+      .replace(/\bPLAN\b\s+[A-ZÁÉÍÓÚÜÑ][A-ZÁÉÍÓÚÜÑ\s-]{2,}/g, " "),
+  );
+}
+
 function splitFullName(fullName: string | null): {
   fullName: string | null;
   name: string | null;
@@ -741,17 +851,36 @@ function parseAddressParts(fullAddress: string | null): {
       country: "España",
     };
 
-  const normalized = normalizeWhitespace(address);
+  const normalized = cleanAddressCandidate(address);
   const postalCode = normalized.match(/\b(\d{5})\b/)?.[1] ?? null;
-  const province = normalized.match(/\(([^)]+)\)\s*$/)?.[1]?.trim() ?? null;
+  const provinceFromParens = normalized.match(/\(([^)]+)\)\s*$/)?.[1]?.trim() ?? null;
+
+  const afterPostal = postalCode ? normalized.split(postalCode)[1] ?? "" : "";
+  const afterPostalTrimmed = afterPostal.replace(/^[,\s-]+/, "").trim();
+  const province =
+    provinceFromParens ??
+    (afterPostalTrimmed ? findProvinceInTail(afterPostalTrimmed) : null);
 
   let city: string | null = null;
-  if (postalCode) {
-    const afterPostal = normalized.split(postalCode)[1] ?? "";
-    const beforeProvince = province
-      ? afterPostal.replace(new RegExp(`\\(${province}\\)\\s*$`), "")
-      : afterPostal;
-    city = safeString(beforeProvince.replace(/^[,\s-]+/, ""));
+  if (afterPostalTrimmed) {
+    let cityCandidate = afterPostalTrimmed;
+
+    if (provinceFromParens) {
+      cityCandidate = cityCandidate.replace(/\([^)]+\)\s*$/, "").trim();
+    } else if (province) {
+      const comparableCity = normalizeComparableText(cityCandidate);
+      const comparableProvince = normalizeComparableText(province);
+
+      if (comparableCity === comparableProvince) {
+        cityCandidate = "";
+      } else if (comparableCity.endsWith(` ${comparableProvince}`)) {
+        cityCandidate = cityCandidate
+          .slice(0, cityCandidate.length - province.length)
+          .trim();
+      }
+    }
+
+    city = safeString(cityCandidate.replace(/[,\s-]+$/, ""));
   }
 
   let street = normalized;
@@ -805,10 +934,40 @@ function extractFullNameFromText(text: string): string | null {
 }
 
 function extractSupplyAddress(text: string): string | null {
-  const block = text.match(
-    /Dirección de suministro:\s*([\s\S]{0,180}?)(?:Nº DE CONTRATO|RESUMEN DE FACTURA|NIF titular del contrato|Número de contrato de acceso|Forma de pago)/i,
+  const lines = text
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map((line) => line.trim());
+
+  const startIndex = lines.findIndex((line) =>
+    /Dirección de suministro:/i.test(line),
   );
-  return block?.[1] ? normalizeWhitespace(block[1]) : null;
+
+  if (startIndex === -1) return null;
+
+  const addressLines: string[] = [];
+  const startLine = lines[startIndex] ?? "";
+  const inlineAddress = startLine.split(/Dirección de suministro:/i)[1]?.trim();
+
+  if (inlineAddress) {
+    addressLines.push(inlineAddress);
+  }
+
+  for (let i = startIndex + 1; i < lines.length && addressLines.length < 4; i++) {
+    const line = lines[i]?.trim() ?? "";
+    if (!line) continue;
+    if (
+      /^(N[º°o]\s*DE\s*CONTRATO|RESUMEN DE FACTURA|PERIODO DE FACTURACIÓN|NIF titular del contrato|Número de contrato de acceso|Forma de pago)/i.test(
+        line,
+      )
+    ) {
+      break;
+    }
+    addressLines.push(line);
+  }
+
+  const candidate = cleanAddressCandidate(addressLines.join(" "));
+  return candidate && /\b\d{5}\b/.test(candidate) ? candidate : null;
 }
 
 function extractPeriodConsumptions(
@@ -1393,3 +1552,11 @@ export async function extractDataFromBill(
 
   return mergeExtractions(aiData, localData);
 }
+
+export const __test__ = {
+  cleanAddressCandidate,
+  extractLocalDataFromText,
+  extractSupplyAddress,
+  findProvinceInTail,
+  parseAddressParts,
+};
