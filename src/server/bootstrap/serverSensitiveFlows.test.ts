@@ -731,7 +731,14 @@ describe("server sensitive frontend flows", () => {
     expect(bankTransfer.body.bankTransfer.iban).toBe(
       "ES1111111111111111111111",
     );
+    expect(bankTransfer.body.bankTransfer.concept).toMatch(
+      /^DNI 12345678Z - CT-/,
+    );
     expect(testServer.spies.sendBankTransferReservationEmail).toHaveBeenCalledOnce();
+    expect(
+      testServer.spies.sendBankTransferReservationEmail.mock.calls[0][0]
+        .transferConcept,
+    ).toBe(bankTransfer.body.bankTransfer.concept);
   });
 
   it("keeps the stripe payment, status polling, webhook and retry flow working", async () => {

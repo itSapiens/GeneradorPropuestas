@@ -614,6 +614,10 @@ export async function generateContractFromAccessUseCase(
         direccion: installation.direccion,
         horas_efectivas: installation.horas_efectivas ?? null,
         id: installation.id,
+        iban_aportaciones: resolveInstallationBankIban(
+          installation,
+          deps.env.sapiensBankAccountIban,
+        ),
         nombre_instalacion: installation.nombre_instalacion,
         porcentaje_autoconsumo: installation.porcentaje_autoconsumo ?? null,
         potencia_instalada_kwp: installation.potencia_instalada_kwp ?? null,
@@ -677,6 +681,10 @@ export async function generateContractFromStudyUseCase(
         direccion: ctx.installation.direccion,
         horas_efectivas: ctx.installation.horas_efectivas ?? null,
         id: ctx.installation.id,
+        iban_aportaciones: resolveInstallationBankIban(
+          ctx.installation,
+          deps.env.sapiensBankAccountIban,
+        ),
         nombre_instalacion: ctx.installation.nombre_instalacion,
         porcentaje_autoconsumo: ctx.installation.porcentaje_autoconsumo ?? null,
         potencia_instalada_kwp: ctx.installation.potencia_instalada_kwp ?? null,
@@ -1028,7 +1036,7 @@ export async function startBankTransferPaymentUseCase(
   const precontractFile = await deps.services.drive.downloadFileAsBuffer(
     contract.contract_drive_file_id,
   );
-  const transferConcept = `Reserva ${contract.contract_number}`;
+  const transferConcept = `DNI ${ctx.client.dni} - ${contract.contract_number}`;
   const nowIso = new Date().toISOString();
 
   await deps.services.mail.sendBankTransferReservationEmail({

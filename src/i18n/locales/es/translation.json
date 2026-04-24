@@ -251,6 +251,10 @@
     "condition1": "El cliente solicita la reserva de la potencia indicada en la instalación seleccionada, quedando dicha reserva pendiente de confirmación económica.",
     "condition2": "Se informa al cliente de un plazo orientativo de 15 días para realizar la transferencia correspondiente.",
     "condition3": "Hasta la validación del pago, la reserva tendrá carácter provisional.",
+    "transferInstructionsTitle": "Transferencia bancaria",
+    "transferInstructionsDescription": "Para confirmar la reserva, realiza la transferencia bancaria al IBAN de la instalación indicando exactamente el concepto señalado.",
+    "transferIban": "IBAN",
+    "transferConcept": "Concepto",
     "clientSignature": "Firma del cliente",
     "modes": {
       "investment": "Inversión",
@@ -439,6 +443,10 @@
       "condition1": "El cliente solicita la reserva de la potencia indicada en la instalación seleccionada, quedando dicha reserva pendiente de confirmación económica.",
       "condition2": "La reserva se formalizará mediante el pago de una señal, ya sea por tarjeta o por transferencia bancaria.",
       "condition3": "Hasta la validación del pago, la reserva tendrá carácter provisional.",
+      "transferInstructionsTitle": "Transferencia bancaria",
+      "transferInstructionsDescription": "Para confirmar la reserva, realiza la transferencia bancaria al IBAN de la instalación indicando exactamente el concepto señalado.",
+      "transferIban": "IBAN",
+      "transferConcept": "Concepto",
       "clientSignature": "Firma del cliente",
       "noData": "-"
     }
@@ -467,7 +475,7 @@
       "iban": "IBAN",
       "beneficiary": "Beneficiario",
       "concept": "Concepto",
-      "body2": "Es importante que indiques exactamente el concepto en la transferencia para poder identificar el pago correctamente.",
+      "body2": "Realiza la transferencia al IBAN indicado y utiliza exactamente el concepto mostrado, que incluye tu DNI y el número de contrato, para poder identificar el pago correctamente.",
       "body3": "Una vez recibido y validado el pago, te enviaremos la confirmación por correo electrónico.",
       "farewell": "Un saludo"
     },

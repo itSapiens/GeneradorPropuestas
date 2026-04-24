@@ -113,6 +113,22 @@ export function getContractTexts(language: AppLanguage) {
     condition1: tServer(language, "contractPdf.condition1"),
     condition2: tServer(language, "contractPdf.condition2"),
     condition3: tServer(language, "contractPdf.condition3"),
+    transferInstructionsTitle: tServer(
+      language,
+      "contractPdf.transferInstructionsTitle",
+      "Transferencia bancaria",
+    ),
+    transferInstructionsDescription: tServer(
+      language,
+      "contractPdf.transferInstructionsDescription",
+      "Para confirmar la reserva, realiza la transferencia bancaria al IBAN de la instalación indicando exactamente el concepto señalado.",
+    ),
+    transferIban: tServer(language, "contractPdf.transferIban", "IBAN"),
+    transferConcept: tServer(
+      language,
+      "contractPdf.transferConcept",
+      "Concepto",
+    ),
     clientSignature: tServer(
       language,
       "contractPdf.clientSignature",

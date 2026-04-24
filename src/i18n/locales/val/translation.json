@@ -251,6 +251,10 @@
     "condition1": "El client sol·licita la reserva de la potència indicada en la instal·lació seleccionada, quedant esta reserva pendent de confirmació econòmica.",
     "condition2": "S'informa el client d'un termini orientatiu de 15 dies per a realitzar la transferència corresponent.",
     "condition3": "Fins a la validació del pagament, la reserva tindrà caràcter provisional.",
+    "transferInstructionsTitle": "Transferència bancària",
+    "transferInstructionsDescription": "Per a confirmar la reserva, realitza la transferència bancària a l'IBAN de la instal·lació indicant exactament el concepte assenyalat.",
+    "transferIban": "IBAN",
+    "transferConcept": "Concepte",
     "clientSignature": "Firma del client",
     "modes": {
       "investment": "Inversió",
@@ -439,6 +443,10 @@
       "condition1": "El client sol·licita la reserva de la potència indicada en la instal·lació seleccionada, quedant esta reserva pendent de confirmació econòmica.",
       "condition2": "La reserva es formalitzarà mitjançant el pagament d'un senyal, ja siga per targeta o per transferència bancària.",
       "condition3": "Fins a la validació del pagament, la reserva tindrà caràcter provisional.",
+      "transferInstructionsTitle": "Transferència bancària",
+      "transferInstructionsDescription": "Per a confirmar la reserva, realitza la transferència bancària a l'IBAN de la instal·lació indicant exactament el concepte assenyalat.",
+      "transferIban": "IBAN",
+      "transferConcept": "Concepte",
       "clientSignature": "Firma del client",
       "noData": "-"
     }
@@ -467,7 +475,7 @@
       "iban": "IBAN",
       "beneficiary": "Beneficiari",
       "concept": "Concepte",
-      "body2": "És important que indiques exactament el concepte en la transferència per a poder identificar el pagament correctament.",
+      "body2": "Realitza la transferència a l'IBAN indicat i utilitza exactament el concepte mostrat, que inclou el teu DNI i el número de contracte, per a poder identificar el pagament correctament.",
       "body3": "Una vegada rebut i validat el pagament, t'enviarem la confirmació per correu electrònic.",
       "farewell": "Una salutació"
     },

@@ -17,6 +17,10 @@ export function buildBasicContractHtml(params: {
 }) {
   const texts = getContractTexts(params.language);
   const fullName = `${params.client.nombre} ${params.client.apellidos}`.trim();
+  const transferConcept = `DNI ${params.client.dni ?? "-"} - ${
+    params.contractNumber
+  }`;
+  const bankAccountIban = params.installation.iban_aportaciones ?? "-";
   const signedDate = new Date().toLocaleDateString(
     getLocaleFromLanguage(params.language),
   );
@@ -59,6 +63,13 @@ export function buildBasicContractHtml(params: {
             margin-top: 50px;
             padding-top: 20px;
             border-top: 1px dashed #9ca3af;
+          }
+          .transfer-box {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+          }
+          .transfer-box p:last-child {
+            margin-bottom: 0;
           }
         </style>
       </head>
@@ -111,6 +122,13 @@ export function buildBasicContractHtml(params: {
           <p>${texts.condition1}</p>
           <p>${texts.condition2}</p>
           <p>${texts.condition3}</p>
+        </div>
+
+        <div class="box transfer-box">
+          <h3>${texts.transferInstructionsTitle}</h3>
+          <p>${texts.transferInstructionsDescription}</p>
+          <p><strong>${texts.transferIban}:</strong> ${bankAccountIban}</p>
+          <p><strong>${texts.transferConcept}:</strong> ${transferConcept}</p>
         </div>
 
         <div class="signature">

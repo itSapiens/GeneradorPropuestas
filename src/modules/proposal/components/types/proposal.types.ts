@@ -84,6 +84,7 @@ export type ContractPreviewData = {
     id: string;
     nombre_instalacion: string;
     direccion: string;
+    iban_aportaciones?: string | null;
     potencia_instalada_kwp?: number | null;
     almacenamiento_kwh?: number | null;
     horas_efectivas?: number | null;
