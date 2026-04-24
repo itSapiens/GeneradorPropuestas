@@ -37,6 +37,7 @@ type ContractPreviewData = {
     id: string;
     nombre_instalacion: string;
     direccion: string;
+    iban_aportaciones?: string | null;
     potencia_instalada_kwp?: number | null;
     almacenamiento_kwh?: number | null;
     horas_efectivas?: number | null;
@@ -470,6 +471,27 @@ writeParagraph(
         "contractFlow.pdf.condition3",
         "Hasta la validación del pago, la reserva tendrá carácter provisional.",
       ),
+    );
+
+    writeSectionTitle(
+      t("contractFlow.pdf.transferInstructionsTitle", "Transferencia bancaria"),
+    );
+    writeParagraph(
+      t(
+        "contractFlow.pdf.transferInstructionsDescription",
+        "Para confirmar la reserva, realiza la transferencia bancaria al IBAN de la instalación indicando exactamente el concepto señalado.",
+      ),
+    );
+    writeParagraph(
+      `${t("contractFlow.pdf.transferIban", "IBAN")}: ${
+        preview.installation.iban_aportaciones ||
+        t("contractFlow.pdf.noData", "-")
+      }`,
+    );
+    writeParagraph(
+      `${t("contractFlow.pdf.transferConcept", "Concepto")}: DNI ${
+        preview.client.dni
+      } - ${preview.contractNumber}`,
     );
 
     y += 12;

@@ -169,6 +169,16 @@ export function useContractFlow({
       condition1: t("contractPdf.condition1"),
       condition2: t("contractPdf.condition2"),
       condition3: t("contractPdf.condition3"),
+      transferInstructionsTitle: t(
+        "contractPdf.transferInstructionsTitle",
+        "Transferencia bancaria",
+      ),
+      transferInstructionsDescription: t(
+        "contractPdf.transferInstructionsDescription",
+        "Para confirmar la reserva, realiza la transferencia bancaria al IBAN de la instalación indicando exactamente el concepto señalado.",
+      ),
+      transferIban: t("contractPdf.transferIban", "IBAN"),
+      transferConcept: t("contractPdf.transferConcept", "Concepto"),
       clientSignature: t("contractPdf.clientSignature"),
       investment: t("contractPdf.modes.investment"),
       service: t("contractPdf.modes.service"),
@@ -239,6 +249,15 @@ export function useContractFlow({
     writeParagraph(contractTexts.condition1);
     writeParagraph(contractTexts.condition2);
     writeParagraph(contractTexts.condition3);
+
+    writeSectionTitle(contractTexts.transferInstructionsTitle);
+    writeParagraph(contractTexts.transferInstructionsDescription);
+    writeParagraph(
+      `${contractTexts.transferIban}: ${preview.installation.iban_aportaciones || "-"}`,
+    );
+    writeParagraph(
+      `${contractTexts.transferConcept}: DNI ${preview.client.dni} - ${preview.contractNumber}`,
+    );
 
     y += 12;
     pdf.setFont("helvetica", "bold");

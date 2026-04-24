@@ -251,6 +251,10 @@
     "condition1": "O cliente solicita a reserva da potencia indicada na instalación seleccionada, quedando dita reserva pendente de confirmación económica.",
     "condition2": "Infórmase ao cliente dun prazo orientativo de 15 días para realizar a transferencia correspondente.",
     "condition3": "Ata a validación do pagamento, a reserva terá carácter provisional.",
+    "transferInstructionsTitle": "Transferencia bancaria",
+    "transferInstructionsDescription": "Para confirmar a reserva, realiza a transferencia bancaria ao IBAN da instalación indicando exactamente o concepto sinalado.",
+    "transferIban": "IBAN",
+    "transferConcept": "Concepto",
     "clientSignature": "Sinatura do cliente",
     "modes": {
       "investment": "Investimento",
@@ -439,6 +443,10 @@
       "condition1": "O cliente solicita a reserva da potencia indicada na instalación seleccionada, quedando dita reserva pendente de confirmación económica.",
       "condition2": "A reserva formalizarase mediante o pagamento dun sinal, xa sexa con tarxeta ou por transferencia bancaria.",
       "condition3": "Ata a validación do pagamento, a reserva terá carácter provisional.",
+      "transferInstructionsTitle": "Transferencia bancaria",
+      "transferInstructionsDescription": "Para confirmar a reserva, realiza a transferencia bancaria ao IBAN da instalación indicando exactamente o concepto sinalado.",
+      "transferIban": "IBAN",
+      "transferConcept": "Concepto",
       "clientSignature": "Sinatura do cliente",
       "noData": "-"
     }
@@ -467,7 +475,7 @@
       "iban": "IBAN",
       "beneficiary": "Beneficiario",
       "concept": "Concepto",
-      "body2": "É importante que indiques exactamente o concepto na transferencia para poder identificar o pagamento correctamente.",
+      "body2": "Realiza a transferencia ao IBAN indicado e utiliza exactamente o concepto mostrado, que inclúe o teu DNI e o número de contrato, para poder identificar o pagamento correctamente.",
       "body3": "Unha vez recibido e validado o pagamento, enviarémosche a confirmación por correo electrónico.",
       "farewell": "Un saúdo"
     },
