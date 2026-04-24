@@ -1,13 +1,10 @@
 import type { Express } from "express";
 
-export function registerCoreRoutes(app: Express) {
-  app.get("/api/config", (_req, res) => {
-    res.json({
-      googleMapsApiKey: process.env.VITE_GOOGLE_MAPS_API_KEY || "",
-    });
-  });
+import { createCoreController } from "../controllers/coreController";
 
-  app.get("/api/health", (_req, res) => {
-    res.json({ status: "ok", timestamp: new Date().toISOString() });
-  });
+type CoreController = ReturnType<typeof createCoreController>;
+
+export function registerCoreRoutes(app: Express, controller: CoreController) {
+  app.get("/api/config", controller.getConfig);
+  app.get("/api/health", controller.getHealth);
 }
