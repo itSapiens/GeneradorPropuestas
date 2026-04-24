@@ -256,7 +256,7 @@ export function useContractFlow({
       `${contractTexts.transferIban}: ${preview.installation.iban_aportaciones || "-"}`,
     );
     writeParagraph(
-      `${contractTexts.transferConcept}: DNI ${preview.client.dni} - ${preview.contractNumber}`,
+      `${contractTexts.transferConcept}: ${preview.client.nombre} ${preview.client.apellidos} - ${preview.contractNumber}`,
     );
 
     y += 12;

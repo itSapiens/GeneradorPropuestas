@@ -489,9 +489,9 @@ writeParagraph(
       }`,
     );
     writeParagraph(
-      `${t("contractFlow.pdf.transferConcept", "Concepto")}: DNI ${
-        preview.client.dni
-      } - ${preview.contractNumber}`,
+      `${t("contractFlow.pdf.transferConcept", "Concepto")}: ${
+        preview.client.nombre
+      } ${preview.client.apellidos} - ${preview.contractNumber}`,
     );
 
     y += 12;

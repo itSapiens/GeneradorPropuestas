@@ -732,7 +732,7 @@ describe("server sensitive frontend flows", () => {
       "ES1111111111111111111111",
     );
     expect(bankTransfer.body.bankTransfer.concept).toMatch(
-      /^DNI 12345678Z - CT-/,
+      /^Ana López - CT-/,
     );
     expect(testServer.spies.sendBankTransferReservationEmail).toHaveBeenCalledOnce();
     expect(

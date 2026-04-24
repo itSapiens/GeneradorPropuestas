@@ -1036,7 +1036,8 @@ export async function startBankTransferPaymentUseCase(
   const precontractFile = await deps.services.drive.downloadFileAsBuffer(
     contract.contract_drive_file_id,
   );
-  const transferConcept = `DNI ${ctx.client.dni} - ${contract.contract_number}`;
+  const clientFullName = `${ctx.client.nombre} ${ctx.client.apellidos}`.trim();
+  const transferConcept = `${clientFullName} - ${contract.contract_number}`;
   const nowIso = new Date().toISOString();
 
   await deps.services.mail.sendBankTransferReservationEmail({

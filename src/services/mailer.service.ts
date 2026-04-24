@@ -696,7 +696,7 @@ export async function sendBankTransferReservationEmail(params: {
   const body2 = translate(
     lang,
     "emails.bankTransfer.body2",
-    "Realiza la transferencia al IBAN indicado y utiliza exactamente el concepto mostrado, que incluye tu DNI y el número de contrato, para poder identificar el pago correctamente.",
+    "Realiza la transferencia al IBAN indicado y utiliza exactamente el concepto mostrado, que incluye tu nombre y el número de contrato, para poder identificar el pago correctamente.",
   );
 
   const body3 = translate(

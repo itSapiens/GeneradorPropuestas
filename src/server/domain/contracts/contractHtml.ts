@@ -17,7 +17,7 @@ export function buildBasicContractHtml(params: {
 }) {
   const texts = getContractTexts(params.language);
   const fullName = `${params.client.nombre} ${params.client.apellidos}`.trim();
-  const transferConcept = `DNI ${params.client.dni ?? "-"} - ${
+  const transferConcept = `${fullName || "-"} - ${
     params.contractNumber
   }`;
   const bankAccountIban = params.installation.iban_aportaciones ?? "-";
