@@ -26,10 +26,7 @@ import {
   unauthorized,
 } from "../../shared/http/httpError";
 import { getContractContextFromStudy } from "../services/contractContextService";
-import {
-  buildContractFileName,
-  buildContractNumber,
-} from "../../infrastructure/external/drive/driveStorageService";
+import { buildContractNumber } from "../../infrastructure/external/drive/driveStorageService";
 import { toPositiveNumber } from "../../utils/parsingUtils";
 
 async function getProposalAccessContext(
@@ -771,21 +768,13 @@ export async function signContractUseCase(
   }
 
   const ctx = await getContractContextFromStudy(deps, contract.study_id);
-  const contractsFolders =
-    await deps.services.drive.ensureContractsStatusFolder("PendientesPago");
-
-  const contractFileName = buildContractFileName({
+  const uploadedContract = await deps.services.documents.uploadClientDocument({
     apellidos: ctx.client.apellidos,
-    contractId: contract.id,
-    dni: ctx.client.dni,
-    nombre: ctx.client.nombre,
-  });
-
-  const uploadedContract = await deps.services.drive.uploadBuffer({
     buffer: params.signedContractFile.buffer,
-    fileName: contractFileName,
-    folderId: contractsFolders.folder.id,
+    dni: ctx.client.dni,
+    fileName: "contrato-firmado.pdf",
     mimeType: params.signedContractFile.mimetype || "application/pdf",
+    nombre: ctx.client.nombre,
   });
 
   const paymentDeadlineAt = new Date(
@@ -842,13 +831,14 @@ export async function signContractUseCase(
 
   const nowIso = new Date().toISOString();
   const updatedContract = await deps.repositories.contracts.update(contract.id, {
-    contract_drive_file_id: uploadedContract.id,
-    contract_drive_url: uploadedContract.webViewLink,
-    drive_folder_id: contractsFolders.folder.id,
-    drive_folder_url: contractsFolders.folder.webViewLink,
+    contract_supabase_bucket: uploadedContract.bucket,
+    contract_supabase_path: uploadedContract.path,
+    supabase_folder_path: uploadedContract.folderPath,
     metadata: {
       ...(contract.metadata ?? {}),
       assigned_kwp: ctx.assignedKwp,
+      contract_supabase_bucket: uploadedContract.bucket,
+      contract_supabase_path: uploadedContract.path,
       currency,
       installation_iban_aportaciones: bankAccountIban,
       payment_deadline_at: paymentDeadlineAt,
@@ -870,9 +860,14 @@ export async function signContractUseCase(
   return {
     contract: updatedContract,
     drive: {
-      contractFileUrl: uploadedContract.webViewLink,
-      contractFolderUrl: contractsFolders.folder.webViewLink,
-      contractsRootFolderUrl: contractsFolders.root.webViewLink,
+      contractFileUrl: null,
+      contractFolderUrl: null,
+      contractsRootFolderUrl: null,
+    },
+    storage: {
+      bucket: uploadedContract.bucket,
+      contractPath: uploadedContract.path,
+      folderPath: uploadedContract.folderPath,
     },
     message:
       "Pre-contrato firmado y reserva creada correctamente. Ahora el cliente debe seleccionar la forma de pago.",
@@ -1017,8 +1012,8 @@ export async function startBankTransferPaymentUseCase(
     );
   }
 
-  if (!contract.contract_drive_file_id) {
-    throw badRequest("El contrato no tiene PDF firmado asociado en Drive");
+  if (!contract.contract_supabase_path && !contract.contract_drive_file_id) {
+    throw badRequest("El contrato no tiene PDF firmado asociado");
   }
 
   const bankAccountIban = resolveInstallationBankIban(
@@ -1033,9 +1028,14 @@ export async function startBankTransferPaymentUseCase(
   const paymentDeadlineAt =
     reservation.payment_deadline_at ??
     new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString();
-  const precontractFile = await deps.services.drive.downloadFileAsBuffer(
-    contract.contract_drive_file_id,
-  );
+  const precontractFile = contract.contract_supabase_path
+    ? await deps.services.documents.downloadFileAsBuffer({
+        bucket: contract.contract_supabase_bucket,
+        path: contract.contract_supabase_path,
+      })
+    : await deps.services.drive.downloadFileAsBuffer(
+        contract.contract_drive_file_id,
+      );
   const clientFullName = `${ctx.client.nombre} ${ctx.client.apellidos}`.trim();
   const transferConcept = `${clientFullName} - ${contract.contract_number}`;
   const nowIso = new Date().toISOString();

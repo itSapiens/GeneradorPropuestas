@@ -310,6 +310,39 @@ function createServerDependenciesForTests() {
       },
     },
     services: {
+      documents: {
+        async downloadFileAsBuffer(payload) {
+          const file = state.files.get(payload.path);
+          if (!file) {
+            throw new Error(`Supabase file not found: ${payload.path}`);
+          }
+
+          return {
+            buffer: file.buffer,
+            fileName: file.fileName,
+            mimeType: file.mimeType,
+          };
+        },
+        async uploadClientDocument(payload) {
+          const folderPath = `clients/${payload.nombre.toLowerCase()}-${payload.apellidos.toLowerCase()}-${payload.dni.toLowerCase()}`
+            .replace(/[^a-z0-9/]+/g, "-")
+            .replace(/-+/g, "-");
+          const path = `${folderPath}/${payload.fileName}`;
+          state.files.set(path, {
+            buffer: payload.buffer,
+            fileName: payload.fileName,
+            mimeType: payload.mimeType,
+          });
+
+          return {
+            bucket: "generador-propuestas-documentos",
+            fileName: payload.fileName,
+            folderPath,
+            mimeType: payload.mimeType,
+            path,
+          };
+        },
+      },
       drive: {
         async downloadFileAsBuffer(fileId) {
           const file = state.files.get(fileId);

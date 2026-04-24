@@ -6,6 +6,14 @@ export interface FileBufferPayload {
   mimeType: string;
 }
 
+export interface StoredDocumentPayload {
+  bucket: string;
+  fileName: string;
+  folderPath: string;
+  mimeType: string;
+  path: string;
+}
+
 export interface ServerDependencies {
   env: {
     contractResumeJwtSecret: string;
@@ -73,6 +81,20 @@ export interface ServerDependencies {
     };
   };
   services: {
+    documents: {
+      downloadFileAsBuffer(payload: {
+        bucket?: string | null;
+        path: string;
+      }): Promise<FileBufferPayload>;
+      uploadClientDocument(payload: {
+        apellidos: string;
+        buffer: Buffer;
+        dni: string;
+        fileName: "factura.pdf" | "propuesta.pdf" | "contrato-firmado.pdf";
+        mimeType: string;
+        nombre: string;
+      }): Promise<StoredDocumentPayload>;
+    };
     drive: {
       downloadFileAsBuffer(fileId: string): Promise<FileBufferPayload>;
       ensureClientFolder(payload: {

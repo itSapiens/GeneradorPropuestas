@@ -9,6 +9,9 @@ export interface StoredDocumentData {
   size?: number;
   driveFileId?: string;
   driveFolderId?: string;
+  supabaseBucket?: string;
+  supabaseFolderPath?: string;
+  supabasePath?: string;
   webViewLink?: string;
   webContentLink?: string;
   status?: string;

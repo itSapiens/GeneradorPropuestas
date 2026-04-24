@@ -11,7 +11,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
-    "start": "tsx server.ts"
+    "start": "tsx server.ts",
+    "storage:ensure-bucket": "tsx scripts/ensureSupabaseDocumentsBucket.ts",
+    "storage:migrate-drive": "tsx scripts/migrateDriveDocumentsToSupabase.ts"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",

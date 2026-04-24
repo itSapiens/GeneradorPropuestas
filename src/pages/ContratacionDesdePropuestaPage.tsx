@@ -81,9 +81,14 @@ type SignedContractResponse = {
     }[];
   };
   drive: {
-    contractsRootFolderUrl: string;
-    contractFolderUrl: string;
-    contractFileUrl: string;
+    contractsRootFolderUrl: string | null;
+    contractFolderUrl: string | null;
+    contractFileUrl: string | null;
+  };
+  storage?: {
+    bucket: string;
+    contractPath: string;
+    folderPath: string;
   };
 };
 

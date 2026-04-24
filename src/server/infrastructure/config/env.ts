@@ -72,6 +72,10 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   );
 }
 
+export const SUPABASE_DOCUMENTS_BUCKET =
+  process.env.SUPABASE_DOCUMENTS_BUCKET ||
+  "generador-propuestas-documentos";
+
 export const GOOGLE_SERVICE_ACCOUNT_EMAIL =
   process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || "";
 

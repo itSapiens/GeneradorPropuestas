@@ -12,6 +12,7 @@ import {
 import { getContractContextFromStudy } from "../../../application/services/contractContextService";
 import { createServerDependencies } from "../../serverDependencies";
 import { downloadDriveFileAsBuffer } from "../drive/driveStorageService";
+import { downloadSupabaseDocumentAsBuffer } from "../storage/supabaseDocumentStorageService";
 
 async function buildPaymentReceiptPdfBuffer(params: {
   contractNumber: string;
@@ -171,13 +172,16 @@ export async function sendReservationConfirmationAfterPayment(params: {
     throw new Error("El cliente no tiene email");
   }
 
-  if (!contract.contract_drive_file_id) {
-    throw new Error("El precontrato no tiene PDF asociado en Drive");
+  if (!contract.contract_supabase_path && !contract.contract_drive_file_id) {
+    throw new Error("El precontrato no tiene PDF asociado");
   }
 
-  const precontractFile = await downloadDriveFileAsBuffer(
-    contract.contract_drive_file_id,
-  );
+  const precontractFile = contract.contract_supabase_path
+    ? await downloadSupabaseDocumentAsBuffer({
+        bucket: contract.contract_supabase_bucket,
+        path: contract.contract_supabase_path,
+      })
+    : await downloadDriveFileAsBuffer(contract.contract_drive_file_id);
 
   const receiptBuffer = await buildPaymentReceiptPdfBuffer({
     contractNumber: contract.contract_number,

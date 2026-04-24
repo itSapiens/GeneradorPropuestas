@@ -17,6 +17,10 @@ import {
   ensureContractsStatusFolder,
   uploadBufferToDrive,
 } from "./external/drive/driveStorageService";
+import {
+  downloadSupabaseDocumentAsBuffer,
+  uploadClientDocumentToSupabase,
+} from "./external/storage/supabaseDocumentStorageService";
 import { extractInvoiceWithFallback } from "./external/extraction/invoiceExtractionOrchestrator";
 import {
   GeocodeError,
@@ -45,6 +49,10 @@ export function createServerDependencies(): ServerDependencies {
     },
     repositories: serverRepositories,
     services: {
+      documents: {
+        downloadFileAsBuffer: downloadSupabaseDocumentAsBuffer,
+        uploadClientDocument: uploadClientDocumentToSupabase,
+      },
       drive: {
         downloadFileAsBuffer: downloadDriveFileAsBuffer,
         ensureClientFolder: ensureClientDriveFolder,

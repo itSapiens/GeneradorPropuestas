@@ -54,6 +54,20 @@ export async function sendStudyProposalEmailUseCase(
     pickFirstString(customer?.apellidos, customer?.lastName, customer?.surnames) ??
     "";
 
+  const proposalSupabasePath =
+    pickFirstString(
+      sourceFile?.proposal_supabase_path,
+      sourceFile?.propuesta_supabase_path,
+    ) ?? null;
+
+  const proposalSupabaseBucket =
+    pickFirstString(
+      sourceFile?.proposal_supabase_bucket,
+      sourceFile?.propuesta_supabase_bucket,
+      sourceFile?.documentos_supabase_bucket,
+      sourceFile?.supabase_bucket,
+    ) ?? null;
+
   const proposalDriveFileId =
     pickFirstString(
       sourceFile?.proposal_drive_file_id,
@@ -70,13 +84,16 @@ export async function sendStudyProposalEmailUseCase(
     throw badRequest("No se encontró el email del cliente");
   }
 
-  if (!proposalDriveFileId) {
-    throw badRequest("No se encontró el PDF de propuesta en Drive");
+  if (!proposalSupabasePath && !proposalDriveFileId) {
+    throw badRequest("No se encontró el PDF de propuesta");
   }
 
-  const driveProposal = await deps.services.drive.downloadFileAsBuffer(
-    proposalDriveFileId,
-  );
+  const proposalPdf = proposalSupabasePath
+    ? await deps.services.documents.downloadFileAsBuffer({
+        bucket: proposalSupabaseBucket,
+        path: proposalSupabasePath,
+      })
+    : await deps.services.drive.downloadFileAsBuffer(proposalDriveFileId!);
 
   const clientDni =
     pickFirstString(customer?.dni, customer?.documentNumber) ?? null;
@@ -102,8 +119,8 @@ export async function sendStudyProposalEmailUseCase(
     clientName: `${nombre} ${apellidos}`.trim(),
     continueContractUrl: access.continueUrl,
     language,
-    pdfBuffer: driveProposal.buffer,
-    pdfFilename: driveProposal.fileName,
+    pdfBuffer: proposalPdf.buffer,
+    pdfFilename: proposalPdf.fileName,
     proposalUrl,
     to: email,
   });
@@ -450,51 +467,53 @@ export async function confirmStudyUseCase(
     telefono,
   };
 
-  let folder: { id: string; webViewLink: string } | null = null;
+  let storageFolderPath: string | null = null;
+  let storageBucket: string | null = null;
   let uploadedInvoice: {
-    id: string;
-    name: string;
-    webContentLink: string | null;
-    webViewLink: string;
+    bucket: string;
+    fileName: string;
+    folderPath: string;
+    mimeType: string;
+    path: string;
   } | null = null;
   let uploadedProposal: {
-    id: string;
-    name: string;
-    webContentLink: string | null;
-    webViewLink: string;
+    bucket: string;
+    fileName: string;
+    folderPath: string;
+    mimeType: string;
+    path: string;
   } | null = null;
-  const driveWarnings: string[] = [];
+  const storageWarnings: string[] = [];
 
   try {
-    folder = await deps.services.drive.ensureClientFolder({
-      apellidos,
-      dni,
-      nombre,
-    });
-
-    if (invoiceFile && folder) {
-      const extension =
-        invoiceFile.originalname.split(".").pop()?.toLowerCase() || "pdf";
-
-      uploadedInvoice = await deps.services.drive.uploadBuffer({
+    if (invoiceFile) {
+      uploadedInvoice = await deps.services.documents.uploadClientDocument({
+        apellidos,
         buffer: invoiceFile.buffer,
-        fileName: `FACTURA_${normalizeDriveToken(dni)}.${extension}`,
-        folderId: folder.id,
+        dni,
+        fileName: "factura.pdf",
         mimeType: invoiceFile.mimetype,
+        nombre,
       });
     }
 
-    if (proposalFile && folder) {
-      uploadedProposal = await deps.services.drive.uploadBuffer({
+    if (proposalFile) {
+      uploadedProposal = await deps.services.documents.uploadClientDocument({
+        apellidos,
         buffer: proposalFile.buffer,
-        fileName: `PROPUESTA_${normalizeDriveToken(dni)}.pdf`,
-        folderId: folder.id,
+        dni,
+        fileName: "propuesta.pdf",
         mimeType: proposalFile.mimetype || "application/pdf",
+        nombre,
       });
     }
+
+    storageFolderPath =
+      uploadedInvoice?.folderPath ?? uploadedProposal?.folderPath ?? null;
+    storageBucket = uploadedInvoice?.bucket ?? uploadedProposal?.bucket ?? null;
   } catch (error: any) {
-    driveWarnings.push(
-      `Google Drive no disponible: ${error?.message || "error desconocido"}. El estudio se ha guardado sin archivos en Drive.`,
+    storageWarnings.push(
+      `Supabase Storage no disponible: ${error?.message || "error desconocido"}. El estudio se ha guardado sin archivos.`,
     );
   }
 
@@ -507,11 +526,9 @@ export async function confirmStudyUseCase(
     datos_adicionales: normalizedCustomer,
     direccion_completa: direccionCompleta ?? null,
     dni,
-    drive_folder_id: folder?.id ?? null,
-    drive_folder_url: folder?.webViewLink ?? null,
+    documentos_supabase_bucket: storageBucket,
     email,
-    factura_drive_file_id: uploadedInvoice?.id ?? null,
-    factura_drive_url: uploadedInvoice?.webViewLink ?? null,
+    factura_supabase_path: uploadedInvoice?.path ?? null,
     iban: iban ?? null,
     nombre,
     pais,
@@ -522,9 +539,9 @@ export async function confirmStudyUseCase(
     precio_p4_eur_kwh: getPeriodPrice(body, invoiceData, "p4"),
     precio_p5_eur_kwh: getPeriodPrice(body, invoiceData, "p5"),
     precio_p6_eur_kwh: getPeriodPrice(body, invoiceData, "p6"),
-    propuesta_drive_file_id: uploadedProposal?.id ?? null,
-    propuesta_drive_url: uploadedProposal?.webViewLink ?? null,
+    propuesta_supabase_path: uploadedProposal?.path ?? null,
     provincia,
+    supabase_folder_path: storageFolderPath,
     telefono,
     tipo_factura,
   });
@@ -622,14 +639,12 @@ export async function confirmStudyUseCase(
     selected_installation_snapshot: finalSelectedInstallationSnapshot,
     source_file: {
       ...(sourceFile ?? {}),
-      drive_folder_id: folder?.id ?? null,
-      drive_folder_url: folder?.webViewLink ?? null,
-      invoice_drive_file_id: uploadedInvoice?.id ?? null,
-      invoice_drive_url: uploadedInvoice?.webViewLink ?? null,
+      documentos_supabase_bucket: storageBucket,
+      factura_supabase_path: uploadedInvoice?.path ?? null,
       mime_type: invoiceFile?.mimetype ?? null,
       original_name: invoiceFile?.originalname ?? null,
-      proposal_drive_file_id: uploadedProposal?.id ?? null,
-      proposal_drive_url: uploadedProposal?.webViewLink ?? null,
+      propuesta_supabase_path: uploadedProposal?.path ?? null,
+      supabase_folder_path: storageFolderPath,
     },
     status: body.status ?? "uploaded",
   });
@@ -669,7 +684,7 @@ export async function confirmStudyUseCase(
         pdfBuffer: proposalFile.buffer,
         pdfFilename:
           proposalFile.originalname || `PROPUESTA_${normalizeDriveToken(dni)}.pdf`,
-        proposalUrl: uploadedProposal?.webViewLink ?? null,
+        proposalUrl: null,
         to: email,
       });
 
@@ -689,11 +704,11 @@ export async function confirmStudyUseCase(
 
   return {
     client: clientData,
-    drive: {
-      folderId: folder?.id ?? null,
-      folderUrl: folder?.webViewLink ?? null,
-      invoiceUrl: uploadedInvoice?.webViewLink ?? null,
-      proposalUrl: uploadedProposal?.webViewLink ?? null,
+    storage: {
+      bucket: storageBucket,
+      folderPath: storageFolderPath,
+      invoicePath: uploadedInvoice?.path ?? null,
+      proposalPath: uploadedProposal?.path ?? null,
     },
     email: {
       continueContractTokenExpiresAt,
@@ -704,6 +719,6 @@ export async function confirmStudyUseCase(
     },
     study: updatedStudy,
     success: true,
-    warnings: driveWarnings.length > 0 ? driveWarnings : undefined,
+    warnings: storageWarnings.length > 0 ? storageWarnings : undefined,
   };
 }
