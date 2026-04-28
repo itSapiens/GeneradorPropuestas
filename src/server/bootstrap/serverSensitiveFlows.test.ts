@@ -68,6 +68,11 @@ function createServerDependenciesForTests() {
     contractable_kwp_reserved: 1,
     contractable_kwp_total: 12,
     direccion: "Calle Mayor 1, Madrid",
+    empresa: {
+      cif: "B12345678",
+      id: "empresa-madrid",
+      nombre: "Sapiens Madrid Solar",
+    },
     empresa_id: "empresa-madrid",
     horas_efectivas: 1600,
     iban_aportaciones: "ES1111111111111111111111",
@@ -86,6 +91,11 @@ function createServerDependenciesForTests() {
     contractable_kwp_reserved: 0,
     contractable_kwp_total: 25,
     direccion: "Avenida del Puerto 10, Valencia",
+    empresa: {
+      cif: "B87654321",
+      id: "empresa-valencia",
+      nombre: "Sapiens Valencia Solar",
+    },
     empresa_id: "empresa-valencia",
     horas_efectivas: 1500,
     id: "installation-far",
@@ -639,6 +649,13 @@ async function createStudyAndGeneratedContract(
   expect(generated.status).toBe(200);
   expect(generated.body.success).toBe(true);
   expect(generated.body.preview.contractId).toBe(generated.body.contract.id);
+  expect(generated.body.preview.installation.empresa.nombre).toBe(
+    "Sapiens Madrid Solar",
+  );
+  expect(generated.body.preview.installation.empresa.cif).toBe("B12345678");
+  expect(generated.body.previewHtml).toContain("Empresa");
+  expect(generated.body.previewHtml).toContain("Sapiens Madrid Solar");
+  expect(generated.body.previewHtml).toContain("B12345678");
 
   return {
     confirm: confirm.body,

@@ -163,6 +163,8 @@ export function useContractFlow({
       phone: t("contractPdf.phone"),
       installationData: t("contractPdf.installationData"),
       installation: t("contractPdf.installation"),
+      company: t("contractPdf.company", "Empresa"),
+      taxId: t("contractPdf.taxId", "CIF"),
       mode: t("contractPdf.mode"),
       assignedKwp: t("contractPdf.assignedKwp"),
       basicConditions: t("contractPdf.basicConditions"),
@@ -236,6 +238,9 @@ export function useContractFlow({
       `${contractTexts.installation}: ${preview.installation.nombre_instalacion}`,
     );
     writeParagraph(`${t("fields.address")}: ${preview.installation.direccion}`);
+    writeParagraph(
+      `${contractTexts.company}: ${preview.installation.empresa?.nombre || "-"} ${contractTexts.taxId}: ${preview.installation.empresa?.cif || "-"}`,
+    );
     writeParagraph(
       `${contractTexts.mode}: ${
         preview.proposalMode === "investment"

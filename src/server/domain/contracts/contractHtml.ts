@@ -17,6 +17,8 @@ export function buildBasicContractHtml(params: {
 }) {
   const texts = getContractTexts(params.language);
   const fullName = `${params.client.nombre} ${params.client.apellidos}`.trim();
+  const installationCompany =
+    params.installation.empresa ?? params.installation.empresas ?? null;
   const transferConcept = `${fullName || "-"} - ${
     params.contractNumber
   }`;
@@ -98,6 +100,12 @@ export function buildBasicContractHtml(params: {
           <p><strong>${texts.address}:</strong> ${
             params.installation.direccion ?? "-"
           }</p>
+          <p><strong>${texts.company}:</strong> ${
+            installationCompany?.nombre ?? "-"
+          } <strong>${texts.taxId}:</strong> ${
+            installationCompany?.cif ?? "-"
+          }</p>
+
           <p><strong>${texts.mode}:</strong> ${getProposalModeLabel(
             params.proposalMode,
             params.language,

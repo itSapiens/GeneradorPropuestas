@@ -390,7 +390,7 @@ export const serverRepositories = {
     async findById(id: string) {
       const { data, error } = await supabase
         .from("installations")
-        .select("*")
+        .select("*, empresa:empresas(*)")
         .eq("id", id)
         .maybeSingle();
 

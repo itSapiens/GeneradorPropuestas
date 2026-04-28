@@ -37,6 +37,11 @@ type ContractPreviewData = {
     id: string;
     nombre_instalacion: string;
     direccion: string;
+    empresa?: {
+      id?: string | null;
+      nombre?: string | null;
+      cif?: string | null;
+    } | null;
     iban_aportaciones?: string | null;
     potencia_instalada_kwp?: number | null;
     almacenamiento_kwh?: number | null;
@@ -445,6 +450,9 @@ writeParagraph(
 );
 writeParagraph(
   `${t("contractFlow.pdf.address", "Dirección")}: ${preview.installation.direccion}`,
+);
+writeParagraph(
+  `${t("contractPdf.company", "Empresa")}: ${preview.installation.empresa?.nombre || "-"} ${t("contractPdf.taxId", "CIF")}: ${preview.installation.empresa?.cif || "-"}`,
 );
 writeParagraph(
   `${t("contractFlow.pdf.mode", "Modalidad")}: ${modeLabel}`,

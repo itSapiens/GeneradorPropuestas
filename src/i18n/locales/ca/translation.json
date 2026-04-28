@@ -246,6 +246,8 @@
     "address": "Adreça",
     "installationData": "Dades de la instal·lació",
     "installation": "Instal·lació",
+    "company": "Empresa",
+    "taxId": "CIF",
     "mode": "Modalitat",
     "assignedKwp": "kWp assignats",
     "basicConditions": "Condicions bàsiques",

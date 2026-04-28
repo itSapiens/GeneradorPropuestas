@@ -103,6 +103,8 @@ export function getContractTexts(language: AppLanguage) {
       "Datos de la instalación",
     ),
     installation: tServer(language, "contractPdf.installation", "Instalación"),
+    company: tServer(language, "contractPdf.company", "Empresa"),
+    taxId: tServer(language, "contractPdf.taxId", "CIF"),
     mode: tServer(language, "contractPdf.mode", "Modalidad"),
     assignedKwp: tServer(language, "contractPdf.assignedKwp", "kWp asignados"),
     basicConditions: tServer(

@@ -649,6 +649,13 @@ export async function generateContractFromAccessUseCase(
       installation: {
         almacenamiento_kwh: installation.almacenamiento_kwh ?? null,
         direccion: installation.direccion,
+        empresa: installation.empresa
+          ? {
+              cif: installation.empresa.cif ?? null,
+              id: installation.empresa.id ?? null,
+              nombre: installation.empresa.nombre ?? null,
+            }
+          : null,
         horas_efectivas: installation.horas_efectivas ?? null,
         id: installation.id,
         iban_aportaciones: resolveInstallationBankIban(
@@ -721,6 +728,13 @@ export async function generateContractFromStudyUseCase(
       installation: {
         almacenamiento_kwh: ctx.installation.almacenamiento_kwh ?? null,
         direccion: ctx.installation.direccion,
+        empresa: ctx.installation.empresa
+          ? {
+              cif: ctx.installation.empresa.cif ?? null,
+              id: ctx.installation.empresa.id ?? null,
+              nombre: ctx.installation.empresa.nombre ?? null,
+            }
+          : null,
         horas_efectivas: ctx.installation.horas_efectivas ?? null,
         id: ctx.installation.id,
         iban_aportaciones: resolveInstallationBankIban(

@@ -27,9 +27,13 @@ export default function UploadStep({
       exit={{ opacity: 0, y: -30 }}
       className="text-center"
     >
-      
-      <div className="max-w-2xl mx-auto mb-8 text-left">
-        
+      <FileUploader
+        onFileSelect={onFileSelect}
+        disabled={!privacyAccepted}
+        disabledMessage={t("upload.disabledMessage")}
+      />
+
+      <div className="max-w-2xl mx-auto mt-8 text-left">
         <label className="flex items-start gap-3 rounded-2xl border border-brand-navy/10 bg-[#F8FAFC] p-4 shadow-sm">
           <input
             type="checkbox"
@@ -55,12 +59,6 @@ export default function UploadStep({
           </span>
         </label>
       </div>
-
-      <FileUploader
-        onFileSelect={onFileSelect}
-        disabled={!privacyAccepted}
-        disabledMessage={t("upload.disabledMessage")}
-      />
     </motion.div>
   );
 }

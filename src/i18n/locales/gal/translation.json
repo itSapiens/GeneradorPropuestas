@@ -246,6 +246,8 @@
     "address": "Enderezo",
     "installationData": "Datos da instalación",
     "installation": "Instalación",
+    "company": "Empresa",
+    "taxId": "CIF",
     "mode": "Modalidade",
     "assignedKwp": "kWp asignados",
     "basicConditions": "Condicións básicas",
