@@ -68,6 +68,7 @@ function createServerDependenciesForTests() {
     contractable_kwp_reserved: 1,
     contractable_kwp_total: 12,
     direccion: "Calle Mayor 1, Madrid",
+    empresa_id: "empresa-madrid",
     horas_efectivas: 1600,
     iban_aportaciones: "ES1111111111111111111111",
     id: "installation-near",
@@ -85,6 +86,7 @@ function createServerDependenciesForTests() {
     contractable_kwp_reserved: 0,
     contractable_kwp_total: 25,
     direccion: "Avenida del Puerto 10, Valencia",
+    empresa_id: "empresa-valencia",
     horas_efectivas: 1500,
     id: "installation-far",
     lat: 39.4699,
@@ -112,6 +114,12 @@ function createServerDependenciesForTests() {
     repositories: {
       accessTokens: {
         async create(payload) {
+          if (!payload.empresa_id) {
+            throw new Error(
+              "No se puede guardar el token de acceso sin empresa_id",
+            );
+          }
+
           state.accessTokens.push({ ...payload });
         },
         async findProposalContinueByHash(tokenHash) {
@@ -141,17 +149,33 @@ function createServerDependenciesForTests() {
         },
       },
       clients: {
-        async findByDni(dni) {
+        async findByDni(params) {
           return (
-            [...state.clients.values()].find((client) => client.dni === dni) ?? null
+            [...state.clients.values()].find(
+              (client) =>
+                client.dni === params.dni &&
+                client.empresa_id === params.empresaId,
+            ) ?? null
           );
         },
         async findById(id) {
           return state.clients.get(id) ?? null;
         },
         async upsert(payload) {
+          if (!payload.empresa_id) {
+            throw new Error("No se puede guardar el cliente sin empresa_id");
+          }
+
+          if (!payload.dni) {
+            throw new Error("No se puede guardar el cliente sin dni");
+          }
+
           const existing =
-            [...state.clients.values()].find((client) => client.dni === payload.dni) ??
+            [...state.clients.values()].find(
+              (client) =>
+                client.dni === payload.dni &&
+                client.empresa_id === payload.empresa_id,
+            ) ??
             null;
 
           if (existing) {
@@ -170,6 +194,10 @@ function createServerDependenciesForTests() {
       },
       contracts: {
         async create(payload) {
+          if (!payload.empresa_id) {
+            throw new Error("No se puede guardar el contrato sin empresa_id");
+          }
+
           const created = {
             confirmed_at: null,
             contract_drive_file_id: null,
@@ -551,7 +579,12 @@ function extractTokenFromContinueUrl(continueUrl: string) {
   return url.searchParams.get("token") ?? "";
 }
 
-async function createStudyAndGeneratedContract(baseUrl: string) {
+async function createStudyAndGeneratedContract(
+  baseUrl: string,
+  options?: {
+    cups?: string;
+  },
+) {
   const confirmForm = new FormData();
   confirmForm.append("customer", JSON.stringify({
     apellidos: "López",
@@ -567,9 +600,10 @@ async function createStudyAndGeneratedContract(baseUrl: string) {
     recommendedPowerKwp: 3.2,
   }));
   confirmForm.append("invoice_data", JSON.stringify({
-    cups: "ES0031400000000001AA",
+    cups: options?.cups ?? "ES0031400000000001AA",
     tipo_factura: "2TD",
   }));
+  confirmForm.append("selected_installation_id", "installation-near");
   confirmForm.append("invoice", buildPdfFile("factura.pdf"));
   confirmForm.append("proposal", buildPdfFile("propuesta.pdf"));
 
@@ -678,10 +712,69 @@ describe("server sensitive frontend flows", () => {
 
     expect(confirm.study.id).toBe(studyId);
     expect(confirm.email.status).toBe("sent");
+    expect(confirm.client.empresa_id).toBe("empresa-madrid");
+    expect(confirm.study.selected_installation_id).toBe("installation-near");
     expect(confirm.email.continueContractUrl).toContain(
       "/continuar-contratacion?token=",
     );
+    expect(testServer.state.accessTokens).toHaveLength(1);
+    expect(testServer.state.accessTokens[0]?.empresa_id).toBe("empresa-madrid");
     expect(testServer.spies.sendProposalEmail).toHaveBeenCalledOnce();
+  });
+
+  it("normalizes spaced CUPS before saving the client", async () => {
+    testServer = await startTestServer();
+
+    const { confirm } = await createStudyAndGeneratedContract(
+      testServer.baseUrl,
+      {
+        cups: "ES 0031 4000 0000 0001 AA",
+      },
+    );
+
+    expect(confirm.client.cups).toBe("ES0031400000000001AA");
+    expect(confirm.study.customer.cups).toBe("ES0031400000000001AA");
+  });
+
+  it("allows the same DNI in different companies when the installation changes", async () => {
+    testServer = await startTestServer();
+
+    const buildConfirmForm = (installationId: string) => {
+      const form = new FormData();
+      form.append("customer", JSON.stringify({
+        apellidos: "López",
+        dni: "12345678Z",
+        email: "cliente@sapiens.test",
+        nombre: "Ana",
+      }));
+      form.append("location", JSON.stringify({
+        address: "Gran Via 1, Madrid",
+      }));
+      form.append("calculation", JSON.stringify({
+        recommendedPowerKwp: 3.2,
+      }));
+      form.append("selected_installation_id", installationId);
+      form.append("proposal", buildPdfFile("propuesta.pdf"));
+      return form;
+    };
+
+    const madridResponse = await fetch(`${testServer.baseUrl}/api/confirm-study`, {
+      body: buildConfirmForm("installation-near"),
+      method: "POST",
+    });
+    const madrid = await readJsonResponse(madridResponse);
+
+    const valenciaResponse = await fetch(`${testServer.baseUrl}/api/confirm-study`, {
+      body: buildConfirmForm("installation-far"),
+      method: "POST",
+    });
+    const valencia = await readJsonResponse(valenciaResponse);
+
+    expect(madridResponse.status).toBe(201);
+    expect(valenciaResponse.status).toBe(201);
+    expect(madrid.body.client.empresa_id).toBe("empresa-madrid");
+    expect(valencia.body.client.empresa_id).toBe("empresa-valencia");
+    expect(testServer.state.clients.size).toBe(2);
   });
 
   it("keeps the proposal access, contract generation, signature and bank transfer flow working", async () => {
@@ -731,6 +824,7 @@ describe("server sensitive frontend flows", () => {
     expect(generateFromAccess.status).toBe(200);
     expect(generateFromAccess.body.success).toBe(true);
     expect(generateFromAccess.body.contract.id).toBe(generated.contract.id);
+    expect(generateFromAccess.body.contract.empresa_id).toBe("empresa-madrid");
 
     const signForm = new FormData();
     signForm.append("signed_contract", buildPdfFile("contrato-firmado.pdf"));

@@ -4,6 +4,10 @@ import { pickFirstString } from "../../utils/stringUtils";
 import { toPositiveNumber } from "../../utils/parsingUtils";
 import { notFound, badRequest } from "../../shared/http/httpError";
 
+function hasEmpresaIdColumn(record: Record<string, any> | null | undefined) {
+  return Boolean(record) && Object.prototype.hasOwnProperty.call(record, "empresa_id");
+}
+
 export async function getContractContextFromStudy(
   deps: ServerDependencies,
   studyId: string,
@@ -22,12 +26,6 @@ export async function getContractContextFromStudy(
     throw badRequest("El estudio no tiene DNI de cliente");
   }
 
-  const client = await deps.repositories.clients.findByDni(clientDni);
-
-  if (!client) {
-    throw notFound("No se encontró el cliente asociado al estudio");
-  }
-
   const installationId = study.selected_installation_id ?? null;
 
   if (!installationId) {
@@ -40,6 +38,19 @@ export async function getContractContextFromStudy(
 
   if (!installation) {
     throw notFound("La instalación asociada al estudio no existe");
+  }
+
+  if (hasEmpresaIdColumn(installation) && !installation.empresa_id) {
+    throw badRequest("La instalación asociada al estudio no tiene empresa");
+  }
+
+  const client = await deps.repositories.clients.findByDni({
+    dni: clientDni,
+    empresaId: hasEmpresaIdColumn(installation) ? installation.empresa_id : null,
+  });
+
+  if (!client) {
+    throw notFound("No se encontró el cliente asociado al estudio");
   }
 
   const assignedKwp =
@@ -64,6 +75,7 @@ export async function createProposalContinueAccessToken(
   deps: ServerDependencies,
   params: {
     clientId: string;
+    empresaId?: string | null;
     expiresInDays?: number;
     language?: unknown;
     studyId: string;
@@ -89,14 +101,15 @@ export async function createProposalContinueAccessToken(
   });
 
   await deps.repositories.accessTokens.create({
-    study_id: params.studyId,
-    contract_id: null,
     client_id: params.clientId,
-    token_hash: tokenHash,
-    purpose: "proposal_continue",
+    contract_id: null,
+    empresa_id: params.empresaId ?? null,
     expires_at: expiresAt,
-    used_at: null,
+    purpose: "proposal_continue",
     revoked_at: null,
+    study_id: params.studyId,
+    token_hash: tokenHash,
+    used_at: null,
   });
 
   return {

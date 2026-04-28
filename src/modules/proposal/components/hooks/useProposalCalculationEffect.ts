@@ -178,6 +178,10 @@ export function useProposalCalculationEffect({
           console.error("Error guardando estudio confirmado:", error);
           console.error("error.message:", error?.message);
           console.error("error.response?.data:", error?.response?.data);
+          console.error(
+            "error.response?.data JSON:",
+            JSON.stringify(error?.response?.data ?? null, null, 2),
+          );
           console.error("error.response?.status:", error?.response?.status);
 
           sileo.error({

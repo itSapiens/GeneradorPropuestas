@@ -111,6 +111,7 @@ export function createContractController(deps: ServerDependencies) {
 
         return res.status(201).json(result);
       } catch (error) {
+        console.error("[contracts.sign] error", error);
         return sendErrorResponse(
           res,
           error,

@@ -135,16 +135,12 @@ export default function ContinuarContratacionPage() {
   const [installationPreview, setInstallationPreview] =
     useState<InstallationPreview | null>(null);
   const [availableModes, setAvailableModes] = useState<ProposalMode[]>([]);
-const [assignedKwp, setAssignedKwp] = useState<number | null>(null);
-const [estimatedSavings, setEstimatedSavings] = useState<number | null>(null);
-const [amountToPayInvestment, setAmountToPayInvestment] = useState<number | null>(null);
-const [amountToPayService, setAmountToPayService] = useState<number | null>(null);
-const [recommendedPowerKwp, setRecommendedPowerKwp] = useState<number | null>(null);
-const [clientPriceKwh, setClientPriceKwh] = useState<number | null>(null);
+  const [annualSavingsInvestment, setAnnualSavingsInvestment] = useState<number | null>(null);
+  const [annualSavingsService, setAnnualSavingsService] = useState<number | null>(null);
+  const [amountToPayInvestment, setAmountToPayInvestment] = useState<number | null>(null);
+  const [amountToPayService, setAmountToPayService] = useState<number | null>(null);
+  const [recommendedPowerKwp, setRecommendedPowerKwp] = useState<number | null>(null);
 
-
-
-  
   useEffect(() => {
     if (langFromUrl && i18n.language !== langFromUrl) {
       i18n.changeLanguage(langFromUrl);
@@ -181,68 +177,63 @@ const [clientPriceKwh, setClientPriceKwh] = useState<number | null>(null);
             ? installation.availableProposalModes
             : [installation.defaultProposalMode];
 
-            const calculation = data?.study?.calculation ?? null;
+        const calculation = data?.study?.calculation ?? null;
 
-const nextAssignedKwp =
-  typeof data?.study?.assigned_kwp === "number"
-    ? data.study.assigned_kwp
-    : null;
+        const nextAnnualSavingsInvestment =
+          typeof calculation?.annualSavingsInvestment === "number"
+            ? calculation.annualSavingsInvestment
+            : typeof calculation?.annualSavingsEuro === "number"
+              ? calculation.annualSavingsEuro
+              : typeof calculation?.estimatedAnnualSavingsEuro === "number"
+                ? calculation.estimatedAnnualSavingsEuro
+                : typeof calculation?.totalSavingsEuro === "number"
+                  ? calculation.totalSavingsEuro
+                  : null;
 
-// Resolución del ahorro: prioriza el campo real annualSavingsInvestment
-const nextEstimatedSavings =
-  typeof calculation?.annualSavingsInvestment === "number"
-    ? calculation.annualSavingsInvestment
-    : typeof calculation?.annualSavingsService === "number"
-      ? calculation.annualSavingsService
-      : typeof calculation?.annualSavingsEuro === "number"
-        ? calculation.annualSavingsEuro
-        : typeof calculation?.estimatedAnnualSavingsEuro === "number"
-          ? calculation.estimatedAnnualSavingsEuro
-          : typeof calculation?.totalSavingsEuro === "number"
-            ? calculation.totalSavingsEuro
-            : null;
+        const nextAnnualSavingsService =
+          typeof calculation?.annualSavingsService === "number"
+            ? calculation.annualSavingsService
+            : nextAnnualSavingsInvestment;
 
-// Cuota mensual servicio: serviceCost es el coste ANUAL → dividir entre 12
-const nextAmountToPayService =
-  typeof calculation?.serviceCost === "number" && calculation.serviceCost > 0
-    ? Math.round((calculation.serviceCost / 12) * 100) / 100
-    : typeof calculation?.serviceMonthlyFee === "number"
-      ? calculation.serviceMonthlyFee
-      : typeof calculation?.monthlyFee === "number"
-        ? calculation.monthlyFee
-        : null;
+        const nextAmountToPayService =
+          typeof calculation?.serviceCost === "number" &&
+          calculation.serviceCost > 0
+            ? Math.round((calculation.serviceCost / 12) * 100) / 100
+            : typeof calculation?.serviceMonthlyFee === "number"
+              ? calculation.serviceMonthlyFee
+              : typeof calculation?.monthlyFee === "number"
+                ? calculation.monthlyFee
+                : null;
 
-// Potencia recomendada
-const nextRecommendedPowerKwp =
-  typeof calculation?.recommendedPowerKwp === "number"
-    ? calculation.recommendedPowerKwp
-    : typeof data?.study?.assigned_kwp === "number"
-      ? data.study.assigned_kwp
-      : null;
+        const nextRecommendedPowerKwp =
+          typeof calculation?.recommendedPowerKwp === "number"
+            ? calculation.recommendedPowerKwp
+            : typeof data?.study?.assigned_kwp === "number"
+              ? data.study.assigned_kwp
+              : null;
 
-// Inversión real = coste_kwh_inversion × kWp × horas_efectivas × 25 años
-// (mismo cálculo que proposalCalculation.ts / proposalCard.ts que usa el ResultStep)
-const nextAmountToPayInvestment = (() => {
-  const kwh = installation.coste_kwh_inversion;
-  const kwp = nextRecommendedPowerKwp;
-  const hours = installation.horas_efectivas;
-  if (typeof kwh === "number" && typeof kwp === "number" && typeof hours === "number" && kwh > 0 && kwp > 0 && hours > 0) {
-    return Math.round(kwh * kwp * hours * 25 * 100) / 100;
-  }
-  return typeof calculation?.investmentTotal === "number"
-    ? calculation.investmentTotal
-    : typeof calculation?.investmentCost === "number"
-      ? calculation.investmentCost
-      : null;
-})();
+        const nextAmountToPayInvestment = (() => {
+          const kwh = installation.coste_kwh_inversion;
+          const kwp = nextRecommendedPowerKwp;
+          const hours = installation.horas_efectivas;
 
-// Precio €/kWh que paga el cliente (con impuestos)
-const nextClientPriceKwh =
-  typeof calculation?.invoicePriceWithVatKwh === "number"
-    ? calculation.invoicePriceWithVatKwh
-    : typeof calculation?.weightedEnergyPriceKwh === "number"
-      ? calculation.weightedEnergyPriceKwh
-      : null;
+          if (
+            typeof kwh === "number" &&
+            typeof kwp === "number" &&
+            typeof hours === "number" &&
+            kwh > 0 &&
+            kwp > 0 &&
+            hours > 0
+          ) {
+            return Math.round(kwh * kwp * hours * 25 * 100) / 100;
+          }
+
+          return typeof calculation?.investmentTotal === "number"
+            ? calculation.investmentTotal
+            : typeof calculation?.investmentCost === "number"
+              ? calculation.investmentCost
+              : null;
+        })();
 
         setInstallationPreview(installation);
         setAvailableModes(nextAvailableModes);
@@ -250,14 +241,12 @@ const nextClientPriceKwh =
           nextAvailableModes.includes(installation.defaultProposalMode)
             ? installation.defaultProposalMode
             : nextAvailableModes[0] ?? "investment",
-            
         );
-        setAssignedKwp(nextAssignedKwp);
-setEstimatedSavings(nextEstimatedSavings);
-setAmountToPayInvestment(nextAmountToPayInvestment);
-setAmountToPayService(nextAmountToPayService);
-setRecommendedPowerKwp(nextRecommendedPowerKwp);
-setClientPriceKwh(nextClientPriceKwh);
+        setAnnualSavingsInvestment(nextAnnualSavingsInvestment);
+        setAnnualSavingsService(nextAnnualSavingsService);
+        setAmountToPayInvestment(nextAmountToPayInvestment);
+        setAmountToPayService(nextAmountToPayService);
+        setRecommendedPowerKwp(nextRecommendedPowerKwp);
       } catch (error: any) {
         const message =
           error?.response?.data?.error ||
@@ -457,6 +446,30 @@ setClientPriceKwh(nextClientPriceKwh);
     availableModes.includes(mode.id),
   );
 
+  const currentAnnualSavings =
+    selectedMode === "service"
+      ? annualSavingsService
+      : annualSavingsInvestment;
+
+  const currentAmountCard =
+    selectedMode === "service"
+      ? {
+          label: t(
+            "continueContract.installation.serviceAmount",
+            "Cuota mensual",
+          ),
+          suffix: t("continueContract.installation.perMonth", "/mes"),
+          value: amountToPayService,
+        }
+      : {
+          label: t(
+            "continueContract.installation.investmentAmount",
+            "Inversión",
+          ),
+          suffix: null,
+          value: amountToPayInvestment,
+        };
+
   return (
     <div className="min-h-screen bg-slate-50 relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(87,217,211,0.18),transparent_30%),radial-gradient(circle_at_top_right,rgba(148,194,255,0.18),transparent_28%),linear-gradient(to_bottom,rgba(7,0,95,0.02),rgba(7,0,95,0.01))]" />
@@ -633,14 +646,16 @@ setClientPriceKwh(nextClientPriceKwh);
 
                  <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
   {/* Ahorro anual */}
-  {typeof estimatedSavings === "number" && (
+  {typeof currentAnnualSavings === "number" && (
     <div className="rounded-2xl bg-brand-mint/20 border border-brand-mint/40 p-4">
       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/55">
         {t("continueContract.installation.annualSavings", "Ahorro anual")}
       </p>
       <p className="mt-2 text-xl font-black text-brand-navy">
-        {formatCurrency(estimatedSavings, normalizeAppLanguage(i18n.language))}
-        <span className="ml-1 text-sm font-semibold text-brand-gray">/año</span>
+        {formatCurrency(currentAnnualSavings, normalizeAppLanguage(i18n.language))}
+        <span className="ml-1 text-sm font-semibold text-brand-gray">
+          {t("continueContract.installation.perYear", "/año")}
+        </span>
       </p>
     </div>
   )}
@@ -657,25 +672,19 @@ setClientPriceKwh(nextClientPriceKwh);
     </div>
   )}
 
-  {/* Inversión total (inversión) o cuota mensual (servicio) */}
-  {availableModes.includes("investment") && typeof amountToPayInvestment === "number" && (
+  {/* Importe principal según modalidad seleccionada */}
+  {typeof currentAmountCard.value === "number" && (
     <div className="rounded-2xl bg-[#F8FAFC]/70 border border-white p-4">
       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
-        {t("continueContract.installation.investmentAmount", "Inversión")}
+        {currentAmountCard.label}
       </p>
       <p className="mt-2 text-xl font-black text-brand-navy">
-        {formatCurrency(amountToPayInvestment, normalizeAppLanguage(i18n.language))}
-      </p>
-    </div>
-  )}
-  {!availableModes.includes("investment") && availableModes.includes("service") && typeof amountToPayService === "number" && (
-    <div className="rounded-2xl bg-[#F8FAFC]/70 border border-white p-4">
-      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
-        {t("continueContract.installation.serviceAmount", "Cuota mensual")}
-      </p>
-      <p className="mt-2 text-xl font-black text-brand-navy">
-        {formatCurrency(amountToPayService, normalizeAppLanguage(i18n.language))}
-        <span className="ml-1 text-sm font-semibold text-brand-gray">/mes</span>
+        {formatCurrency(currentAmountCard.value, normalizeAppLanguage(i18n.language))}
+        {currentAmountCard.suffix ? (
+          <span className="ml-1 text-sm font-semibold text-brand-gray">
+            {currentAmountCard.suffix}
+          </span>
+        ) : null}
       </p>
     </div>
   )}

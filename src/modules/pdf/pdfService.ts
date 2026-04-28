@@ -30,6 +30,8 @@ export interface ProposalPdfSummary {
   recommendedPowerKwp: number;
   annualConsumptionKwh: number;
   description: string;
+  installationAddress?: string | null;
+  installationName?: string | null;
 }
 
 const COLORS = {
@@ -692,20 +694,29 @@ function drawHighlightPill(
   text: string,
   accent: readonly [number, number, number],
 ) {
-  drawCard(doc, x, y, w, 10, COLORS.soft, COLORS.border, 4.5);
-  drawCard(doc, x + 3, y + 2.1, 5.8, 5.8, accent, accent, 2.9);
-  writeText(doc, "•", x + 5.9, y + 5.8, {
+  const pillFontSize = text.length > 36 ? 5.2 : 5.8;
+  const textLines = getLines(doc, text, w - 14, pillFontSize, "bold");
+  const pillHeight = textLines.length > 1 ? 13.5 : 10;
+  const iconSize = 5.8;
+  const iconY = y + (pillHeight - iconSize) / 2;
+  const textY = textLines.length > 1 ? y + 4.9 : y + 6.4;
+
+  drawCard(doc, x, y, w, pillHeight, COLORS.soft, COLORS.border, 4.5);
+  drawCard(doc, x + 3, iconY, iconSize, iconSize, accent, accent, 2.9);
+  writeText(doc, "•", x + 5.9, y + pillHeight / 2 + 0.8, {
     size: 8,
     color: COLORS.navy,
     fontStyle: "bold",
     align: "center",
   });
-  writeText(doc, text, x + 11.3, y + 6.4, {
-    size: 5.8,
+  writeText(doc, text, x + 11.3, textY, {
+    size: pillFontSize,
     color: COLORS.navy,
     fontStyle: "bold",
     maxWidth: w - 14,
   });
+
+  return pillHeight;
 }
 
 function getModeAccent(mode: ProposalPdfMode) {
@@ -941,12 +952,23 @@ function getSupplyRows(
     proposal,
   );
 
+  const installationLabel = [
+    proposal.installationName,
+    proposal.installationAddress,
+  ]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .join(" · ");
+
   const rows: Array<[string, string]> = [
     [tPdf(language, "supply.holder", "Titular"), getCustomerFullName(data, language)],
     [tPdf(language, "supply.cups", "CUPS"), data.cups || "-"],
     [tPdf(language, "supply.tariff", "Tarifa"), data.billType || "-"],
     [tPdf(language, "supply.address", "Dirección"), data.address || "-"],
-    [tPdf(language, "supply.email", "Email"), data.email || "-"],
+    [
+      tPdf(language, "supply.installation", "Instalación"),
+      installationLabel || "-",
+    ],
     // [tPdf(language, "supply.iban", "IBAN"), getMaskedIbanText(data)],
     [
       tPdf(
@@ -999,6 +1021,11 @@ function drawEconomicSummary(
   const gap = 3;
   const cardW = (w - gap * 2) / 3;
   const cardH = 20;
+  const managementFeeLabel = tPdf(
+    language,
+    "labels.managementFeeAnnual",
+    "Cuota de gestión anual",
+  );
 
   if (proposal.mode === "service") {
     drawEconomicMiniCard(
@@ -1032,7 +1059,7 @@ function drawEconomicSummary(
       formatCurrency(proposal.totalSavings25Years, language),
     );
 
-    drawHighlightPill(
+    const firstPillHeight = drawHighlightPill(
       doc,
       x,
       y + 24,
@@ -1047,7 +1074,7 @@ function drawEconomicSummary(
     drawHighlightPill(
       doc,
       x,
-      y + 36,
+      y + 24 + firstPillHeight + 2.5,
       w,
       tPdf(
         language,
@@ -1086,30 +1113,53 @@ function drawEconomicSummary(
       formatCurrency(proposal.totalSavings25Years, language),
     );
 
-    drawHighlightPill(
-      doc,
-      x,
-      y + 24,
-      w,
-      tPdf(
-        language,
-        "highlights.investment.0",
-        "Mayor ahorro acumulado a largo plazo",
-      ),
-      COLORS.cyan,
-    );
-    drawHighlightPill(
-      doc,
-      x,
-      y + 36,
-      w,
-      tPdf(
-        language,
-        "highlights.investment.1",
-        "Más control sobre la rentabilidad del proyecto",
-      ),
-      COLORS.sky,
-    );
+    if (proposal.annualMaintenance > 0) {
+      const firstPillHeight = drawHighlightPill(
+        doc,
+        x,
+        y + 24,
+        w,
+        `${managementFeeLabel}: ${formatCurrency(proposal.annualMaintenance, language)}`,
+        COLORS.cyan,
+      );
+      drawHighlightPill(
+        doc,
+        x,
+        y + 24 + firstPillHeight + 2.5,
+        w,
+        tPdf(
+          language,
+          "highlights.investment.1",
+          "Más control sobre la rentabilidad del proyecto",
+        ),
+        COLORS.sky,
+      );
+    } else {
+      const firstPillHeight = drawHighlightPill(
+        doc,
+        x,
+        y + 24,
+        w,
+        tPdf(
+          language,
+          "highlights.investment.0",
+          "Mayor ahorro acumulado a largo plazo",
+        ),
+        COLORS.cyan,
+      );
+      drawHighlightPill(
+        doc,
+        x,
+        y + 24 + firstPillHeight + 2.5,
+        w,
+        tPdf(
+          language,
+          "highlights.investment.1",
+          "Más control sobre la rentabilidad del proyecto",
+        ),
+        COLORS.sky,
+      );
+    }
   }
 }
 
@@ -1464,7 +1514,7 @@ function renderStudyPdfPage(
 
   // ── 2-COLUMN GRID (bottom row) ────────────────────────────────────
   const bottomY = gridY + gridCardH + gridGap;
-  const bottomCardH = 62;
+  const bottomCardH = proposal.mode === "investment" ? 70 : 62;
 
   drawCard(doc, margin, bottomY, gridCardW, bottomCardH, COLORS.white, COLORS.border, 6);
   drawSectionTitle(
@@ -1800,6 +1850,26 @@ function drawRecommendationSummaryCard(
       proposal.paybackYears > 0
         ? `${formatNumber(proposal.paybackYears, language, 1)} ${translate(language, "result.units.years", "años")}`
         : tPdf(language, "common.notAvailable", "N/D"),
+    );
+  }
+
+  if (proposal.mode === "investment" && proposal.annualMaintenance > 0) {
+    const managementFeeLabel = tPdf(
+      language,
+      "labels.managementFeeAnnual",
+      "Cuota de gestión anual",
+    );
+    writeText(
+      doc,
+      `${managementFeeLabel}: ${formatCurrency(proposal.annualMaintenance, language)}`,
+      x + 4,
+      y + h - 18.5,
+      {
+        size: 5.7,
+        color: COLORS.navy,
+        fontStyle: "bold",
+        maxWidth: w - 8,
+      },
     );
   }
 

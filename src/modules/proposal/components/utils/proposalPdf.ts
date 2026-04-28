@@ -151,6 +151,7 @@ export function pdfArtifactToBlob(pdfArtifact: PdfArtifact): Blob {
 
 export function buildProposalPdfSummary(
   proposal: ProposalCardData,
+  installation?: ApiInstallation | null,
 ): ProposalPdfSummary {
   return {
     mode: proposal.id,
@@ -165,6 +166,8 @@ export function buildProposalPdfSummary(
     recommendedPowerKwp: proposal.recommendedPowerKwp,
     annualConsumptionKwh: proposal.annualConsumptionKwh,
     description: proposal.description,
+    installationAddress: installation?.direccion ?? null,
+    installationName: installation?.nombre_instalacion ?? null,
   };
 }
 
@@ -184,6 +187,7 @@ export function buildProposalPdfSummariesForInstallation(
   return modes.map((mode) =>
     buildProposalPdfSummary(
       buildProposalCardData(result, mode, installation, t),
+      installation,
     ),
   );
 }

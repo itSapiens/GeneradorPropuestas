@@ -30,6 +30,17 @@ export async function confirmStudy({
   consentAccepted = true,
   status = "uploaded",
 }: ConfirmStudyParams) {
+const resolvedSelectedInstallationId =
+  selectedInstallationId ??
+  (typeof selectedInstallationSnapshot === "object" &&
+  selectedInstallationSnapshot !== null
+    ? ((selectedInstallationSnapshot as Record<string, unknown>).id ??
+      (selectedInstallationSnapshot as Record<string, unknown>).installationId ??
+      ((selectedInstallationSnapshot as Record<string, unknown>)
+        .installationData as Record<string, unknown> | undefined)?.id ??
+      null)
+    : null);
+
 const formData = new FormData();
 formData.append("invoice", invoiceFile);
 formData.append("proposal", proposalFile);
@@ -42,8 +53,11 @@ formData.append(
   JSON.stringify(selectedInstallationSnapshot ?? {}),
 );
 
-if (selectedInstallationId) {
-  formData.append("selected_installation_id", selectedInstallationId);
+if (resolvedSelectedInstallationId) {
+  formData.append(
+    "selected_installation_id",
+    String(resolvedSelectedInstallationId),
+  );
 }
 
 if (typeof assignedKwp === "number" && assignedKwp > 0) {
@@ -52,6 +66,14 @@ if (typeof assignedKwp === "number" && assignedKwp > 0) {
 
 formData.append("language", language);
 formData.append("consent_accepted", String(consentAccepted));
+
+if (import.meta.env.DEV) {
+  console.debug("[front] confirmStudy selected installation:", {
+    originalSelectedInstallationId: selectedInstallationId ?? null,
+    resolvedSelectedInstallationId,
+    selectedInstallationSnapshot,
+  });
+}
 
 const { data } = await axios.post("/api/confirm-study", formData, {
   headers: {

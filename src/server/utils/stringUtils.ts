@@ -30,3 +30,23 @@ export function pickFirstString(...values: unknown[]): string | null {
   }
   return null;
 }
+
+export function normalizeCups(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+
+  return normalized || null;
+}
+
+export function isValidCupsFormat(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^[A-Z]{2}[0-9]{16}[A-Z]{2}([0-9][FPCR])?$/i.test(value)
+  );
+}

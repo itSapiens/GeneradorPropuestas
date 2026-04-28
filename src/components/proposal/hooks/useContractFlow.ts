@@ -393,6 +393,10 @@ export function useContractFlow({
       console.error("Error firmando precontrato:", error);
       console.error("status:", error?.response?.status);
       console.error("data:", error?.response?.data);
+      console.error(
+        "data JSON:",
+        JSON.stringify(error?.response?.data ?? null, null, 2),
+      );
 
       sileo.error({
         title: "No se pudo iniciar la reserva",

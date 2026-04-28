@@ -21,7 +21,37 @@ import {
   toBoolean,
   toNullableNumber,
 } from "../../utils/parsingUtils";
-import { normalizeDriveToken, pickFirstString } from "../../utils/stringUtils";
+import {
+  isValidCupsFormat,
+  normalizeCups,
+  normalizeDriveToken,
+  pickFirstString,
+} from "../../utils/stringUtils";
+
+function hasEmpresaIdColumn(record: Record<string, any> | null | undefined) {
+  return Boolean(record) && Object.prototype.hasOwnProperty.call(record, "empresa_id");
+}
+
+function stripLegacyDriveFields<T extends Record<string, any> | null | undefined>(
+  payload: T,
+) {
+  if (!payload) {
+    return payload ?? null;
+  }
+
+  const sanitized = { ...payload };
+
+  delete sanitized.drive_folder_id;
+  delete sanitized.drive_folder_url;
+  delete sanitized.factura_drive_file_id;
+  delete sanitized.factura_drive_url;
+  delete sanitized.proposal_drive_file_id;
+  delete sanitized.proposal_drive_url;
+  delete sanitized.propuesta_drive_file_id;
+  delete sanitized.propuesta_drive_url;
+
+  return sanitized;
+}
 
 export async function sendStudyProposalEmailUseCase(
   deps: ServerDependencies,
@@ -68,32 +98,18 @@ export async function sendStudyProposalEmailUseCase(
       sourceFile?.supabase_bucket,
     ) ?? null;
 
-  const proposalDriveFileId =
-    pickFirstString(
-      sourceFile?.proposal_drive_file_id,
-      sourceFile?.propuesta_drive_file_id,
-    ) ?? null;
-
-  const proposalUrl =
-    pickFirstString(
-      sourceFile?.proposal_drive_url,
-      sourceFile?.propuesta_drive_url,
-    ) ?? null;
-
   if (!email) {
     throw badRequest("No se encontró el email del cliente");
   }
 
-  if (!proposalSupabasePath && !proposalDriveFileId) {
+  if (!proposalSupabasePath) {
     throw badRequest("No se encontró el PDF de propuesta");
   }
 
-  const proposalPdf = proposalSupabasePath
-    ? await deps.services.documents.downloadFileAsBuffer({
-        bucket: proposalSupabaseBucket,
-        path: proposalSupabasePath,
-      })
-    : await deps.services.drive.downloadFileAsBuffer(proposalDriveFileId!);
+  const proposalPdf = await deps.services.documents.downloadFileAsBuffer({
+    bucket: proposalSupabaseBucket,
+    path: proposalSupabasePath,
+  });
 
   const clientDni =
     pickFirstString(customer?.dni, customer?.documentNumber) ?? null;
@@ -102,7 +118,28 @@ export async function sendStudyProposalEmailUseCase(
     throw badRequest("No se encontró el DNI del cliente en el estudio");
   }
 
-  const client = await deps.repositories.clients.findByDni(clientDni);
+  const installationId = study.selected_installation_id ?? null;
+
+  if (!installationId) {
+    throw badRequest("El estudio no tiene instalación seleccionada");
+  }
+
+  const installation = await deps.repositories.installations.findById(
+    installationId,
+  );
+
+  if (!installation) {
+    throw notFound("No se encontró la instalación asociada al estudio");
+  }
+
+  if (hasEmpresaIdColumn(installation) && !installation.empresa_id) {
+    throw badRequest("La instalación seleccionada no tiene empresa asociada");
+  }
+
+  const client = await deps.repositories.clients.findByDni({
+    dni: clientDni,
+    empresaId: hasEmpresaIdColumn(installation) ? installation.empresa_id : null,
+  });
 
   if (!client) {
     throw notFound("No se encontró el cliente asociado al estudio", "Cliente no encontrado");
@@ -111,6 +148,7 @@ export async function sendStudyProposalEmailUseCase(
   const language = normalizeAppLanguage(study.language);
   const access = await createProposalContinueAccessToken(deps, {
     clientId: client.id,
+    empresaId: hasEmpresaIdColumn(installation) ? installation.empresa_id : null,
     language,
     studyId: study.id,
   });
@@ -121,7 +159,7 @@ export async function sendStudyProposalEmailUseCase(
     language,
     pdfBuffer: proposalPdf.buffer,
     pdfFilename: proposalPdf.fileName,
-    proposalUrl,
+    proposalUrl: null,
     to: email,
   });
 
@@ -316,7 +354,12 @@ export async function confirmStudyUseCase(
     throw badRequest("Faltan nombre, apellidos o DNI para confirmar el estudio");
   }
 
-  const cups = pickFirstString(body.cups, customer?.cups, invoiceData?.cups);
+  const rawCups = pickFirstString(body.cups, customer?.cups, invoiceData?.cups);
+  const normalizedCups = normalizeCups(rawCups);
+  const persistedCups =
+    normalizedCups && isValidCupsFormat(normalizedCups)
+      ? normalizedCups
+      : null;
   const direccionCompleta = pickFirstString(
     body.direccion_completa,
     customer?.direccion_completa,
@@ -437,6 +480,39 @@ export async function confirmStudyUseCase(
 
   const tipo_factura = tipoFacturaRaw === "3TD" ? "3TD" : "2TD";
 
+  const selectedInstallationId =
+    pickFirstString(
+      body.selected_installation_id,
+      body.selectedInstallationId,
+      selectedInstallationSnapshot?.id,
+      selectedInstallationSnapshot?.installationId,
+      selectedInstallationSnapshot?.installationData?.id,
+    ) ?? null;
+
+  console.log("[confirm-study] selectedInstallationId:", selectedInstallationId);
+
+  if (!selectedInstallationId) {
+    throw badRequest("Debes seleccionar una instalación antes de confirmar el estudio");
+  }
+
+  const selectedInstallation = await deps.repositories.installations.findById(
+    selectedInstallationId,
+  );
+
+  if (!selectedInstallation) {
+    throw notFound("No se encontró la instalación seleccionada");
+  }
+
+  if (hasEmpresaIdColumn(selectedInstallation) && !selectedInstallation.empresa_id) {
+    throw badRequest("La instalación seleccionada no tiene empresa asociada");
+  }
+
+  const empresaId = hasEmpresaIdColumn(selectedInstallation)
+    ? selectedInstallation.empresa_id
+    : null;
+
+  console.log("[confirm-study] selectedInstallation empresa_id:", empresaId);
+
   const consumo_mensual_real_kwh =
     toNullableNumber(body.consumo_mensual_real_kwh) ??
     toNullableNumber(customer?.consumo_mensual_real_kwh) ??
@@ -451,11 +527,14 @@ export async function confirmStudyUseCase(
     toNullableNumber(invoiceData?.monthly_average_consumption_kwh) ??
     null;
 
+  const bic =
+    pickFirstString(body.bic, customer?.bic, invoiceData?.bic) ?? null;
+
   const normalizedCustomer = {
     ...(customer ?? {}),
     apellidos,
     codigo_postal,
-    cups: cups ?? null,
+    cups: normalizedCups ?? rawCups ?? null,
     direccion_completa: direccionCompleta ?? null,
     dni,
     email,
@@ -517,22 +596,23 @@ export async function confirmStudyUseCase(
     );
   }
 
-  const clientData = await deps.repositories.clients.upsert({
-    apellidos,
-    codigo_postal,
+  const clientPayload: Record<string, any> = {
+    apellidos: apellidos ?? "",
+    bic,
+    codigo_postal: codigo_postal ?? "",
     consumo_medio_mensual_kwh,
     consumo_mensual_real_kwh,
-    cups: cups ?? null,
-    datos_adicionales: normalizedCustomer,
-    direccion_completa: direccionCompleta ?? null,
+    cups: persistedCups,
+    datos_adicionales: customer?.datos_adicionales ?? {},
+    direccion_completa: direccionCompleta ?? "",
     dni,
     documentos_supabase_bucket: storageBucket,
-    email,
+    email: email ?? "",
     factura_supabase_path: uploadedInvoice?.path ?? null,
-    iban: iban ?? null,
-    nombre,
-    pais,
-    poblacion,
+    iban: iban || null,
+    nombre: nombre ?? "",
+    pais: pais ?? "España",
+    poblacion: poblacion ?? "",
     precio_p1_eur_kwh: getPeriodPrice(body, invoiceData, "p1"),
     precio_p2_eur_kwh: getPeriodPrice(body, invoiceData, "p2"),
     precio_p3_eur_kwh: getPeriodPrice(body, invoiceData, "p3"),
@@ -540,19 +620,19 @@ export async function confirmStudyUseCase(
     precio_p5_eur_kwh: getPeriodPrice(body, invoiceData, "p5"),
     precio_p6_eur_kwh: getPeriodPrice(body, invoiceData, "p6"),
     propuesta_supabase_path: uploadedProposal?.path ?? null,
-    provincia,
+    provincia: provincia ?? "",
     supabase_folder_path: storageFolderPath,
-    telefono,
-    tipo_factura,
-  });
+    telefono: telefono ?? "",
+    tipo_factura: tipo_factura || null,
+  };
 
-  const selectedInstallationId =
-    pickFirstString(
-      body.selected_installation_id,
-      body.selectedInstallationId,
-      selectedInstallationSnapshot?.installationId,
-      selectedInstallationSnapshot?.installationData?.id,
-    ) ?? null;
+  if (empresaId) {
+    clientPayload.empresa_id = empresaId;
+  }
+
+  console.log("[confirm-study] client dni:", clientPayload.dni);
+
+  const clientData = await deps.repositories.clients.upsert(clientPayload);
 
   const requestedAssignedKwpRaw =
     toNullableNumber(
@@ -632,13 +712,14 @@ export async function confirmStudyUseCase(
     consent_accepted: toBoolean(body.consent_accepted),
     customer: normalizedCustomer,
     email_status: "pending",
+    empresa_id: empresaId,
     invoice_data: invoiceData ?? null,
     language: appLanguage,
     location: locationPayload,
     selected_installation_id: selectedInstallationId,
     selected_installation_snapshot: finalSelectedInstallationSnapshot,
     source_file: {
-      ...(sourceFile ?? {}),
+      ...(stripLegacyDriveFields(sourceFile) ?? {}),
       documentos_supabase_bucket: storageBucket,
       factura_supabase_path: uploadedInvoice?.path ?? null,
       mime_type: invoiceFile?.mimetype ?? null,
@@ -655,6 +736,7 @@ export async function confirmStudyUseCase(
   try {
     const access = await createProposalContinueAccessToken(deps, {
       clientId: clientData.id,
+      empresaId,
       language: appLanguage,
       studyId: studyData.id,
     });

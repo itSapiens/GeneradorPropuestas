@@ -33,7 +33,10 @@ export interface ServerDependencies {
       update(id: string, payload: GenericRecord): Promise<GenericRecord>;
     };
     clients: {
-      findByDni(dni: string): Promise<GenericRecord | null>;
+      findByDni(params: {
+        dni: string;
+        empresaId?: string | null;
+      }): Promise<GenericRecord | null>;
       findById(id: string): Promise<GenericRecord | null>;
       upsert(payload: GenericRecord): Promise<GenericRecord>;
     };

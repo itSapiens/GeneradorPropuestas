@@ -78,6 +78,7 @@ async function getOrCreateGeneratedContract(
   params: {
     assignedKwp: number;
     clientId: string;
+    empresaId?: string | null;
     installationId: string;
     proposalMode: "investment" | "service";
     source: "access" | "study";
@@ -112,6 +113,7 @@ async function getOrCreateGeneratedContract(
     return await deps.repositories.contracts.create({
       client_id: params.clientId,
       contract_number: buildContractNumber(params.study.id),
+      empresa_id: params.empresaId ?? null,
       installation_id: params.installationId,
       metadata: {
         assigned_kwp: params.assignedKwp,
@@ -441,11 +443,13 @@ export async function validateProposalAccessUseCase(
       cups: client.cups ?? null,
       direccion_completa: client.direccion_completa ?? null,
       dni: client.dni,
+      documentos_supabase_bucket: client.documentos_supabase_bucket ?? null,
       email: client.email ?? null,
-      factura_drive_url: client.factura_drive_url ?? null,
+      factura_supabase_path: client.factura_supabase_path ?? null,
       id: client.id,
       nombre: client.nombre,
-      propuesta_drive_url: client.propuesta_drive_url ?? null,
+      propuesta_supabase_path: client.propuesta_supabase_path ?? null,
+      supabase_folder_path: client.supabase_folder_path ?? null,
       telefono: client.telefono ?? null,
     },
     existingContract: existingContract
@@ -540,6 +544,11 @@ export async function generateContractFromAccessUseCase(
   const contract = await getOrCreateGeneratedContract(deps, {
     assignedKwp,
     clientId: client.id,
+    empresaId:
+      study?.empresa_id ??
+      installation?.empresa_id ??
+      client?.empresa_id ??
+      null,
     installationId: installation.id,
     proposalMode,
     source: "access",
@@ -642,6 +651,11 @@ export async function generateContractFromStudyUseCase(
   const contract = await getOrCreateGeneratedContract(deps, {
     assignedKwp: ctx.assignedKwp,
     clientId: ctx.client.id,
+    empresaId:
+      ctx.study?.empresa_id ??
+      ctx.installation?.empresa_id ??
+      ctx.client?.empresa_id ??
+      null,
     installationId: ctx.installation.id,
     proposalMode,
     source: "study",
