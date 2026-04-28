@@ -844,6 +844,29 @@ describe("server sensitive frontend flows", () => {
       { id: "stripe", label: "Tarjeta" },
     ]);
 
+    const previewAfterSignResponse = await fetch(
+      `${testServer.baseUrl}/api/contracts/proposal-access/preview?token=${encodeURIComponent(continueToken)}`,
+    );
+    const previewAfterSign = await readJsonResponse(previewAfterSignResponse);
+    expect(previewAfterSignResponse.status).toBe(200);
+    expect(previewAfterSign.body.existingContract.id).toBe(generated.contract.id);
+    expect(previewAfterSign.body.existingReservation.id).toBe(
+      signed.body.reservation.id,
+    );
+
+    const generateAfterSignResponse = await postJson(
+      testServer.baseUrl,
+      "/api/contracts/generate-from-access",
+      {
+        proposalMode: "investment",
+        resumeToken: validate.body.resumeToken,
+      },
+    );
+    const generateAfterSign = await readJsonResponse(generateAfterSignResponse);
+    expect(generateAfterSignResponse.status).toBe(200);
+    expect(generateAfterSign.body.alreadySigned).toBe(true);
+    expect(generateAfterSign.body.contract.id).toBe(generated.contract.id);
+
     const bankTransferResponse = await postJson(
       testServer.baseUrl,
       `/api/contracts/${generated.contract.id}/payments/bank-transfer`,

@@ -340,6 +340,11 @@ export async function previewProposalAccessUseCase(
     token,
   );
 
+  const existingContract = await deps.repositories.contracts.findByStudyId(study.id);
+  const existingReservation = existingContract
+    ? await deps.repositories.reservations.findByContractId(existingContract.id)
+    : null;
+
   const language = normalizeAppLanguage(study.language);
   const allowedModes = getAllowedProposalModes(installation.modalidad);
 
@@ -350,6 +355,32 @@ export async function previewProposalAccessUseCase(
       installationId: installation.id,
       studyId: study.id,
     },
+    existingContract: existingContract
+      ? {
+          contractNumber: existingContract.contract_number ?? null,
+          id: existingContract.id,
+          proposalMode: existingContract.proposal_mode ?? null,
+          signedAt: existingContract.signed_at ?? null,
+          status: existingContract.status ?? null,
+          uploadedAt: existingContract.uploaded_at ?? null,
+        }
+      : null,
+    existingReservation: existingReservation
+      ? {
+          contractId: existingContract?.id ?? null,
+          contractNumber: existingContract?.contract_number ?? null,
+          currency: existingReservation.currency ?? null,
+          id: existingReservation.id,
+          installationAddress: installation.direccion ?? null,
+          installationName: installation.nombre_instalacion ?? null,
+          paymentDeadlineAt: existingReservation.payment_deadline_at ?? null,
+          paymentStatus: existingReservation.payment_status ?? null,
+          proposalMode: existingContract?.proposal_mode ?? null,
+          reservationStatus: existingReservation.reservation_status ?? null,
+          reservedKwp: existingReservation.reserved_kwp ?? study.assigned_kwp ?? null,
+          signalAmount: existingReservation.signal_amount ?? null,
+        }
+      : null,
     installation: {
       availableProposalModes: allowedModes,
       coste_kwh_inversion: installation.coste_kwh_inversion ?? null,

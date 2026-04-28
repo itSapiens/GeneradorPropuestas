@@ -36,6 +36,28 @@ type InstallationPreview = {
 
 type ProposalAccessPreviewResponse = {
   success: boolean;
+  existingContract?: {
+    contractNumber?: string | null;
+    id: string;
+    proposalMode?: ProposalMode | null;
+    signedAt?: string | null;
+    status?: string | null;
+    uploadedAt?: string | null;
+  } | null;
+  existingReservation?: {
+    contractId?: string | null;
+    contractNumber?: string | null;
+    currency?: string | null;
+    id: string;
+    installationAddress?: string | null;
+    installationName?: string | null;
+    paymentDeadlineAt?: string | null;
+    paymentStatus?: string | null;
+    proposalMode?: ProposalMode | null;
+    reservationStatus?: string | null;
+    reservedKwp?: number | null;
+    signalAmount?: number | null;
+  } | null;
   language?: AppLanguage;
   installation?: InstallationPreview;
   study?: {
@@ -115,6 +137,16 @@ function formatCurrency(value: number, language: AppLanguage = "es") {
     maximumFractionDigits: 2,
   }).format(value);
 }
+
+function normalizeStatusKey(value?: string | null) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .replace(/_+/g, "_");
+}
+
 export default function ContinuarContratacionPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -134,6 +166,10 @@ export default function ContinuarContratacionPage() {
   const [loadingPreview, setLoadingPreview] = useState(true);
   const [installationPreview, setInstallationPreview] =
     useState<InstallationPreview | null>(null);
+  const [existingReservation, setExistingReservation] =
+    useState<ProposalAccessPreviewResponse["existingReservation"]>(null);
+  const [existingContract, setExistingContract] =
+    useState<ProposalAccessPreviewResponse["existingContract"]>(null);
   const [availableModes, setAvailableModes] = useState<ProposalMode[]>([]);
   const [annualSavingsInvestment, setAnnualSavingsInvestment] = useState<number | null>(null);
   const [annualSavingsService, setAnnualSavingsService] = useState<number | null>(null);
@@ -236,6 +272,8 @@ export default function ContinuarContratacionPage() {
         })();
 
         setInstallationPreview(installation);
+        setExistingReservation(data.existingReservation ?? null);
+        setExistingContract(data.existingContract ?? null);
         setAvailableModes(nextAvailableModes);
         setSelectedMode(
           nextAvailableModes.includes(installation.defaultProposalMode)
@@ -257,6 +295,8 @@ export default function ContinuarContratacionPage() {
           );
 
         setInstallationPreview(null);
+        setExistingReservation(null);
+        setExistingContract(null);
         setAvailableModes([]);
 
         sileo.error({
@@ -470,6 +510,24 @@ export default function ContinuarContratacionPage() {
           value: amountToPayInvestment,
         };
 
+  const reservationAlreadyCreated = Boolean(existingReservation?.id);
+  const reservationStatusLabel = reservationAlreadyCreated
+    ? t(
+        `continueContract.statuses.reservation.${normalizeStatusKey(
+          existingReservation?.reservationStatus,
+        )}`,
+        existingReservation?.reservationStatus || "-",
+      )
+    : "-";
+  const paymentStatusLabel = reservationAlreadyCreated
+    ? t(
+        `continueContract.statuses.payment.${normalizeStatusKey(
+          existingReservation?.paymentStatus,
+        )}`,
+        existingReservation?.paymentStatus || "-",
+      )
+    : "-";
+
   return (
     <div className="min-h-screen bg-slate-50 relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(87,217,211,0.18),transparent_30%),radial-gradient(circle_at_top_right,rgba(148,194,255,0.18),transparent_28%),linear-gradient(to_bottom,rgba(7,0,95,0.02),rgba(7,0,95,0.01))]" />
@@ -594,14 +652,24 @@ export default function ContinuarContratacionPage() {
                 </div>
 
                 <h2 className="mt-4 text-3xl md:text-4xl font-black tracking-tight text-brand-navy">
-                  {t("continueContract.form.title", "Confirma tus datos")}
+                  {reservationAlreadyCreated
+                    ? t(
+                        "continueContract.reservationCreated.title",
+                        "La reserva ya está creada",
+                      )
+                    : t("continueContract.form.title", "Confirma tus datos")}
                 </h2>
 
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-brand-gray">
-                  {t(
-                    "continueContract.form.description",
-                    "Introduce los datos del titular y selecciona la modalidad con la que deseas continuar la contratación.",
-                  )}
+                  {reservationAlreadyCreated
+                    ? t(
+                        "continueContract.reservationCreated.description",
+                        "Este enlace ya fue utilizado para firmar el contrato y generar la reserva. Aquí tienes el resumen para que no tengas que volver a completar el formulario.",
+                      )
+                    : t(
+                        "continueContract.form.description",
+                        "Introduce los datos del titular y selecciona la modalidad con la que deseas continuar la contratación.",
+                      )}
                 </p>
               </div>
 
@@ -692,6 +760,108 @@ export default function ContinuarContratacionPage() {
                 </div>
               ) : null}
 
+              {reservationAlreadyCreated ? (
+                <div className="space-y-6">
+                  <div className="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                        <ShieldCheck className="h-6 w-6" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold uppercase tracking-[0.16em] text-emerald-700">
+                          {t(
+                            "continueContract.reservationCreated.badge",
+                            "Reserva ya realizada",
+                          )}
+                        </p>
+                        <p className="mt-2 text-base font-semibold text-emerald-950">
+                          {t(
+                            "continueContract.reservationCreated.message",
+                            "No necesitas volver a completar la contratación. El contrato ya fue firmado correctamente.",
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="rounded-[1.6rem] border border-brand-navy/5 bg-[#F8FAFC] p-5">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+                        {t(
+                          "continueContract.reservationCreated.contractNumber",
+                          "Número de contrato",
+                        )}
+                      </p>
+                      <p className="mt-2 text-sm font-bold text-brand-navy">
+                        {existingReservation?.contractNumber ||
+                          existingContract?.contractNumber ||
+                          "-"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-[1.6rem] border border-brand-navy/5 bg-[#F8FAFC] p-5">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+                        {t(
+                          "continueContract.reservationCreated.mode",
+                          "Modalidad",
+                        )}
+                      </p>
+                      <p className="mt-2 text-sm font-bold text-brand-navy">
+                        {formatModeLabel(
+                          (existingReservation?.proposalMode ||
+                            existingContract?.proposalMode ||
+                            selectedMode) as ProposalMode,
+                          t,
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[1.8rem] border border-brand-navy/5 bg-brand-navy/[0.02] p-6 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="rounded-2xl bg-[#F8FAFC] border border-brand-navy/5 p-4">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+                          {t(
+                            "continueContract.reservationCreated.reservedKwp",
+                            "Potencia reservada",
+                          )}
+                        </p>
+                        <p className="mt-2 text-lg font-black text-brand-navy">
+                          {existingReservation?.reservedKwp ?? recommendedPowerKwp ?? "-"}{" "}
+                          {typeof (existingReservation?.reservedKwp ?? recommendedPowerKwp) ===
+                          "number"
+                            ? "kWp"
+                            : ""}
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl bg-[#F8FAFC] border border-brand-navy/5 p-4">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+                          {t(
+                            "continueContract.reservationCreated.reservationStatus",
+                            "Estado de la reserva",
+                        )}
+                      </p>
+                      <p className="mt-2 text-lg font-black text-brand-navy">
+                          {reservationStatusLabel}
+                      </p>
+                    </div>
+
+                      <div className="rounded-2xl bg-[#F8FAFC] border border-brand-navy/5 p-4">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+                          {t(
+                            "continueContract.reservationCreated.paymentStatus",
+                            "Estado del pago",
+                          )}
+                        </p>
+                        <p className="mt-2 text-lg font-black text-brand-navy">
+                          {paymentStatusLabel}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
               <form onSubmit={handleSubmit} className="space-y-7">
                 <div className="space-y-3">
                   <p className="text-sm font-bold text-brand-navy">
@@ -917,6 +1087,7 @@ export default function ContinuarContratacionPage() {
                   )}
                 </button>
               </form>
+              )}
             </div>
           </div>
         </div>

@@ -342,6 +342,24 @@
       "accessValidatedDescription": "Vamos a continuar con tu contratación.",
       "couldNotContinueTitle": "No se pudo continuar",
       "couldNotValidateDescription": "No se pudo validar tu acceso."
+    },
+    "statuses": {
+      "reservation": {
+        "pending_payment": "Pendiente de pago",
+        "paid": "Pagada",
+        "confirmed": "Confirmada",
+        "released": "Liberada",
+        "cancelled": "Cancelada",
+        "rejected": "Rechazada"
+      },
+      "payment": {
+        "pending": "Pendiente",
+        "signal_paid": "Señal pagada",
+        "paid": "Pagado",
+        "failed": "Pago fallido",
+        "refunded": "Reembolsado",
+        "unpaid": "No pagado"
+      }
     }
   },
   "contractFlow": {

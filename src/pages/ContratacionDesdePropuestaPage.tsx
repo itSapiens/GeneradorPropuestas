@@ -56,6 +56,26 @@ type GeneratedContractResponse = {
   preview: ContractPreviewData;
 };
 
+type AlreadySignedContractAccessResponse = {
+  alreadySigned: true;
+  contract: {
+    confirmed_at?: string | null;
+    contract_number?: string | null;
+    id: string;
+    proposal_mode?: ProposalMode | null;
+    signed_at?: string | null;
+    status?: string | null;
+    uploaded_at?: string | null;
+  };
+  message: string;
+  reservationSummary?: {
+    paymentDeadlineAt?: string | null;
+    paymentStatus?: string | null;
+    reservationStatus?: string | null;
+  } | null;
+  success: false;
+};
+
 type SignedContractResponse = {
   success: boolean;
   message: string;
@@ -209,6 +229,8 @@ export default function ContratacionDesdePropuestaPage() {
 
   const [generatedContract, setGeneratedContract] =
     useState<GeneratedContractResponse | null>(null);
+  const [alreadySignedContract, setAlreadySignedContract] =
+    useState<AlreadySignedContractAccessResponse | null>(null);
   const [signedContractResult, setSignedContractResult] =
     useState<SignedContractResponse | null>(null);
 
@@ -543,12 +565,15 @@ writeParagraph(
 
       setLoading(true);
       setGeneratedContract(null);
+      setAlreadySignedContract(null);
       setSignedContractResult(null);
       setIsPaymentMethodModalOpen(false);
       clearSignature();
 
       try {
-        const { data } = await axios.post<GeneratedContractResponse>(
+        const { data } = await axios.post<
+          GeneratedContractResponse | AlreadySignedContractAccessResponse
+        >(
           "/api/contracts/generate-from-access",
           {
             resumeToken,
@@ -556,7 +581,12 @@ writeParagraph(
           },
         );
 
-        setGeneratedContract(data);
+        if ((data as AlreadySignedContractAccessResponse)?.alreadySigned) {
+          setAlreadySignedContract(data as AlreadySignedContractAccessResponse);
+          return;
+        }
+
+        setGeneratedContract(data as GeneratedContractResponse);
       } catch (error: any) {
         console.error("Error cargando contrato desde acceso:", error);
         console.error("status:", error?.response?.status);
@@ -908,6 +938,87 @@ writeParagraph(
   }
 
   if (!generatedContract) {
+    if (alreadySignedContract) {
+      const signedMode =
+        alreadySignedContract.contract.proposal_mode === "service"
+          ? t("result.modes.service", "Servicio")
+          : t("result.modes.investment", "Inversión");
+
+      return (
+        <div className="min-h-screen bg-slate-50 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(87,217,211,0.16),transparent_30%),radial-gradient(circle_at_top_right,rgba(148,194,255,0.18),transparent_28%),linear-gradient(to_bottom,rgba(7,0,95,0.02),rgba(7,0,95,0.01))]" />
+          <div className="relative z-10 min-h-screen px-4 py-8 md:px-8 md:py-10">
+            <div className="mx-auto max-w-4xl rounded-[2.5rem] border border-brand-navy/5 bg-[#F8FAFC] p-8 shadow-2xl shadow-brand-navy/5">
+              <div className="rounded-[1.8rem] border border-emerald-200 bg-emerald-50 p-6">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">
+                  {t("contractFlow.alreadySigned.badge", "Reserva ya creada")}
+                </p>
+                <h1 className="mt-3 text-3xl font-black text-brand-navy">
+                  {t(
+                    "contractFlow.alreadySigned.title",
+                    "Este contrato ya fue firmado",
+                  )}
+                </h1>
+                <p className="mt-3 text-sm leading-6 text-brand-gray">
+                  {alreadySignedContract.message}
+                </p>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="rounded-[1.6rem] border border-brand-navy/5 bg-brand-navy/[0.02] p-5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+                    {t("contractFlow.alreadySigned.contractId", "Id de contrato")}
+                  </p>
+                  <p className="mt-2 text-sm font-bold break-all text-brand-navy">
+                    {alreadySignedContract.contract.id}
+                  </p>
+                </div>
+                <div className="rounded-[1.6rem] border border-brand-navy/5 bg-brand-navy/[0.02] p-5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+                    {t(
+                      "contractFlow.alreadySigned.contractNumber",
+                      "Número de contrato",
+                    )}
+                  </p>
+                  <p className="mt-2 text-sm font-bold text-brand-navy">
+                    {alreadySignedContract.contract.contract_number || "-"}
+                  </p>
+                </div>
+                <div className="rounded-[1.6rem] border border-brand-navy/5 bg-brand-navy/[0.02] p-5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+                    {t("contractFlow.alreadySigned.mode", "Modalidad")}
+                  </p>
+                  <p className="mt-2 text-sm font-bold text-brand-navy">
+                    {signedMode}
+                  </p>
+                </div>
+                <div className="rounded-[1.6rem] border border-brand-navy/5 bg-brand-navy/[0.02] p-5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+                    {t(
+                      "contractFlow.alreadySigned.reservationStatus",
+                      "Estado de la reserva",
+                    )}
+                  </p>
+                  <p className="mt-2 text-sm font-bold text-brand-navy">
+                    {alreadySignedContract.reservationSummary?.reservationStatus || "-"}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={goHome}
+                className="mt-8 inline-flex items-center gap-2 rounded-[1.2rem] brand-gradient px-5 py-4 text-sm font-bold text-brand-navy shadow-lg shadow-brand-mint/15"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                {t("contractFlow.leftPanel.backHome", "Volver al inicio")}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return null;
   }
 

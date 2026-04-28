@@ -342,6 +342,24 @@
       "accessValidatedDescription": "Continuarem amb la teua contractació.",
       "couldNotContinueTitle": "No s'ha pogut continuar",
       "couldNotValidateDescription": "No s'ha pogut validar el teu accés."
+    },
+    "statuses": {
+      "reservation": {
+        "pending_payment": "Pendent de pagament",
+        "paid": "Pagada",
+        "confirmed": "Confirmada",
+        "released": "Alliberada",
+        "cancelled": "Cancel·lada",
+        "rejected": "Rebutjada"
+      },
+      "payment": {
+        "pending": "Pendent",
+        "signal_paid": "Senyal pagat",
+        "paid": "Pagat",
+        "failed": "Pagament fallit",
+        "refunded": "Reemborsat",
+        "unpaid": "No pagat"
+      }
     }
   },
   "contractFlow": {
