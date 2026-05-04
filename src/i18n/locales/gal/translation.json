@@ -498,6 +498,7 @@
       "concept": "Concepto",
       "body2": "Realiza a transferencia ao IBAN indicado e utiliza exactamente o concepto mostrado, que inclúe o teu nome e o número de contrato, para poder identificar o pagamento correctamente.",
       "body3": "Unha vez recibido e validado o pagamento, enviarémosche a confirmación por correo electrónico.",
+      "supportLine": "Para calquera consulta sobre esta reserva, escribe a {{supportEmail}}.",
       "farewell": "Un saúdo"
     },
     "reservationConfirmed": {

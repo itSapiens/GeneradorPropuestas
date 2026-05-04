@@ -1,9 +1,9 @@
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 
-import { downloadDriveFileAsBuffer } from "../src/server/infrastructure/external/drive/driveStorageService";
-import { uploadClientDocumentToSupabase } from "../src/server/infrastructure/external/storage/supabaseDocumentStorageService";
-import { pickFirstString } from "../src/server/utils/stringUtils";
+import { downloadDriveFileAsBuffer } from "../server/infrastructure/external/drive/driveStorageService";
+import { uploadClientDocumentToSupabase } from "../server/infrastructure/external/storage/supabaseDocumentStorageService";
+import { pickFirstString } from "../server/utils/stringUtils";
 
 dotenv.config({ path: ".env.local", override: false });
 dotenv.config({ override: false });

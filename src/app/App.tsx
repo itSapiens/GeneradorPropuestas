@@ -1,10 +1,10 @@
-import AppRoutes from "./AppRoutes";
-import GoogleMapsProvider from "./providers/GoogleMapsProvider";
+import AppProviders from "./providers/AppProviders";
+import AppRoutes from "./router/AppRoutes";
 
 export default function App() {
   return (
-    <GoogleMapsProvider>
+    <AppProviders>
       <AppRoutes />
-    </GoogleMapsProvider>
+    </AppProviders>
   );
 }
