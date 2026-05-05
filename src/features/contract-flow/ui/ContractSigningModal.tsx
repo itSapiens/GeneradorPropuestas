@@ -51,14 +51,12 @@ export default function ContractSigningModal({
   t,
 }: ContractSigningModalProps) {
   const commercial = generatedContract?.preview.commercial;
-  const availableModesLabel =
-    commercial?.availableModes
-      ?.map((mode) =>
-        mode === "service"
-          ? t("result.modes.service", "Servicio")
-          : t("result.modes.investment", "Inversión"),
-      )
-      .join(" · ") ?? contractPreviewModeLabel;
+  const selectedModeLabel =
+    commercial?.selectedMode === "service"
+      ? t("result.modes.service", "Servicio")
+      : commercial?.selectedMode === "investment"
+        ? t("result.modes.investment", "Inversión")
+        : contractPreviewModeLabel;
 
   return (
     <AnimatePresence>
@@ -138,9 +136,12 @@ export default function ContractSigningModal({
                       <div className="space-y-2 text-sm text-brand-navy/80">
                         <p>
                           <span className="font-bold text-brand-navy">
-                            Modalidades disponibles:
+                            {t(
+                              "contractFlow.summary.selectedMode",
+                              "Modalidad contratada:",
+                            )}
                           </span>{" "}
-                          {availableModesLabel}
+                          {selectedModeLabel}
                         </p>
                         <p>
                           <span className="font-bold text-brand-navy">
@@ -173,22 +174,6 @@ export default function ContractSigningModal({
                             ? formatCurrency(commercial.annualMaintenance)
                             : formatCurrency(0)}
                         </p>
-                        {commercial?.availableModes?.includes("investment") && commercial?.investmentPrice != null ? (
-                          <p>
-                            <span className="font-bold text-brand-navy">
-                              {t("contractFlow.summary.investment", "Inversión")}:
-                            </span>{" "}
-                            {formatCurrency(commercial.investmentPrice)}
-                          </p>
-                        ) : null}
-                        {commercial?.availableModes?.includes("service") && commercial?.serviceMonthlyFee != null ? (
-                          <p>
-                            <span className="font-bold text-brand-navy">
-                              {t("contractFlow.summary.service", "Servicio")}:
-                            </span>{" "}
-                            {formatCurrency(commercial.serviceMonthlyFee)} / mes
-                          </p>
-                        ) : null}
                       </div>
                     </div>
 

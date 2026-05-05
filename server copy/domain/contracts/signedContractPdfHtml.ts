@@ -51,14 +51,6 @@ export function buildSignedContractPdfHtml(params: {
   const annualMaintenance = commercial
     ? formatCurrencyByLanguage(commercial.annualMaintenance ?? 0, "EUR", params.language)
     : "-";
-  const investmentPrice =
-    commercial?.investmentPrice != null
-      ? formatCurrencyByLanguage(commercial.investmentPrice, "EUR", params.language)
-      : "-";
-  const serviceMonthlyFee =
-    commercial?.serviceMonthlyFee != null
-      ? formatCurrencyByLanguage(commercial.serviceMonthlyFee, "EUR", params.language)
-      : "-";
   const selectedPrice =
     commercial?.selectedPrice != null
       ? formatCurrencyByLanguage(commercial.selectedPrice, "EUR", params.language)
@@ -67,13 +59,11 @@ export function buildSignedContractPdfHtml(params: {
     commercial?.selectedPriceUnit === "monthly"
       ? texts.perMonth
       : texts.oneTimePayment;
-  const availableModes = Array.isArray(commercial?.availableModes)
-    ? commercial.availableModes
-        .map((mode: "investment" | "service") =>
-          getProposalModeLabel(mode, params.language),
-        )
-        .join(" · ")
-    : getProposalModeLabel(preview.proposalMode, params.language);
+  const selectedModeLabel = getProposalModeLabel(preview.proposalMode, params.language);
+  const selectedInstallationPriceLine =
+    preview.proposalMode === "service"
+      ? `<p><strong>${escapeHtml(texts.servicePrice)}:</strong> ${escapeHtml(selectedPrice)}${selectedPrice !== "-" ? ` ${escapeHtml(texts.perMonth)}` : ""}</p>`
+      : `<p><strong>${escapeHtml(texts.investmentPrice)}:</strong> ${escapeHtml(selectedPrice)}</p>`;
   const assignedKwpLabel = formatNumber(
     Number(preview.assignedKwp ?? 0),
     params.language,
@@ -162,16 +152,6 @@ export function buildSignedContractPdfHtml(params: {
     }
     p { margin: 0 0 3px; }
     p:last-child { margin-bottom: 0; }
-    .columns {
-      display: grid;
-      gap: 8px;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .details-grid {
-      display: grid;
-      gap: 3px 12px;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
     .transfer { background: #eff6ff; border-color: #bfdbfe; }
     .signature {
       border-top: 1px dashed #9ca3af;
@@ -195,8 +175,8 @@ export function buildSignedContractPdfHtml(params: {
     <section class="summary-grid">
       <div class="metric">
         <div class="metric-label">${escapeHtml(texts.selectedMode)}</div>
-        <div class="metric-value">${escapeHtml(getProposalModeLabel(preview.proposalMode, params.language))}</div>
-        <div class="metric-help">${escapeHtml(texts.availableModes)}: ${escapeHtml(availableModes)}</div>
+        <div class="metric-value">${escapeHtml(selectedModeLabel)}</div>
+        <div class="metric-help">${escapeHtml(texts.mode)}</div>
       </div>
       <div class="metric">
         <div class="metric-label">${escapeHtml(preview.proposalMode === "service" ? texts.selectedServicePrice : texts.selectedInvestmentPrice)}</div>
@@ -215,52 +195,50 @@ export function buildSignedContractPdfHtml(params: {
       </div>
     </section>
 
-    <div class="columns">
-      <section class="box">
-        <h2>${escapeHtml(texts.clientData)}</h2>
-        <p><strong>${escapeHtml(texts.name)}:</strong> ${escapeHtml(fullName)}</p>
-        <p><strong>${escapeHtml(texts.dni)}:</strong> ${escapeHtml(client.dni ?? "-")}</p>
-        <p><strong>${escapeHtml(texts.email)}:</strong> ${escapeHtml(client.email ?? "-")}</p>
-        <p><strong>${escapeHtml(texts.phone)}:</strong> ${escapeHtml(client.telefono ?? "-")}</p>
-        <p><strong>${escapeHtml(texts.address)}:</strong> ${escapeHtml(client.direccion_completa ?? client.address ?? "-")}</p>
-      </section>
+    <section class="box">
+      <h2>${escapeHtml(texts.clientData)}</h2>
+      <p><strong>${escapeHtml(texts.name)}:</strong> ${escapeHtml(fullName)}</p>
+      <p><strong>${escapeHtml(texts.dni)}:</strong> ${escapeHtml(client.dni ?? "-")}</p>
+      <p><strong>${escapeHtml(texts.email)}:</strong> ${escapeHtml(client.email ?? "-")}</p>
+      <p><strong>${escapeHtml(texts.phone)}:</strong> ${escapeHtml(client.telefono ?? "-")}</p>
+      <p><strong>${escapeHtml(texts.address)}:</strong> ${escapeHtml(client.direccion_completa ?? client.address ?? "-")}</p>
+    </section>
 
-      <section class="box">
-        <h2>${escapeHtml(texts.installationData)}</h2>
-        <div class="details-grid">
-          <p><strong>${escapeHtml(texts.installation)}:</strong> ${escapeHtml(installation.nombre_instalacion ?? "-")}</p>
-          <p><strong>${escapeHtml(texts.address)}:</strong> ${escapeHtml(installation.direccion ?? "-")}</p>
-          <p><strong>${escapeHtml(texts.company)}:</strong> ${escapeHtml(company?.nombre ?? "-")}</p>
-          <p><strong>${escapeHtml(texts.taxId)}:</strong> ${escapeHtml(company?.cif ?? "-")}</p>
-          <p><strong>${escapeHtml(texts.mode)}:</strong> ${escapeHtml(getProposalModeLabel(preview.proposalMode, params.language))}</p>
-          <p><strong>${escapeHtml(texts.assignedKwp)}:</strong> ${escapeHtml(preview.assignedKwp ?? "-")}</p>
-          <p><strong>${escapeHtml(texts.investmentPrice)}:</strong> ${escapeHtml(investmentPrice)}</p>
-          <p><strong>${escapeHtml(texts.servicePrice)}:</strong> ${escapeHtml(serviceMonthlyFee)}${serviceMonthlyFee !== "-" ? ` ${escapeHtml(texts.perMonth)}` : ""}</p>
-          <p><strong>${escapeHtml(texts.reservation)}:</strong> ${escapeHtml(reservationAmount)}</p>
-          <p><strong>${escapeHtml(texts.annualMaintenance)}:</strong> ${escapeHtml(annualMaintenance)}</p>
-          <p><strong>${escapeHtml(texts.installedPower)}:</strong> ${escapeHtml(installation.potencia_instalada_kwp ?? "-")} kWp</p>
-          <p><strong>${escapeHtml(texts.battery)}:</strong> ${escapeHtml(installation.almacenamiento_kwh ?? "-")} kWh</p>
-          <p><strong>${escapeHtml(texts.effectiveHours)}:</strong> ${escapeHtml(installation.horas_efectivas ?? "-")} h/año</p>
-          <p><strong>${escapeHtml(texts.estimatedSelfConsumption)}:</strong> ${escapeHtml(installation.porcentaje_autoconsumo ?? "-")}%</p>
-        </div>
-      </section>
-    </div>
+    <section class="box">
+      <h2>${escapeHtml(texts.installationData)}</h2>
+      <p><strong>${escapeHtml(texts.installation)}:</strong> ${escapeHtml(installation.nombre_instalacion ?? "-")}</p>
+      <p><strong>${escapeHtml(texts.address)}:</strong> ${escapeHtml(installation.direccion ?? "-")}</p>
+      <p><strong>${escapeHtml(texts.company)}:</strong> ${escapeHtml(company?.nombre ?? "-")}</p>
+      <p><strong>${escapeHtml(texts.taxId)}:</strong> ${escapeHtml(company?.cif ?? "-")}</p>
+      <p><strong>${escapeHtml(texts.mode)}:</strong> ${escapeHtml(getProposalModeLabel(preview.proposalMode, params.language))}</p>
+      <p><strong>${escapeHtml(texts.assignedKwp)}:</strong> ${escapeHtml(preview.assignedKwp ?? "-")}</p>
+      ${selectedInstallationPriceLine}
+      <p><strong>${escapeHtml(texts.reservation)}:</strong> ${escapeHtml(reservationAmount)}</p>
+      <p><strong>${escapeHtml(texts.annualMaintenance)}:</strong> ${escapeHtml(annualMaintenance)}</p>
+    </section>
 
-    <div class="columns">
-      <section class="box">
-        <h2>${escapeHtml(texts.basicConditions)}</h2>
-        <p>${escapeHtml(texts.condition1)}</p>
-        <p>${escapeHtml(texts.condition2)}</p>
-        <p>${escapeHtml(texts.condition3)}</p>
-      </section>
+    ${(() => {
+      const ec = preview.extraConsumption;
+      if (!ec || (!ec.hvac && !ec.ev)) return "";
+      const items: string[] = [];
+      if (ec.ev) items.push(`${escapeHtml(texts.extraConsumptionEv)}${ec.evAnnualKm ? ` (${escapeHtml(String(ec.evAnnualKm))} ${escapeHtml(texts.extraConsumptionEvKm)})` : ""}`);
+      if (ec.hvac) items.push(`${escapeHtml(texts.extraConsumptionHvac)}${ec.hvacSquareMeters ? ` (${escapeHtml(String(ec.hvacSquareMeters))} ${escapeHtml(texts.extraConsumptionHvacM2)})` : ""}`);
+      return `<section class="box"><h2>${escapeHtml(texts.extraConsumption)}</h2><p>${items.join(", ")}</p></section>`;
+    })()}
 
-      <section class="box transfer">
-        <h2>${escapeHtml(texts.transferInstructionsTitle)}</h2>
-        <p>${escapeHtml(texts.transferInstructionsDescription)}</p>
-        <p><strong>${escapeHtml(texts.transferIban)}:</strong> ${escapeHtml(installation.iban_aportaciones ?? "-")}</p>
-        <p><strong>${escapeHtml(texts.transferConcept)}:</strong> ${escapeHtml(transferConcept)}</p>
-      </section>
-    </div>
+    <section class="box">
+      <h2>${escapeHtml(texts.basicConditions)}</h2>
+      <p>${escapeHtml(texts.condition1)}</p>
+      <p>${escapeHtml(texts.condition2)}</p>
+      <p>${escapeHtml(texts.condition3)}</p>
+    </section>
+
+    <section class="box transfer">
+      <h2>${escapeHtml(texts.transferInstructionsTitle)}</h2>
+      <p>${escapeHtml(texts.transferInstructionsDescription)}</p>
+      <p><strong>${escapeHtml(texts.transferIban)}:</strong> ${escapeHtml(installation.iban_aportaciones ?? "-")}</p>
+      <p><strong>${escapeHtml(texts.transferConcept)}:</strong> ${escapeHtml(transferConcept)}</p>
+    </section>
 
     <section class="signature">
       <p><strong>${escapeHtml(texts.clientSignature)}:</strong></p>

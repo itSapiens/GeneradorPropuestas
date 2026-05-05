@@ -58,29 +58,15 @@ export function buildBasicContractHtml(params: {
           params.language,
         )
       : formatCurrencyByLanguage(0, "EUR", params.language);
-  const investmentPrice =
-    params.commercial.investmentPrice !== null
-      ? formatCurrencyByLanguage(
-          params.commercial.investmentPrice,
-          "EUR",
-          params.language,
-        )
-      : "-";
-  const serviceMonthlyFee =
-    params.commercial.serviceMonthlyFee !== null
-      ? formatCurrencyByLanguage(
-          params.commercial.serviceMonthlyFee,
-          "EUR",
-          params.language,
-        )
-      : "-";
   const selectedPriceSuffix =
     params.commercial.selectedPriceUnit === "monthly"
       ? texts.perMonth
       : texts.oneTimePayment;
-  const availableModes = params.commercial.availableModes
-    .map((mode) => getProposalModeLabel(mode, params.language))
-    .join(" · ");
+  const selectedModeLabel = getProposalModeLabel(params.proposalMode, params.language);
+  const selectedInstallationPriceLine =
+    params.proposalMode === "service"
+      ? `<p><strong>${texts.servicePrice}:</strong> ${selectedPrice}${selectedPrice !== "-" ? ` ${texts.perMonth}` : ""}</p>`
+      : `<p><strong>${texts.investmentPrice}:</strong> ${selectedPrice}</p>`;
   const reservationHelp =
     params.commercial.reservationMode === "fija"
       ? texts.fixedReservationAmount
@@ -193,11 +179,8 @@ export function buildBasicContractHtml(params: {
         <div class="summary-grid">
           <div class="metric">
             <div class="metric-label">${texts.selectedMode}</div>
-            <div class="metric-value">${getProposalModeLabel(
-              params.proposalMode,
-              params.language,
-            )}</div>
-            <div class="metric-help">${texts.availableModes}: ${availableModes}</div>
+            <div class="metric-value">${selectedModeLabel}</div>
+            <div class="metric-help">${texts.mode}</div>
           </div>
           <div class="metric">
             <div class="metric-label">${
@@ -250,25 +233,19 @@ export function buildBasicContractHtml(params: {
             params.language,
           )}</p>
           <p><strong>${texts.assignedKwp}:</strong> ${params.assignedKwp ?? "-"}</p>
-          <p><strong>${texts.investmentPrice}:</strong> ${investmentPrice}</p>
-          <p><strong>${texts.servicePrice}:</strong> ${serviceMonthlyFee}${
-            serviceMonthlyFee !== "-" ? ` ${texts.perMonth}` : ""
-          }</p>
+          ${selectedInstallationPriceLine}
           <p><strong>${texts.reservation}:</strong> ${reservationAmount}</p>
           <p><strong>${texts.annualMaintenance}:</strong> ${annualMaintenance}</p>
-          <p><strong>${texts.installedPower}:</strong> ${
-            params.installation.potencia_instalada_kwp ?? "-"
-          } kWp</p>
-          <p><strong>${texts.battery}:</strong> ${
-            params.installation.almacenamiento_kwh ?? "-"
-          } kWh</p>
-          <p><strong>${texts.effectiveHours}:</strong> ${
-            params.installation.horas_efectivas ?? "-"
-          } h/año</p>
-          <p><strong>${texts.estimatedSelfConsumption}:</strong> ${
-            params.installation.porcentaje_autoconsumo ?? "-"
-          }%</p>
         </div>
+
+        ${(() => {
+          const ec = params.study?.invoice_data?.extraConsumption;
+          if (!ec || (!ec.hvac && !ec.ev)) return "";
+          const items: string[] = [];
+          if (ec.ev) items.push(`${texts.extraConsumptionEv}${ec.evAnnualKm ? ` (${ec.evAnnualKm} ${texts.extraConsumptionEvKm})` : ""}`);
+          if (ec.hvac) items.push(`${texts.extraConsumptionHvac}${ec.hvacSquareMeters ? ` (${ec.hvacSquareMeters} ${texts.extraConsumptionHvacM2})` : ""}`);
+          return `<div class="box"><h3>${texts.extraConsumption}</h3><p>${items.join(", ")}</p></div>`;
+        })()}
 
         <div class="box">
           <h3>${texts.basicConditions}</h3>

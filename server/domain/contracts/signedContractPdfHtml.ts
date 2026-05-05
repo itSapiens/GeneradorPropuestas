@@ -51,14 +51,6 @@ export function buildSignedContractPdfHtml(params: {
   const annualMaintenance = commercial
     ? formatCurrencyByLanguage(commercial.annualMaintenance ?? 0, "EUR", params.language)
     : "-";
-  const investmentPrice =
-    commercial?.investmentPrice != null
-      ? formatCurrencyByLanguage(commercial.investmentPrice, "EUR", params.language)
-      : "-";
-  const serviceMonthlyFee =
-    commercial?.serviceMonthlyFee != null
-      ? formatCurrencyByLanguage(commercial.serviceMonthlyFee, "EUR", params.language)
-      : "-";
   const selectedPrice =
     commercial?.selectedPrice != null
       ? formatCurrencyByLanguage(commercial.selectedPrice, "EUR", params.language)
@@ -67,13 +59,11 @@ export function buildSignedContractPdfHtml(params: {
     commercial?.selectedPriceUnit === "monthly"
       ? texts.perMonth
       : texts.oneTimePayment;
-  const availableModes = Array.isArray(commercial?.availableModes)
-    ? commercial.availableModes
-        .map((mode: "investment" | "service") =>
-          getProposalModeLabel(mode, params.language),
-        )
-        .join(" · ")
-    : getProposalModeLabel(preview.proposalMode, params.language);
+  const selectedModeLabel = getProposalModeLabel(preview.proposalMode, params.language);
+  const selectedInstallationPriceLine =
+    preview.proposalMode === "service"
+      ? `<p><strong>${escapeHtml(texts.servicePrice)}:</strong> ${escapeHtml(selectedPrice)}${selectedPrice !== "-" ? ` ${escapeHtml(texts.perMonth)}` : ""}</p>`
+      : `<p><strong>${escapeHtml(texts.investmentPrice)}:</strong> ${escapeHtml(selectedPrice)}</p>`;
   const assignedKwpLabel = formatNumber(
     Number(preview.assignedKwp ?? 0),
     params.language,
@@ -185,8 +175,8 @@ export function buildSignedContractPdfHtml(params: {
     <section class="summary-grid">
       <div class="metric">
         <div class="metric-label">${escapeHtml(texts.selectedMode)}</div>
-        <div class="metric-value">${escapeHtml(getProposalModeLabel(preview.proposalMode, params.language))}</div>
-        <div class="metric-help">${escapeHtml(texts.availableModes)}: ${escapeHtml(availableModes)}</div>
+        <div class="metric-value">${escapeHtml(selectedModeLabel)}</div>
+        <div class="metric-help">${escapeHtml(texts.mode)}</div>
       </div>
       <div class="metric">
         <div class="metric-label">${escapeHtml(preview.proposalMode === "service" ? texts.selectedServicePrice : texts.selectedInvestmentPrice)}</div>
@@ -222,8 +212,7 @@ export function buildSignedContractPdfHtml(params: {
       <p><strong>${escapeHtml(texts.taxId)}:</strong> ${escapeHtml(company?.cif ?? "-")}</p>
       <p><strong>${escapeHtml(texts.mode)}:</strong> ${escapeHtml(getProposalModeLabel(preview.proposalMode, params.language))}</p>
       <p><strong>${escapeHtml(texts.assignedKwp)}:</strong> ${escapeHtml(preview.assignedKwp ?? "-")}</p>
-      ${Array.isArray(commercial?.availableModes) && commercial.availableModes.includes("investment") ? `<p><strong>${escapeHtml(texts.investmentPrice)}:</strong> ${escapeHtml(investmentPrice)}</p>` : ""}
-      ${Array.isArray(commercial?.availableModes) && commercial.availableModes.includes("service") ? `<p><strong>${escapeHtml(texts.servicePrice)}:</strong> ${escapeHtml(serviceMonthlyFee)}${serviceMonthlyFee !== "-" ? ` ${escapeHtml(texts.perMonth)}` : ""}</p>` : ""}
+      ${selectedInstallationPriceLine}
       <p><strong>${escapeHtml(texts.reservation)}:</strong> ${escapeHtml(reservationAmount)}</p>
       <p><strong>${escapeHtml(texts.annualMaintenance)}:</strong> ${escapeHtml(annualMaintenance)}</p>
     </section>

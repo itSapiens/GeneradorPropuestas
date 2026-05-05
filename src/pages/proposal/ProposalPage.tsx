@@ -562,14 +562,12 @@ export default function ContratacionDesdePropuestaPage() {
       ? t("result.modes.investment", "Inversión")
       : t("result.modes.service", "Servicio");
   const commercial = generatedContract?.preview?.commercial ?? null;
-  const availableModesLabel =
-    commercial?.availableModes
-      ?.map((mode) =>
-        mode === "service"
-          ? t("result.modes.service", "Servicio")
-          : t("result.modes.investment", "Inversión"),
-      )
-      .join(" · ") ?? modeLabel;
+  const selectedModeLabel =
+    commercial?.selectedMode === "service"
+      ? t("result.modes.service", "Servicio")
+      : commercial?.selectedMode === "investment"
+        ? t("result.modes.investment", "Inversión")
+        : modeLabel;
 
   const handleSubmitSignedContract = async () => {
     if (!generatedContract?.contract?.id || !generatedContract?.preview) {
@@ -1218,9 +1216,12 @@ export default function ContratacionDesdePropuestaPage() {
                     <div className="space-y-2 text-sm text-brand-navy/80">
                       <p>
                         <span className="font-bold text-brand-navy">
-                          Modalidades disponibles:
+                          {t(
+                            "contractFlow.summary.selectedMode",
+                            "Modalidad contratada:",
+                          )}
                         </span>{" "}
-                        {availableModesLabel}
+                        {selectedModeLabel}
                       </p>
                       <p>
                         <span className="font-bold text-brand-navy">
@@ -1253,25 +1254,6 @@ export default function ContratacionDesdePropuestaPage() {
                           commercial?.annualMaintenance ?? 0,
                         )}
                       </p>
-                      {commercial?.availableModes?.includes("investment") && commercial?.investmentPrice != null ? (
-                        <p>
-                          <span className="font-bold text-brand-navy">
-                            Inversión:
-                          </span>{" "}
-                          {formatCurrencyByLanguage(commercial.investmentPrice)}
-                        </p>
-                      ) : null}
-                      {commercial?.availableModes?.includes("service") && commercial?.serviceMonthlyFee != null ? (
-                        <p>
-                          <span className="font-bold text-brand-navy">
-                            Servicio:
-                          </span>{" "}
-                          {formatCurrencyByLanguage(
-                            commercial.serviceMonthlyFee,
-                          )}{" "}
-                          / mes
-                        </p>
-                      ) : null}
                     </div>
                   </div>
 
