@@ -40,7 +40,7 @@
 .solar-comun-informe-wrapper.new-vibrant-design .pptx-slide {
     width: 100%;
     max-width: 210mm;
-    min-height: 250mm;
+    min-height: 297mm;
     background: var(--bg-page);
     position: relative;
     overflow: hidden;
@@ -53,7 +53,7 @@
 /* Elemento interno */
 .solar-comun-informe-wrapper.new-vibrant-design .pptx-slide .page {
     width: 794px;
-    height: 945px;
+    height: 1123px;
     position: absolute;
     top: 0;
     left: 50%;
@@ -156,8 +156,8 @@
 .solar-comun-informe-wrapper.new-vibrant-design .client-data-grid {
     position: relative;
     z-index: 2;
-    margin-top: 10px;
-    padding: 10px 18px;
+    margin-top: 18px;
+    padding: 14px 20px;
     background: var(--bg-card);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
@@ -184,11 +184,11 @@
 .solar-comun-informe-wrapper.new-vibrant-design .central-flow-container {
     position: relative;
     z-index: 2;
-    margin-top: 15px;
+    margin-top: 28px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 15px; /* Espacio uniforme entre Hero y Gráfico */
+    gap: 24px; /* Espacio uniforme entre Hero y Gráfico */
 }
 
 /* Título Hero (MODIFICADO: Alineado a la izquierda, como "hace rato") */
@@ -200,7 +200,7 @@
 .solar-comun-informe-wrapper.new-vibrant-design .main-title {
     font-size: 36px;
     max-width: 25ch;
-    line-height: 1.0;
+    line-height: 1.05;
     color: var(--text-main);
     margin: 0; /* Reiniciar márgenes automáticos para alineación izquierda */
 }
@@ -218,16 +218,19 @@
     font-size: 11px;
     color: var(--text-light);
     max-width: 60ch;
-    margin: 6px 0 0; /* Reiniciar márgenes automáticos laterales */
+    margin: 10px 0 0; /* Reiniciar márgenes automáticos laterales */
 }
 
 /* Sección Comparativa (GRÁFICO CENTRADO VERTICALMENTE) */
 .solar-comun-informe-wrapper.new-vibrant-design .comparison-container.centered-graphic {
     width: 100%;
     margin: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
 }
 
-.solar-comun-informe-wrapper.new-vibrant-design .comparison-header { margin-bottom: 8px; }
+.solar-comun-informe-wrapper.new-vibrant-design .comparison-header { margin-bottom: 14px; }
 .solar-comun-informe-wrapper.new-vibrant-design .comparison-eyebrow { color: var(--brand-mint); }
 .solar-comun-informe-wrapper.new-vibrant-design .comparison-title { font-size: 22px; line-height: 1; }
 
@@ -246,14 +249,30 @@
     grid-template-columns: auto 1fr;
     gap: 15px;
     align-items: center;
-    padding: 18px 160px 18px 142px;
-    min-height: 196px;
-    background: rgba(255,255,255,0.4);
+    padding: 30px 168px 30px 148px;
+    min-height: 248px;
+    background: #fff;
     -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
     border-radius: 12px;
-    border: 1px solid rgba(11,25,87,0.03);
-    box-shadow: inset 0 0 20px rgba(11,25,87,0.015);
+    border: 1px solid #E4EAF7;
+    box-shadow: none;
+    overflow: hidden;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .orbs-comparison-grid::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #92EADE 0%, #A0E3EF 45%, #ADC6FF 100%);
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .orbs-comparison-grid > * {
+    position: relative;
+    z-index: 1;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .stability-orbit-notes {
@@ -492,35 +511,38 @@
 
 /* Sección Participación Footer P1 (Mantenida en su posición original, fondo refinado) */
 .solar-comun-informe-wrapper.new-vibrant-design .participation-footer {
-    bottom: 35px; /* Sutil ajuste */
+    left: 20px;
+    right: 20px;
+    bottom: 42px; /* Sutil ajuste */
+    background: transparent;
 }
 
-.solar-comun-informe-wrapper.new-vibrant-design .participation-label { margin-bottom: 6px; }
+.solar-comun-informe-wrapper.new-vibrant-design .participation-label { margin-bottom: 8px; }
 
 .solar-comun-informe-wrapper.new-vibrant-design .participation-block {
-    background: var(--grad-vibrant);
+    background: linear-gradient(90deg, #72DCCE 0%, #7FD2E8 45%, #87AFFF 100%);
     border-radius: 8px;
-    padding: 12px 18px;
-    box-shadow: var(--shadow-vibrant);
+    padding: 22px 28px;
+    box-shadow: none;
 }
 
-.solar-comun-informe-wrapper.new-vibrant-design .participation-bg-orb { background: radial-gradient(circle, #fff, transparent 65%); opacity: 0.3;}
+.solar-comun-informe-wrapper.new-vibrant-design .participation-bg-orb { display: none; }
 
-.solar-comun-informe-wrapper.new-vibrant-design .participation-grid { gap: 15px; }
+.solar-comun-informe-wrapper.new-vibrant-design .participation-grid { gap: 22px; }
 
 .solar-comun-informe-wrapper.new-vibrant-design .power-value {
-    font-size: 38px;
+    font-size: 50px;
     color: var(--text-main);
-    text-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    text-shadow: none;
 }
-.solar-comun-informe-wrapper.new-vibrant-design .power-unit { font-size: 13px; font-weight: 500; }
+.solar-comun-informe-wrapper.new-vibrant-design .power-unit { font-size: 17px; font-weight: 500; }
 .solar-comun-informe-wrapper.new-vibrant-design .power-label { color: rgba(11,25,87,0.8); }
 
 .solar-comun-informe-wrapper.new-vibrant-design .participation-separator { background: rgba(11,25,87,0.08); }
 
 .solar-comun-informe-wrapper.new-vibrant-design .stat-col {}
-.solar-comun-informe-wrapper.new-vibrant-design .stat-label { color: rgba(11,25,87,0.8); font-size: 7.5px; }
-.solar-comun-informe-wrapper.new-vibrant-design .stat-value { font-size: 16px; color: var(--text-main); }
+.solar-comun-informe-wrapper.new-vibrant-design .stat-label { color: rgba(11,25,87,0.8); font-size: 8.2px; }
+.solar-comun-informe-wrapper.new-vibrant-design .stat-value { font-size: 21px; color: var(--text-main); }
 
 /* ============================================================
    AJUSTES PÁGINA 2 - CENTRADO VISUAL
@@ -575,20 +597,31 @@
 
 /* Gráfico P2 Renovado y Centrado (con Glow) */
 .solar-comun-informe-wrapper.new-vibrant-design .p2-graph-block {
-    padding: 12px 18px;
-    background: rgba(255,255,255,0.4);
-    border: 1px solid rgba(11,25,87,0.04);
-    box-shadow: inset 0 0 20px rgba(11,25,87,0.01);
-    border-radius: 8px;
-    margin-bottom: 15px;
+    padding: 26px 28px;
+    background: #fff;
+    border: 1px solid #E4EAF7;
+    box-shadow: none;
+    border-radius: 10px;
+    margin-bottom: 28px;
+    overflow: hidden;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .p2-graph-block::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #92EADE 0%, #A0E3EF 45%, #ADC6FF 100%);
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .graph-price-col {}
-.solar-comun-informe-wrapper.new-vibrant-design .graph-main-price { font-size: 34px; color: var(--text-main); }
-.solar-comun-informe-wrapper.new-vibrant-design .graph-note { font-size: 9px; color: var(--text-muted); max-width: 25ch; }
+.solar-comun-informe-wrapper.new-vibrant-design .graph-main-price { font-size: 44px; color: var(--text-main); }
+.solar-comun-informe-wrapper.new-vibrant-design .graph-note { font-size: 11px; color: var(--text-muted); max-width: 25ch; }
 
 .solar-comun-informe-wrapper.new-vibrant-design .graph-svg-col { flex: 1; }
-.solar-comun-informe-wrapper.new-vibrant-design .graph-svg-col .chart-svg { height: 95px; }
+.solar-comun-informe-wrapper.new-vibrant-design .graph-svg-col .chart-svg { height: 190px; }
 
 /* EFECTO NEÓN/GLOW FINAL LÍNEA GRÁFICO P2 */
 .solar-comun-informe-wrapper.new-vibrant-design .graph-line-shadow_vFinal {
@@ -600,12 +633,12 @@
 
 /* Sección Impacto P2 Mil veces más visual */
 .solar-comun-informe-wrapper.new-vibrant-design .impact-grid.condensed-impact {
-    gap: 8px;
-    margin-bottom: 10px;
+    gap: 12px;
+    margin-bottom: 18px;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .impact-item {
-    padding: 12px 8px;
+    padding: 24px 12px;
     border-radius: 8px;
     background: #fff;
     border: 1px solid rgba(11,25,87,0.04);
@@ -618,44 +651,46 @@
 .solar-comun-informe-wrapper.new-vibrant-design .impact-shadow-energy_vFinal { filter: drop-shadow(0 4px 8px rgba(255,183,77,0.25)); }
 .solar-comun-informe-wrapper.new-vibrant-design .impact-shadow-diesel_vFinal { filter: drop-shadow(0 4px 8px rgba(100,181,246,0.25)); }
 
-.solar-comun-informe-wrapper.new-vibrant-design .impact-icon-wrapper { width: 40px; height: 40px; margin-bottom: 5px;}
+.solar-comun-informe-wrapper.new-vibrant-design .impact-icon-wrapper { width: 68px; height: 68px; margin-bottom: 10px;}
 
-.solar-comun-informe-wrapper.new-vibrant-design .impact-value { font-size: 20px; font-weight: 700;}
+.solar-comun-informe-wrapper.new-vibrant-design .impact-value { font-size: 28px; font-weight: 700;}
 
 .solar-comun-informe-wrapper.new-vibrant-design .value-co2 { color: var(--brand-mint); }
 .solar-comun-informe-wrapper.new-vibrant-design .value-trees { color: #2E7D32; }
 .solar-comun-informe-wrapper.new-vibrant-design .value-energy { color: #F57C00; }
 .solar-comun-informe-wrapper.new-vibrant-design .value-diesel { color: #1565C0; }
 
-.solar-comun-informe-wrapper.new-vibrant-design .impact-label { font-size: 9px; color: var(--text-light); margin-top: 3px; font-weight: 600;}
+.solar-comun-informe-wrapper.new-vibrant-design .impact-label { font-size: 11px; color: var(--text-light); margin-top: 5px; font-weight: 600;}
 
 .solar-comun-informe-wrapper.new-vibrant-design .impact-comparison-note { font-size: 9px; color: var(--text-muted); margin-bottom: 10px;}
 
 /* CTA P2 Renovado y Centrado */
 .solar-comun-informe-wrapper.new-vibrant-design .cta-block.condensed-cta {
     position: absolute;
-    left: 30px;
-    right: 30px;
+    left: 20px;
+    right: 20px;
     bottom: 35px; /* Ajuste sutil simétrico */
-    padding: 10px 18px;
-    background: var(--text-main);
+    padding: 22px 26px;
+    background: linear-gradient(90deg, #72DCCE 0%, #7FD2E8 45%, #87AFFF 100%);
     border-radius: 8px;
-    box-shadow: 0 15px 35px -5px rgba(11,25,87,0.3);
+    box-shadow: none;
 }
 
-.solar-comun-informe-wrapper.new-vibrant-design .cta-title { font-size: 20px; color: #fff; line-height: 1.1;}
+.solar-comun-informe-wrapper.new-vibrant-design .cta-bg-grad { display: none; }
+
+.solar-comun-informe-wrapper.new-vibrant-design .cta-title { font-size: 26px; color: #fff; line-height: 1.1;}
 
 .solar-comun-informe-wrapper.new-vibrant-design .cta-button {
-    background: var(--grad-vibrant);
+    background: linear-gradient(90deg, #52CFC0 0%, #6F9DF7 100%);
     color: #fff;
     font-weight: 700;
-    font-size: 11px;
-    padding: 9px 14px;
+    font-size: 12px;
+    padding: 13px 20px;
     border-radius: 4px;
-    box-shadow: 0 4px 12px rgba(46,209,188,0.25);
+    box-shadow: none;
 }
 
-.solar-comun-informe-wrapper.new-vibrant-design .cta-contact { font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 4px; }
+.solar-comun-informe-wrapper.new-vibrant-design .cta-contact { font-size: 10px; color: rgba(255,255,255,0.82); margin-top: 6px; }
 
 /* ============================================================
    RESPONSIVE (ZOOM) - Mantenido igual
@@ -763,6 +798,7 @@ body {
 .solar-comun-informe-wrapper.new-vibrant-design .arrow-wrapper,
 .solar-comun-informe-wrapper.new-vibrant-design .rec-orb-col,
 .solar-comun-informe-wrapper.new-vibrant-design .modality-card,
+.solar-comun-informe-wrapper.new-vibrant-design .graph-block,
 .solar-comun-informe-wrapper.new-vibrant-design .savings-summary-block,
 .solar-comun-informe-wrapper.new-vibrant-design .participation-block,
 .solar-comun-informe-wrapper.new-vibrant-design .cta-block {
@@ -812,8 +848,6 @@ body {
 }
 .solar-comun-informe-wrapper.new-vibrant-design .participation-footer {
     position: absolute;
-    left: 30px;
-    right: 30px;
     z-index: 2;
 }
 .solar-comun-informe-wrapper.new-vibrant-design .participation-grid {
@@ -825,7 +859,7 @@ body {
 }
 .solar-comun-informe-wrapper.new-vibrant-design .participation-separator {
     width: 1px;
-    height: 44px;
+    height: 66px;
 }
 .solar-comun-informe-wrapper.new-vibrant-design .stat-col {
     text-align: left;
@@ -901,7 +935,7 @@ body {
 }
 
 @page {
-    size: 210mm 250mm;
+    size: 210mm 297mm;
     margin: 0;
 }
 
@@ -909,7 +943,7 @@ body {
     html,
     body {
         width: 210mm;
-        height: 250mm;
+        height: 297mm;
         margin: 0 !important;
         padding: 0 !important;
         background: #F8F8F5 !important;
@@ -932,8 +966,8 @@ body {
     .solar-comun-informe-wrapper.new-vibrant-design .pptx-slide {
         width: 210mm !important;
         max-width: none !important;
-        min-height: 250mm !important;
-        height: 250mm !important;
+        min-height: 297mm !important;
+        height: 297mm !important;
         margin: 0 !important;
         border-radius: 0 !important;
         box-shadow: none !important;
@@ -948,11 +982,84 @@ body {
 
     .solar-comun-informe-wrapper.new-vibrant-design .pptx-slide .page {
         width: 794px !important;
-        height: 945px !important;
+        height: 1123px !important;
         top: 0 !important;
         left: 0 !important;
         transform: none !important;
         position: absolute !important;
+    }
+
+    .solar-comun-informe-wrapper.new-vibrant-design,
+    .solar-comun-informe-wrapper.new-vibrant-design * {
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+    }
+
+    .solar-comun-informe-wrapper.new-vibrant-design .decorative-orb-1 {
+        filter: none !important;
+        opacity: 0.08 !important;
+    }
+
+    .solar-comun-informe-wrapper.new-vibrant-design .client-data-grid,
+    .solar-comun-informe-wrapper.new-vibrant-design .stability-orbit-note,
+    .solar-comun-informe-wrapper.new-vibrant-design .impact-item,
+    .solar-comun-informe-wrapper.new-vibrant-design .modality-card {
+        background: #ffffff !important;
+        box-shadow: none !important;
+        border-color: #E8ECF8 !important;
+    }
+
+    .solar-comun-informe-wrapper.new-vibrant-design .graph-block {
+        background: #ffffff !important;
+        border: 1px solid #E4EAF7 !important;
+        box-shadow: none !important;
+    }
+
+    .solar-comun-informe-wrapper.new-vibrant-design .orbs-comparison-grid {
+        background: #ffffff !important;
+        border: 1px solid #E4EAF7 !important;
+        box-shadow: none !important;
+    }
+
+    .solar-comun-informe-wrapper.new-vibrant-design .orb-current,
+    .solar-comun-informe-wrapper.new-vibrant-design .orb-destination-small,
+    .solar-comun-informe-wrapper.new-vibrant-design .arrow-svg,
+    .solar-comun-informe-wrapper.new-vibrant-design .impact-icon-wrapper,
+    .solar-comun-informe-wrapper.new-vibrant-design .discount-badge,
+    .solar-comun-informe-wrapper.new-vibrant-design .recommended-tag,
+    .solar-comun-informe-wrapper.new-vibrant-design .cta-button {
+        filter: none !important;
+        box-shadow: none !important;
+    }
+
+    .solar-comun-informe-wrapper.new-vibrant-design .stability-orbit-note::before,
+    .solar-comun-informe-wrapper.new-vibrant-design .brand-dot,
+    .solar-comun-informe-wrapper.new-vibrant-design .proposal-stability-graph span {
+        box-shadow: none !important;
+    }
+
+    .solar-comun-informe-wrapper.new-vibrant-design .orbit-price-pill,
+    .solar-comun-informe-wrapper.new-vibrant-design .cost-badge-a {
+        background: #F4F7FF !important;
+    }
+
+    .solar-comun-informe-wrapper.new-vibrant-design .cta-block.condensed-cta {
+        background: linear-gradient(90deg, #72DCCE 0%, #7FD2E8 45%, #87AFFF 100%) !important;
+        box-shadow: none !important;
+    }
+
+    .solar-comun-informe-wrapper.new-vibrant-design .participation-block {
+        background: linear-gradient(90deg, #72DCCE 0%, #7FD2E8 45%, #87AFFF 100%) !important;
+        box-shadow: none !important;
+    }
+
+    .solar-comun-informe-wrapper.new-vibrant-design .participation-footer {
+        background: transparent !important;
+    }
+
+    .solar-comun-informe-wrapper.new-vibrant-design .participation-bg-orb,
+    .solar-comun-informe-wrapper.new-vibrant-design .cta-bg-grad {
+        display: none !important;
     }
 }
 
@@ -997,7 +1104,7 @@ body {
 
         <!-- ============== PÁGINA 1 ============== -->
         <div class="pptx-slide Variation-A-Page1">
-            <div class="page" style="padding: 20px 30px 0px;">
+            <div class="page" style="padding: 34px 30px 0px;">
                 <!-- Decorative sun + ring -->
                 <div aria-hidden="true" class="decorative-orb-1"></div>
                 <div aria-hidden="true" class="decorative-ring-1"></div>
@@ -1255,7 +1362,7 @@ body {
 
         <!-- ============== PÁGINA 2 (Mantenida, con ajustes visuales de centrado) ============== -->
         <div class="pptx-slide Variation-A-Page2">
-            <div class="page" style="padding: 24px 30px 0px;">
+            <div class="page" style="padding: 34px 30px 0px;">
                 <!-- Header -->
                 <div class="header-container-p2">
                     <!-- Brandmark Small -->

@@ -70,6 +70,7 @@ describe("buildProposalPdfHtml", () => {
 
     expect(html).toContain(`class="orbs-comparison-grid"`);
     expect(html).toContain(`class="stability-orbit-notes"`);
+    expect(html).toContain(`class="proposal-stability-graph"`);
     expect(html).toContain("Precio actual factura:");
     expect(html).toContain("<strong>Servicio</strong>");
     expect(html).toContain("Inversión:");
@@ -123,6 +124,38 @@ describe("buildProposalPdfHtml", () => {
       `<div class="recommended-badge">RECOMENDADO</div>`,
     );
     expect(html).not.toContain(`<div class="modality-card card-b`);
+  });
+
+  it("uses the calculated service monthly amount instead of the template placeholder", () => {
+    const html = buildProposalPdfHtml({
+      billData,
+      calculationResult: {
+        ...calculationResult,
+        annualServiceFee: 288,
+      },
+      language: "es",
+      proposals: [
+        {
+          annualConsumptionKwh: 4150,
+          annualMaintenance: 0,
+          annualSavings: 330,
+          badge: "A",
+          companyEmail: "titular@example.com",
+          companyName: "Empresa Titular",
+          description: "Servicio",
+          mode: "service",
+          monthlyFee: 22,
+          paybackYears: 0,
+          recommendedPowerKwp: 3.5,
+          title: "Cuota mensual",
+          totalSavings25Years: 12050,
+          upfrontCost: 0,
+        },
+      ],
+    });
+
+    expect(html).toContain("24,00 €/mes");
+    expect(html).not.toContain("22€/mes");
   });
 
   it("localizes key proposal labels based on the selected language", () => {
