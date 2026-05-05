@@ -33,6 +33,33 @@ export function getFixedInstallationPower(
   return fixed;
 }
 
+export function getFixedInstallationPaymentAmount(
+  installation: ApiInstallation | null | undefined,
+): number | null {
+  const paymentMode = (installation?.pago ?? "").toLowerCase().trim();
+
+  if (paymentMode !== "fijo") return null;
+
+  const fixedAmount = Number(installation?.cantidad_precio_fijo ?? 0);
+
+  if (!Number.isFinite(fixedAmount)) return null;
+  if (fixedAmount <= 0) return null;
+
+  return fixedAmount;
+}
+
+export function getFixedServiceMonthlyFee(
+  installation: ApiInstallation | null | undefined,
+): number | null {
+  return getFixedInstallationPaymentAmount(installation);
+}
+
+export function isFixedInstallationPayment(
+  installation: ApiInstallation | null | undefined,
+): boolean {
+  return getFixedInstallationPaymentAmount(installation) !== null;
+}
+
 
 export function resolveEffectiveAssignedKwpForInstallation(
   validatedData: ValidationBillData,
@@ -96,6 +123,8 @@ export function calculateRequiredKwpForInstallation(
     effectiveHours: installation.horas_efectivas,
     investmentCostKwh: installation.coste_kwh_inversion,
     serviceCostKwh: installation.coste_kwh_servicio,
+    paymentMode: installation.pago,
+    fixedPaymentAmount: installation.cantidad_precio_fijo,
 
     modality: normalizeInstallationModalidad(installation.modalidad),
 
@@ -129,6 +158,12 @@ export function getServiceMonthlyFeeFromInstallation(
 ): number | null {
   if (!installation) return null;
 
+  const fixedMonthlyFee = getFixedServiceMonthlyFee(installation);
+
+  if (fixedMonthlyFee !== null) {
+    return fixedMonthlyFee;
+  }
+
   const directMonthlyFee = getFirstNumericField(
     installation,
     [
@@ -161,6 +196,12 @@ export function getInvestmentCostFromFormula(
   recommendedPowerKwp: number,
 ): number {
   if (!installation) return 0;
+
+  const fixedPaymentAmount = getFixedInstallationPaymentAmount(installation);
+
+  if (fixedPaymentAmount !== null) {
+    return fixedPaymentAmount;
+  }
 
   const effectiveHours = parseNumericValue(installation.horas_efectivas);
   const investmentCostPerKwh = parseNumericValue(

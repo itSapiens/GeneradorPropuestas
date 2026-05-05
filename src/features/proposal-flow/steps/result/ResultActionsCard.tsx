@@ -99,10 +99,16 @@ export default function ResultActionsCard({
       {signedContractResult?.reservation ? (
         <div className="rounded-[1.4rem] bg-brand-mint/10 border border-brand-mint/20 p-4 text-brand-navy">
           <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-brand-navy/50">
-            {t("result.reserve.startedTitle")}
+            {signedContractResult.nextStep === "pending_bank_transfer"
+              ? "Contrato firmado correctamente"
+              : t("result.reserve.startedTitle")}
           </p>
 
           <div className="mt-3 space-y-2 text-sm leading-relaxed">
+            {signedContractResult.message ? (
+              <p>{signedContractResult.message}</p>
+            ) : null}
+
             <p>
               <span className="font-bold">
                 {signedContractResult.reservation.reservedKwp} kWp
@@ -127,6 +133,35 @@ export default function ResultActionsCard({
                 {formatCurrency(signedContractResult.reservation.signalAmount)}
               </span>
             </p>
+
+            {signedContractResult.bankTransfer?.emailSentTo ? (
+              <p>
+                Email:{" "}
+                <span className="font-bold">
+                  {signedContractResult.bankTransfer.emailSentTo}
+                </span>
+              </p>
+            ) : null}
+
+            {signedContractResult.bankTransfer?.concept ? (
+              <p>
+                Referencia:{" "}
+                <span className="font-bold">
+                  {signedContractResult.bankTransfer.concept}
+                </span>
+              </p>
+            ) : null}
+
+            {signedContractResult.nextStep === "pending_bank_transfer" ? (
+              <p>
+                Estado:{" "}
+                <span className="font-bold">
+                  {signedContractResult.emailDeliveryStatus === "pending_retry"
+                    ? "Pendiente de reenvío de instrucciones"
+                    : "Pago pendiente de confirmación"}
+                </span>
+              </p>
+            ) : null}
           </div>
         </div>
       ) : null}

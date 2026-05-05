@@ -33,6 +33,10 @@ export interface CalculationInput {
 
   // Si llega > 0, esta potencia manda sobre la calculada automática
   forcedPowerKwp?: number;
+
+  // Modo de cálculo del precio mostrado al cliente en servicio o inversión.
+  paymentMode?: "segun_factura" | "fijo" | string | null;
+  fixedPaymentAmount?: number | null;
 }
 
 export interface ChartBarItem {
@@ -170,6 +174,22 @@ function normalizePositive(value: unknown, fallback = 0): number {
     return fallback;
   }
   return value;
+}
+
+function normalizePaymentMode(
+  value: CalculationInput["paymentMode"],
+): "segun_factura" | "fijo" {
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  if (normalized === "fijo" || normalized === "fixed") {
+    return "fijo";
+  }
+
+  return "segun_factura";
 }
 
 function normalizeRatio(value: number): number {
@@ -454,15 +474,27 @@ export const calculateEnergyStudy = (
   );
 
   // Cuota anual del servicio (modalidad PPA).
-  // El cliente paga coste_kwh_servicio SOLO por la energía solar que consume
-  // (no por la producción total: los excedentes van a red y no se facturan como servicio).
+  // Si la instalación define pago fijo, ese importe manda también aquí.
+  // Si no, se calcula por la energía solar que consume el cliente.
+  const paymentMode = normalizePaymentMode(
+    input.paymentMode,
+  );
+  const fixedPaymentAmount = normalizePositive(
+    input.fixedPaymentAmount,
+    0,
+  );
   const annualServiceFee = round(
-    annualSelfConsumedEnergyKwh * normalizePositive(input.serviceCostKwh, 0),
+    paymentMode === "fijo" && fixedPaymentAmount > 0
+      ? fixedPaymentAmount * 12
+      : annualSelfConsumedEnergyKwh * normalizePositive(input.serviceCostKwh, 0),
   );
 
-  // Coste de inversión (CapEx único, modalidad compra)
+  // Coste de inversión (CapEx único, modalidad compra).
+  // En modo fijo usamos directamente el importe de BD.
   const investmentCost = round(
-    recommendedPowerKwp * normalizePositive(input.investmentCostKwh, 0),
+    paymentMode === "fijo" && fixedPaymentAmount > 0
+      ? fixedPaymentAmount
+      : recommendedPowerKwp * normalizePositive(input.investmentCostKwh, 0),
   );
 
   // Coste anual del servicio (OpEx recurrente)

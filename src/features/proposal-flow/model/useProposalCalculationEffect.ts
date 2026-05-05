@@ -117,6 +117,8 @@ export function useProposalCalculationEffect({
         effectiveHours: selectedInstallation.horas_efectivas,
         investmentCostKwh: selectedInstallation.coste_kwh_inversion,
         serviceCostKwh: selectedInstallation.coste_kwh_servicio,
+        paymentMode: selectedInstallation.pago,
+        fixedPaymentAmount: selectedInstallation.cantidad_precio_fijo,
         modality: normalizeInstallationModalidad(
           selectedInstallation.modalidad,
         ),

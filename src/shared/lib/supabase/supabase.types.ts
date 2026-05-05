@@ -21,6 +21,8 @@ export interface InstallationRow {
   coste_anual_mantenimiento_por_kwp: number;
   coste_kwh_inversion: number;
   coste_kwh_servicio: number;
+  pago?: 'segun_factura' | 'fijo' | string | null;
+  cantidad_precio_fijo?: number | null;
   porcentaje_autoconsumo: number;
   modalidad: InstallationModalidad;
   active: boolean;

@@ -5,6 +5,7 @@ import { ApiInstallation, AppLanguage, ProposalCardData } from "@/src/entities/p
 import { TFunction } from "i18next";
 import { getAvailableProposalModes, normalizeInstallationModalidad } from "./proposalModes";
 import { buildProposalCardData } from "./proposalCard";
+import { isFixedInstallationPayment } from "./proposalCalculation";
 
 export type PdfArtifact =
   | Blob
@@ -75,7 +76,7 @@ export const buildPdfArtifact = async (
 
     try {
       const errorData = await response.json();
-      message = errorData?.error || errorData?.details || message;
+      message = errorData?.details || errorData?.error || message;
     } catch {
       // La respuesta de error no siempre es JSON.
     }
@@ -191,6 +192,14 @@ export function buildProposalPdfSummary(
     companyName: installation?.empresa?.nombre ?? null,
     companyEmail: installation?.empresa?.email ?? null,
     companyPhone: installation?.empresa?.telefono ?? null,
+    energyPriceKwh:
+      proposal.id === "investment"
+        ? isFixedInstallationPayment(installation)
+          ? null
+          : installation?.coste_kwh_inversion ?? null
+        : isFixedInstallationPayment(installation)
+          ? null
+          : installation?.coste_kwh_servicio ?? null,
   };
 }
 

@@ -6,11 +6,6 @@ import { formatCurrency } from "@/src/shared/lib/utils";
 import { AppLanguage, SignedContractResponse } from "@/src/entities/proposal/domain/proposal.types";
 import { getDateLocale } from "@/src/features/proposal-flow/lib/proposalNumbers";
 import { TFunction } from "i18next";
-// import { getDateLocale } from "@/src/features/proposal-flow/lib/proposalNumbers";
-// import type {
-//   AppLanguage,
-//   SignedContractResponse,
-// } from "@/src/entities/proposal/domain/proposal.types";
 
 interface PaymentMethodModalProps {
   open: boolean;
@@ -30,7 +25,6 @@ export default function PaymentMethodModal({
   currentAppLanguage,
   onClose,
   onSelectBankTransferPayment,
-  onSelectStripePayment,
   t,
 }: PaymentMethodModalProps) {
   return (
@@ -145,17 +139,6 @@ export default function PaymentMethodModal({
                       )}
                     </p>
                   </button>
-
-                  {/*
-                  <button
-                    type="button"
-                    onClick={onSelectStripePayment}
-                    disabled={isSelectingPaymentMethod}
-                    className="rounded-[1.5rem] border border-brand-mint/20 bg-brand-mint/10 p-6 text-left shadow-sm hover:shadow-md transition disabled:opacity-60"
-                  >
-                    ...
-                  </button>
-                  */}
                 </div>
 
                 <div className="pt-2">

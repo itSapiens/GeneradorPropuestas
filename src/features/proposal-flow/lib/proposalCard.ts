@@ -1,7 +1,11 @@
 import { CalculationResult } from "@/src/entities/proposal/application/calculateProposal.usecase";
 import { ApiInstallation, ProposalCardData } from "@/src/entities/proposal/domain/proposal.types";
 import { TFunction } from "i18next";
-import { getFixedInstallationPower, getInvestmentRealCostFromFormula, getServiceMonthlyFeeFromResult } from "./proposalCalculation";
+import {
+  getFixedInstallationPower,
+  getInvestmentRealCostFromFormula,
+  getServiceMonthlyFeeFromResult,
+} from "./proposalCalculation";
 import { getFirstNumericField } from "@/src/features/proposal-flow/lib/proposalNumbers";
 import { INVESTMENT_MAINTENANCE_EUR_PER_KWP_YEAR } from "@/src/shared/lib/constants/proposal.constants";
 

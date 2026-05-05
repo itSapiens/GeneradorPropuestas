@@ -53,6 +53,8 @@ export interface ApiInstallation {
 
   calculo_estudios?: "segun_factura" | "fijo" | string | null;
   potencia_fija_kwp?: number | null;
+  pago?: "segun_factura" | "fijo" | string | null;
+  cantidad_precio_fijo?: number | null;
   reserva?: "segun_potencia" | "fija" | string | null;
   reserva_fija_eur?: number | null;
   iban_aportaciones?: string | null;
@@ -94,6 +96,17 @@ export type ContractPreviewData = {
   contractNumber: string;
   proposalMode: "investment" | "service";
   assignedKwp: number;
+  commercial: {
+    annualMaintenance: number;
+    availableModes: ProposalMode[];
+    investmentPrice: number | null;
+    reservationAmount: number;
+    reservationMode: "fija" | "segun_potencia";
+    selectedMode: ProposalMode;
+    selectedPrice: number | null;
+    selectedPriceUnit: "one_time" | "monthly";
+    serviceMonthlyFee: number | null;
+  };
   client: {
     id: string;
     nombre: string;
@@ -106,6 +119,7 @@ export type ContractPreviewData = {
     id: string;
     nombre_instalacion: string;
     direccion: string;
+    modalidad?: "inversion" | "servicio" | "ambas" | null;
     empresa?: {
       id?: string | null;
       nombre?: string | null;
@@ -135,6 +149,11 @@ export type GeneratedContractResponse = {
 };
 
 export type PaymentMethodId = "stripe" | "bank_transfer";
+export type ContractNextStep =
+  | "sign_contract"
+  | "select_payment_method"
+  | "pending_bank_transfer"
+  | "completed";
 
  export type PaymentMethodOption = {
   id: PaymentMethodId;
@@ -144,6 +163,12 @@ export type PaymentMethodId = "stripe" | "bank_transfer";
 export type SignedContractResponse = {
   success: boolean;
   message: string;
+  nextStep?: ContractNextStep;
+  paymentFlowStatus?: string | null;
+  paymentInstructionsSentAt?: string | null;
+  lastPaymentInstructionsSentAt?: string | null;
+  paymentInstructionsSentCount?: number;
+  emailDeliveryStatus?: "sent" | "pending_retry";
   contract: any;
   reservation: {
     id: string;
@@ -155,13 +180,21 @@ export type SignedContractResponse = {
     installationName: string;
     reservedKwp: number;
   };
-  payment: {
+  payment?: {
     step: "select_method";
     availableMethods: {
       id: "stripe" | "bank_transfer";
       label: string;
     }[];
   };
+  bankTransfer?: {
+    iban: string;
+    beneficiary: string;
+    concept: string;
+    paymentDeadlineAt: string;
+    emailSentTo: string | null;
+    supportEmail: string;
+  } | null;
   drive: {
     contractsRootFolderUrl: string | null;
     contractFolderUrl: string | null;
@@ -201,6 +234,12 @@ export type StripePaymentResponse = {
 export type BankTransferPaymentResponse = {
   success: boolean;
   message: string;
+  nextStep?: ContractNextStep;
+  paymentFlowStatus?: string | null;
+  paymentInstructionsSentAt?: string | null;
+  lastPaymentInstructionsSentAt?: string | null;
+  paymentInstructionsSentCount?: number;
+  emailDeliveryStatus?: "sent" | "pending_retry";
   contract: {
     id: string;
     status: string;

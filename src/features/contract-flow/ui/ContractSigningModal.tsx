@@ -50,6 +50,16 @@ export default function ContractSigningModal({
   onSubmitSignedContract,
   t,
 }: ContractSigningModalProps) {
+  const commercial = generatedContract?.preview.commercial;
+  const availableModesLabel =
+    commercial?.availableModes
+      ?.map((mode) =>
+        mode === "service"
+          ? t("result.modes.service", "Servicio")
+          : t("result.modes.investment", "Inversión"),
+      )
+      .join(" · ") ?? contractPreviewModeLabel;
+
   return (
     <AnimatePresence>
       {open && generatedContract ? (
@@ -59,20 +69,20 @@ export default function ContractSigningModal({
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[200] bg-brand-navy/50 backdrop-blur-sm overflow-y-auto"
         >
-          <div className="min-h-full px-4 py-4 md:px-8 md:py-8 flex items-start md:items-center justify-center">
+          <div className="min-h-full px-3 py-3 sm:px-6 sm:py-6 lg:px-8 lg:py-8 flex items-start lg:items-center justify-center">
             <motion.div
               initial={{ opacity: 0, y: 24, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 12, scale: 0.98 }}
-              className="w-full max-w-5xl rounded-[2rem] md:rounded-[2.5rem] bg-[#F8FAFC] border border-brand-navy/5 shadow-2xl overflow-hidden"
+              className="w-full max-w-7xl rounded-[1.5rem] sm:rounded-[2rem] lg:rounded-[2.5rem] bg-[#F8FAFC] border border-brand-navy/5 shadow-2xl overflow-hidden"
             >
-              <div className="max-h-[calc(100vh-2rem)] md:max-h-[92vh] overflow-y-auto">
-                <div className="sticky top-0 z-20 px-5 md:px-8 py-5 border-b border-brand-navy/5 bg-[#F8FAFC]/95 backdrop-blur-md flex items-center justify-between gap-4">
+              <div className="max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-3rem)] lg:max-h-[94vh] overflow-y-auto">
+                <div className="sticky top-0 z-20 px-4 sm:px-6 md:px-8 py-4 sm:py-5 border-b border-brand-navy/5 bg-[#F8FAFC]/95 backdrop-blur-md flex items-center justify-between gap-4">
                   <div>
                     <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40 mb-1">
                       {t("contractFlow.modal.badge", "Contratación")}
                     </p>
-                    <h3 className="text-xl md:text-2xl font-bold text-brand-navy">
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-brand-navy">
                       {t("contractFlow.leftPanel.titleLine1", "Revisa y firma")}{" "}
                       {t("contractFlow.leftPanel.titleLine2", "tu contrato")}
                     </h3>
@@ -81,28 +91,28 @@ export default function ContractSigningModal({
                   <button
                     type="button"
                     onClick={onClose}
-                    className="w-11 h-11 rounded-2xl bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy transition shrink-0"
+                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy transition shrink-0"
                     aria-label={t("common.close", "Cerrar")}
                   >
                     ✕
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px]">
-                  <div className="p-4 md:p-8 border-b lg:border-b-0 lg:border-r border-brand-navy/5">
-                    <div className="rounded-[1.5rem] overflow-hidden border border-brand-navy/5 bg-brand-sky/5">
+                <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_420px]">
+                  <div className="p-3 sm:p-5 md:p-8 border-b xl:border-b-0 xl:border-r border-brand-navy/5">
+                    <div className="rounded-[1.2rem] sm:rounded-[1.5rem] overflow-hidden border border-brand-navy/5 bg-brand-sky/5">
                       <iframe
                         title={t(
                           "contractFlow.iframe.title",
                           "Vista previa del contrato",
                         )}
                         srcDoc={generatedContract.previewHtml}
-                        className="w-full h-[320px] sm:h-[420px] md:h-[560px] bg-[#F8FAFC]"
+                        className="w-full h-[480px] sm:h-[600px] md:h-[820px] bg-[#F8FAFC]"
                       />
                     </div>
                   </div>
 
-                  <div className="p-4 md:p-6 space-y-5 bg-brand-navy/[0.02]">
+                  <div className="p-4 sm:p-5 md:p-6 space-y-4 bg-brand-navy/[0.02]">
                     <div className="rounded-[1.4rem] bg-[#F8FAFC] border border-brand-navy/5 p-4">
                       <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40 mb-2">
                         {t("contractFlow.contractCard.title", "Contrato")}
@@ -118,6 +128,68 @@ export default function ContractSigningModal({
                         {t("contractFlow.contractCard.dni", "DNI")}:{" "}
                         {generatedContract.preview.client.dni}
                       </p>
+                    </div>
+
+                    <div className="rounded-[1.4rem] bg-[#F8FAFC] border border-brand-navy/5 p-4 space-y-3">
+                      <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40">
+                        Resumen económico
+                      </p>
+
+                      <div className="space-y-2 text-sm text-brand-navy/80">
+                        <p>
+                          <span className="font-bold text-brand-navy">
+                            Modalidades disponibles:
+                          </span>{" "}
+                          {availableModesLabel}
+                        </p>
+                        <p>
+                          <span className="font-bold text-brand-navy">
+                            {commercial?.selectedMode === "service"
+                              ? "Precio del servicio:"
+                              : "Precio de la inversión:"}
+                          </span>{" "}
+                          {commercial?.selectedPrice != null
+                            ? formatCurrency(commercial.selectedPrice)
+                            : "-"}{" "}
+                          {commercial?.selectedPriceUnit === "monthly"
+                            ? "/ mes"
+                            : commercial?.selectedPrice != null
+                              ? "pago único"
+                              : ""}
+                        </p>
+                        <p>
+                          <span className="font-bold text-brand-navy">
+                            Reserva:
+                          </span>{" "}
+                          {commercial?.reservationAmount != null
+                            ? formatCurrency(commercial.reservationAmount)
+                            : formatCurrency(signalAmount)}
+                        </p>
+                        <p>
+                          <span className="font-bold text-brand-navy">
+                            Mantenimiento anual:
+                          </span>{" "}
+                          {commercial?.annualMaintenance != null
+                            ? formatCurrency(commercial.annualMaintenance)
+                            : formatCurrency(0)}
+                        </p>
+                        {commercial?.availableModes?.includes("investment") && commercial?.investmentPrice != null ? (
+                          <p>
+                            <span className="font-bold text-brand-navy">
+                              {t("contractFlow.summary.investment", "Inversión")}:
+                            </span>{" "}
+                            {formatCurrency(commercial.investmentPrice)}
+                          </p>
+                        ) : null}
+                        {commercial?.availableModes?.includes("service") && commercial?.serviceMonthlyFee != null ? (
+                          <p>
+                            <span className="font-bold text-brand-navy">
+                              {t("contractFlow.summary.service", "Servicio")}:
+                            </span>{" "}
+                            {formatCurrency(commercial.serviceMonthlyFee)} / mes
+                          </p>
+                        ) : null}
+                      </div>
                     </div>
 
                     <div className="rounded-[1.4rem] bg-[#F8FAFC] border border-brand-navy/5 p-4">
@@ -152,7 +224,7 @@ export default function ContractSigningModal({
                       <p className="text-xs text-brand-gray mt-3 leading-relaxed">
                         {t(
                           "contractFlow.signature.help",
-                          "Firma dentro del recuadro. Al confirmar, se generará el PDF firmado, se creará tu reserva provisional y podrás elegir la forma de pago.",
+                          "Firma dentro del recuadro. Al confirmar, se generará el PDF firmado, se creará tu reserva provisional y se enviarán las instrucciones de transferencia bancaria.",
                         )}
                       </p>
                     </div>
@@ -187,7 +259,9 @@ export default function ContractSigningModal({
                           {t("contractFlow.reservation.signalLabel", "Pago de reserva")}
                         </p>
                         <p className="text-lg font-bold text-brand-navy">
-                          {formatCurrency(signalAmount)}
+                          {formatCurrency(
+                            commercial?.reservationAmount ?? signalAmount,
+                          )}
                         </p>
                       </div>
                     </div>

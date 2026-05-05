@@ -11,6 +11,7 @@ import type {
   SignedContractResponse,
   StripePaymentResponse,
 } from "@/src/entities/proposal/domain/proposal.types";
+import { ENABLE_PAYMENT_METHOD_SELECTOR } from "@/src/features/contract-flow/lib/paymentFlow.constants";
 
 interface UseContractFlowParams {
   savedStudy: any;
@@ -259,22 +260,41 @@ export function useContractFlow({
 
       setSignedContractResult(response.data);
       setIsContractModalOpen(false);
-      setIsPaymentMethodModalOpen(true);
+      setIsPaymentMethodModalOpen(ENABLE_PAYMENT_METHOD_SELECTOR);
 
-      sileo.success({
-        title: t(
-          "contractFlow.toasts.signedSuccessTitle",
-          "Precontrato firmado correctamente",
-        ),
-        description: t(
-          "contractFlow.toasts.signedSuccessDescription",
-          "Se han reservado {{reservedKwp}} kWp en {{installationName}}. Ahora debes seleccionar la forma de pago para continuar.",
-          {
-            reservedKwp: response.data.reservation.reservedKwp,
-            installationName: response.data.reservation.installationName,
-          },
-        ),
-      });
+      if (response.data.nextStep === "pending_bank_transfer") {
+        sileo.success({
+          title: t(
+            "contractFlow.toasts.signedSuccessTitle",
+            "Contrato firmado correctamente",
+          ),
+          description:
+            response.data.emailDeliveryStatus === "pending_retry"
+              ? t(
+                  "contractFlow.toasts.bankTransferRetryDescription",
+                  "La reserva ya está creada. Estamos pendientes de reenviar las instrucciones de transferencia por email.",
+                )
+              : t(
+                  "contractFlow.toasts.bankTransferAutoSelectedDescription",
+                  "Te hemos enviado las instrucciones de transferencia al correo y el pago queda pendiente de confirmación.",
+                ),
+        });
+      } else {
+        sileo.success({
+          title: t(
+            "contractFlow.toasts.signedSuccessTitle",
+            "Precontrato firmado correctamente",
+          ),
+          description: t(
+            "contractFlow.toasts.signedSuccessDescription",
+            "Se han reservado {{reservedKwp}} kWp en {{installationName}}. Ahora debes seleccionar la forma de pago para continuar.",
+            {
+              reservedKwp: response.data.reservation.reservedKwp,
+              installationName: response.data.reservation.installationName,
+            },
+          ),
+        });
+      }
     } catch (error: any) {
       console.error("Error firmando precontrato:", error);
       console.error("status:", error?.response?.status);

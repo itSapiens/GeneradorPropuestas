@@ -12,6 +12,19 @@ import {
   normalizeAppLanguage,
   resolveProposalMode,
 } from "../../domain/contracts/contractLocalization";
+import {
+  ENABLE_PAYMENT_METHOD_SELECTOR,
+  getContractPaymentFlowStatus,
+  getContractPaymentMethod,
+  getLastPaymentInstructionsSentAt,
+  getPaymentInstructionsSentAt,
+  getPaymentInstructionsSentCount,
+  getPaymentMethodSelectedAt,
+  hasContractBeenSigned,
+  isContractCompleted,
+  type ContractNextStep,
+} from "../../domain/contracts/paymentFlow";
+import { buildContractCommercialSummary } from "../../domain/contracts/contractCommercial";
 import { buildBasicContractHtml } from "../../domain/contracts/contractHtml";
 import { buildSignedContractPdfHtml } from "../../domain/contracts/signedContractPdfHtml";
 import {
@@ -247,6 +260,558 @@ async function buildPaymentSelectionContext(
   };
 }
 
+function getRecordMetadata(record: any) {
+  return record?.metadata && typeof record.metadata === "object"
+    ? record.metadata
+    : {};
+}
+
+function getPaymentOptionsAvailable() {
+  return ["bank_transfer", "stripe"];
+}
+
+function buildPendingBankTransferResponse(params: {
+  contract: any;
+  ctx: any;
+  deps: ServerDependencies;
+  emailDeliveryStatus: "sent" | "pending_retry";
+  message: string;
+  paymentDeadlineAt: string;
+  paymentFlowStatus: string;
+  reservation: any;
+  reservationAmountSource: string;
+  reservationMode: string;
+  signalAmount: number;
+}) {
+  const paymentInstructionsSentAt = getPaymentInstructionsSentAt(
+    params.contract,
+    params.reservation,
+  );
+  const lastPaymentInstructionsSentAt = getLastPaymentInstructionsSentAt(
+    params.contract,
+    params.reservation,
+  );
+  const paymentInstructionsSentCount = getPaymentInstructionsSentCount(
+    params.contract,
+    params.reservation,
+  );
+
+  return {
+    bankTransfer: {
+      beneficiary: resolveInstallationBankBeneficiary(
+        params.ctx.installation,
+        "Sapiens Energía",
+      ),
+      concept:
+        getRecordMetadata(params.reservation).transfer_concept ??
+        getRecordMetadata(params.contract).transfer_concept ??
+        `${params.ctx.client.nombre} ${params.ctx.client.apellidos}`.trim(),
+      emailSentTo: params.ctx.client.email ?? null,
+      iban: resolveInstallationBankIban(
+        params.ctx.installation,
+        params.deps.env.sapiensBankAccountIban,
+      ),
+      paymentDeadlineAt: params.paymentDeadlineAt,
+      supportEmail: resolveInstallationContactEmail(
+        params.ctx.installation,
+        params.deps.env.sapiensContactEmail,
+      ),
+    },
+    contract: {
+      contractNumber:
+        params.contract.contract_number ?? params.contract.contractNumber ?? null,
+      id: params.contract.id,
+      status: params.contract.status,
+    },
+    emailDeliveryStatus: params.emailDeliveryStatus,
+    lastPaymentInstructionsSentAt,
+    message: params.message,
+    nextStep: "pending_bank_transfer" as ContractNextStep,
+    paymentFlowStatus: params.paymentFlowStatus,
+    paymentInstructionsSentAt,
+    paymentInstructionsSentCount,
+    reservation: {
+      currency:
+        params.reservation.currency ??
+        getRecordMetadata(params.contract).currency ??
+        "eur",
+      id: params.reservation.id,
+      installationName: params.ctx.installation.nombre_instalacion,
+      paymentDeadlineAt: params.paymentDeadlineAt,
+      paymentMethod: "bank_transfer" as const,
+      paymentStatus: params.reservation.payment_status ?? "pending",
+      reservationAmountSource: params.reservationAmountSource,
+      reservationMode: params.reservationMode,
+      reservationStatus: params.reservation.reservation_status ?? "pending_payment",
+      reservedKwp: Number(params.reservation.reserved_kwp ?? params.ctx.assignedKwp ?? 0),
+      signalAmount: params.signalAmount,
+    },
+    success: true,
+  };
+}
+
+async function updateContractAndReservationForPendingInstructions(
+  deps: ServerDependencies,
+  params: {
+    contract: any;
+    currency: string;
+    nowIso: string;
+    paymentDeadlineAt: string;
+    reservation: any;
+    reservationAmountSource: string;
+    reservationMode: string;
+    signalAmount: number;
+    transferContext: {
+      bankAccountIban: string;
+      bankBeneficiary: string;
+      bankSupportEmail: string;
+      transferConcept: string;
+    };
+  },
+) {
+  const existingSelectedAt =
+    getPaymentMethodSelectedAt(params.contract, params.reservation) ?? params.nowIso;
+
+  const reservationMetadata = {
+    ...getRecordMetadata(params.reservation),
+    bank_account_iban: params.transferContext.bankAccountIban,
+    bank_beneficiary: params.transferContext.bankBeneficiary,
+    bank_support_email: params.transferContext.bankSupportEmail,
+    payment_flow_status: "pending_payment_instructions",
+    payment_method: "bank_transfer",
+    payment_method_selected_at: existingSelectedAt,
+    payment_options_available: getPaymentOptionsAvailable(),
+    reservation_amount_source: params.reservationAmountSource,
+    reservation_mode: params.reservationMode,
+    transfer_concept: params.transferContext.transferConcept,
+  };
+
+  const contractMetadata = {
+    ...getRecordMetadata(params.contract),
+    bank_account_iban: params.transferContext.bankAccountIban,
+    bank_beneficiary: params.transferContext.bankBeneficiary,
+    bank_support_email: params.transferContext.bankSupportEmail,
+    currency: params.currency,
+    installation_iban_aportaciones: params.transferContext.bankAccountIban,
+    payment_deadline_at: params.paymentDeadlineAt,
+    payment_flow_status: "pending_payment_instructions",
+    payment_method: "bank_transfer",
+    payment_method_selected_at: existingSelectedAt,
+    payment_options_available: getPaymentOptionsAvailable(),
+    payment_step: "awaiting_bank_transfer",
+    reservation_amount_source: params.reservationAmountSource,
+    reservation_id: params.reservation.id,
+    reservation_mode: params.reservationMode,
+    reservation_status: "pending_payment",
+    signal_amount: params.signalAmount,
+    transfer_concept: params.transferContext.transferConcept,
+  };
+
+  await deps.repositories.reservations.update(params.reservation.id, {
+    currency: params.currency,
+    metadata: reservationMetadata,
+    payment_status: "pending",
+    reservation_status: "pending_payment",
+    signal_amount: params.signalAmount,
+  });
+
+  const updatedContract = await deps.repositories.contracts.update(
+    params.contract.id,
+    {
+      metadata: contractMetadata,
+      signed_at: params.contract.signed_at ?? params.nowIso,
+      status: isContractCompleted(params.contract, params.reservation)
+        ? params.contract.status
+        : "signed",
+    },
+  );
+
+  const updatedReservation =
+    (await deps.repositories.reservations.findById(params.reservation.id)) ??
+    params.reservation;
+
+  return {
+    contract: updatedContract,
+    reservation: updatedReservation,
+    selectedAt: existingSelectedAt,
+  };
+}
+
+async function markPendingBankTransferInstructionsSent(
+  deps: ServerDependencies,
+  params: {
+    contract: any;
+    incrementCount?: boolean;
+    nowIso: string;
+    reservation: any;
+    updateLastSentAt?: boolean;
+  },
+) {
+  const currentCount = getPaymentInstructionsSentCount(
+    params.contract,
+    params.reservation,
+  );
+  const sentCount = params.incrementCount === false ? currentCount : currentCount + 1;
+  const paymentInstructionsSentAt =
+    getPaymentInstructionsSentAt(params.contract, params.reservation) ??
+    params.nowIso;
+  const lastPaymentInstructionsSentAt =
+    params.updateLastSentAt === false
+      ? getLastPaymentInstructionsSentAt(params.contract, params.reservation) ??
+        paymentInstructionsSentAt
+      : params.nowIso;
+
+  await deps.repositories.reservations.update(params.reservation.id, {
+    metadata: {
+      ...getRecordMetadata(params.reservation),
+      last_payment_instructions_sent_at: lastPaymentInstructionsSentAt,
+      payment_flow_status: "pending_payment",
+      payment_instructions_sent_at: paymentInstructionsSentAt,
+      payment_instructions_sent_count: sentCount,
+    },
+  });
+
+  const updatedContract = await deps.repositories.contracts.update(
+    params.contract.id,
+    {
+      metadata: {
+        ...getRecordMetadata(params.contract),
+        last_payment_instructions_sent_at: lastPaymentInstructionsSentAt,
+        payment_flow_status: "pending_payment",
+        payment_instructions_sent_at: paymentInstructionsSentAt,
+        payment_instructions_sent_count: sentCount,
+      },
+    },
+  );
+
+  const updatedReservation =
+    (await deps.repositories.reservations.findById(params.reservation.id)) ??
+    params.reservation;
+
+  return {
+    contract: updatedContract,
+    reservation: updatedReservation,
+    selectedAt: getPaymentMethodSelectedAt(updatedContract, updatedReservation),
+  };
+}
+
+async function markPendingBankTransferAwaitingInstructions(
+  deps: ServerDependencies,
+  params: {
+    contract: any;
+    reservation: any;
+  },
+) {
+  const updatedContract = await deps.repositories.contracts.update(
+    params.contract.id,
+    {
+      metadata: {
+        ...getRecordMetadata(params.contract),
+        payment_flow_status: "pending_payment_instructions",
+      },
+    },
+  );
+
+  await deps.repositories.reservations.update(params.reservation.id, {
+    metadata: {
+      ...getRecordMetadata(params.reservation),
+      payment_flow_status: "pending_payment_instructions",
+    },
+  });
+
+  const updatedReservation =
+    (await deps.repositories.reservations.findById(params.reservation.id)) ??
+    params.reservation;
+
+  return {
+    contract: updatedContract,
+    reservation: updatedReservation,
+    selectedAt: getPaymentMethodSelectedAt(updatedContract, updatedReservation),
+  };
+}
+
+async function ensurePendingBankTransferForContract(
+  deps: ServerDependencies,
+  params: {
+    contract: any;
+    ctx: any;
+    reservation: any;
+    reservationAmountSource: string;
+    reservationMode: string;
+    signalAmount: number;
+  },
+) {
+  if (!params.ctx.client.email) {
+    throw badRequest(
+      "El cliente no tiene email para enviar las instrucciones de transferencia",
+    );
+  }
+
+  if (!params.contract.contract_supabase_path && !params.contract.contract_drive_file_id) {
+    throw badRequest("El contrato no tiene PDF firmado asociado");
+  }
+
+  const currency = String(
+    params.reservation.currency || params.contract?.metadata?.currency || "eur",
+  )
+    .trim()
+    .toLowerCase();
+  const paymentDeadlineAt =
+    params.reservation.payment_deadline_at ??
+    params.contract?.metadata?.payment_deadline_at ??
+    new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString();
+  const bankAccountIban = resolveInstallationBankIban(
+    params.ctx.installation,
+    deps.env.sapiensBankAccountIban,
+  );
+  const bankBeneficiary = resolveInstallationBankBeneficiary(
+    params.ctx.installation,
+    "Sapiens Energía",
+  );
+  const bankSupportEmail = resolveInstallationContactEmail(
+    params.ctx.installation,
+    deps.env.sapiensContactEmail,
+  );
+  const clientFullName =
+    `${params.ctx.client.nombre} ${params.ctx.client.apellidos}`.trim();
+  const transferConcept = `${clientFullName} - ${params.contract.contract_number}`;
+  const nowIso = new Date().toISOString();
+
+  let synced = await updateContractAndReservationForPendingInstructions(deps, {
+    contract: params.contract,
+    currency,
+    nowIso,
+    paymentDeadlineAt,
+    reservation: params.reservation,
+    reservationAmountSource: params.reservationAmountSource,
+    reservationMode: params.reservationMode,
+    signalAmount: params.signalAmount,
+    transferContext: {
+      bankAccountIban,
+      bankBeneficiary,
+      bankSupportEmail,
+      transferConcept,
+    },
+  });
+
+  const paymentInstructionsSentAt = getPaymentInstructionsSentAt(
+    synced.contract,
+    synced.reservation,
+  );
+
+  if (paymentInstructionsSentAt) {
+    synced = await markPendingBankTransferInstructionsSent(deps, {
+      contract: synced.contract,
+      incrementCount: false,
+      nowIso,
+      reservation: synced.reservation,
+      updateLastSentAt: false,
+    });
+
+    return buildPendingBankTransferResponse({
+      contract: synced.contract,
+      ctx: params.ctx,
+      deps,
+      emailDeliveryStatus: "sent",
+      message:
+        "Contrato firmado correctamente. Ya existían instrucciones de transferencia enviadas para esta reserva.",
+      paymentDeadlineAt,
+      paymentFlowStatus: "pending_payment",
+      reservation: synced.reservation,
+      reservationAmountSource: params.reservationAmountSource,
+      reservationMode: params.reservationMode,
+      signalAmount: params.signalAmount,
+    });
+  }
+
+  try {
+    const precontractFile = params.contract.contract_supabase_path
+      ? await deps.services.documents.downloadFileAsBuffer({
+          bucket: params.contract.contract_supabase_bucket,
+          path: params.contract.contract_supabase_path,
+        })
+      : await deps.services.drive.downloadFileAsBuffer(
+          params.contract.contract_drive_file_id,
+        );
+
+    await deps.services.mail.sendBankTransferReservationEmail({
+      bankAccountIban,
+      bankBeneficiary,
+      bankSupportEmail,
+      clientName: clientFullName,
+      contractNumber: params.contract.contract_number,
+      currency,
+      installationName: params.ctx.installation.nombre_instalacion,
+      language: params.ctx.language,
+      paymentDeadlineAt,
+      precontractPdfBuffer: precontractFile.buffer,
+      precontractPdfFilename:
+        precontractFile.fileName ||
+        `PRECONTRATO_${params.contract.contract_number}.pdf`,
+      reservedKwp: Number(
+        params.reservation.reserved_kwp ?? params.ctx.assignedKwp ?? 0,
+      ),
+      signalAmount: params.signalAmount,
+      to: params.ctx.client.email,
+      transferConcept,
+    });
+
+    synced = await markPendingBankTransferInstructionsSent(deps, {
+      contract: synced.contract,
+      nowIso,
+      reservation: synced.reservation,
+    });
+
+    return buildPendingBankTransferResponse({
+      contract: synced.contract,
+      ctx: params.ctx,
+      deps,
+      emailDeliveryStatus: "sent",
+      message:
+        "Contrato firmado correctamente. Te hemos enviado las instrucciones de transferencia al correo.",
+      paymentDeadlineAt,
+      paymentFlowStatus: "pending_payment",
+      reservation: synced.reservation,
+      reservationAmountSource: params.reservationAmountSource,
+      reservationMode: params.reservationMode,
+      signalAmount: params.signalAmount,
+    });
+  } catch (error: any) {
+    synced = await markPendingBankTransferAwaitingInstructions(deps, {
+      contract: synced.contract,
+      reservation: synced.reservation,
+    });
+
+    return {
+      ...buildPendingBankTransferResponse({
+        contract: synced.contract,
+        ctx: params.ctx,
+        deps,
+        emailDeliveryStatus: "pending_retry",
+        message:
+          "Contrato firmado correctamente, pero no se han podido enviar las instrucciones de transferencia. Volveremos a intentarlo cuando reabras el enlace.",
+        paymentDeadlineAt,
+        paymentFlowStatus: "pending_payment_instructions",
+        reservation: synced.reservation,
+        reservationAmountSource: params.reservationAmountSource,
+        reservationMode: params.reservationMode,
+        signalAmount: params.signalAmount,
+      }),
+      error: error?.message ?? null,
+    };
+  }
+}
+
+async function resolveExistingContractNextStep(
+  deps: ServerDependencies,
+  params: {
+    contract: any;
+    ctx: any;
+    reservation: any | null;
+  },
+) {
+  if (isContractCompleted(params.contract, params.reservation)) {
+    return {
+      alreadySigned: true,
+      contract: {
+        confirmed_at: params.contract.confirmed_at ?? null,
+        contract_number: params.contract.contract_number ?? null,
+        id: params.contract.id,
+        proposal_mode: params.contract.proposal_mode ?? null,
+        signed_at: params.contract.signed_at ?? null,
+        status: params.contract.status ?? null,
+        uploaded_at: params.contract.uploaded_at ?? null,
+      },
+      message: "El pago de esta reserva ya ha sido confirmado.",
+      nextStep: "completed" as ContractNextStep,
+      reservationSummary: params.reservation
+        ? {
+            paymentDeadlineAt: params.reservation.payment_deadline_at ?? null,
+            paymentStatus: params.reservation.payment_status ?? null,
+            reservationStatus: params.reservation.reservation_status ?? null,
+          }
+        : null,
+      success: true,
+    };
+  }
+
+  if (!hasContractBeenSigned(params.contract) && !params.reservation) {
+    return null;
+  }
+
+  const resolvedReservation = resolveReservationAmountForInstallation({
+    assignedKwp: params.ctx.assignedKwp,
+    fallbackAmount:
+      params.reservation?.signal_amount ??
+      params.contract?.metadata?.signal_amount ??
+      deps.env.defaultSignalAmountEur,
+    installation: params.ctx.installation,
+  });
+
+  let reservation = params.reservation;
+
+  if (!reservation) {
+    const paymentDeadlineAt =
+      params.contract?.metadata?.payment_deadline_at ??
+      new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString();
+
+    reservation = await deps.repositories.reservations.createPendingReservation({
+      clientId: params.ctx.client.id,
+      contractId: params.contract.id,
+      installationId: params.ctx.installation.id,
+      notes:
+        "Reserva recuperada desde contrato firmado y pendiente de instrucciones de pago",
+      paymentDeadlineAt,
+      reservedKwp: params.ctx.assignedKwp,
+      studyId: params.ctx.study.id,
+    });
+
+    if (!reservation?.id) {
+      throw internalServerError("No se pudo recuperar la reserva del contrato");
+    }
+  }
+
+  if (
+    ENABLE_PAYMENT_METHOD_SELECTOR &&
+    !getContractPaymentMethod(params.contract, reservation)
+  ) {
+    return {
+      alreadySigned: true,
+      contract: {
+        confirmed_at: params.contract.confirmed_at ?? null,
+        contract_number: params.contract.contract_number ?? null,
+        id: params.contract.id,
+        proposal_mode: params.contract.proposal_mode ?? null,
+        signed_at: params.contract.signed_at ?? null,
+        status: params.contract.status ?? null,
+        uploaded_at: params.contract.uploaded_at ?? null,
+      },
+      message: "El contrato ya está firmado. Selecciona el método de pago para continuar.",
+      nextStep: "select_payment_method" as ContractNextStep,
+      reservationSummary: {
+        paymentDeadlineAt: reservation.payment_deadline_at ?? null,
+        paymentStatus: reservation.payment_status ?? null,
+        reservationStatus: reservation.reservation_status ?? null,
+      },
+      success: true,
+    };
+  }
+
+  const pendingTransfer = await ensurePendingBankTransferForContract(deps, {
+    contract: params.contract,
+    ctx: params.ctx,
+    reservation,
+    reservationAmountSource: resolvedReservation.source,
+    reservationMode: resolvedReservation.reservationMode,
+    signalAmount: resolvedReservation.signalAmount,
+  });
+
+  return {
+    alreadySigned: true,
+    ...pendingTransfer,
+  };
+}
+
 export async function retryContractPaymentUseCase(
   deps: ServerDependencies,
   contractId: string,
@@ -408,6 +973,7 @@ export async function previewProposalAccessUseCase(
       : null,
     installation: {
       availableProposalModes: allowedModes,
+      cantidad_precio_fijo: installation.cantidad_precio_fijo ?? null,
       coste_kwh_inversion: installation.coste_kwh_inversion ?? null,
       coste_kwh_servicio: installation.coste_kwh_servicio ?? null,
       defaultProposalMode: allowedModes[0] ?? "investment",
@@ -416,6 +982,7 @@ export async function previewProposalAccessUseCase(
       id: installation.id,
       modalidad: installation.modalidad,
       nombre_instalacion: installation.nombre_instalacion,
+      pago: installation.pago ?? null,
       porcentaje_autoconsumo: installation.porcentaje_autoconsumo ?? null,
     },
     language,
@@ -518,11 +1085,13 @@ export async function validateProposalAccessUseCase(
       : null,
     installation: {
       availableProposalModes,
+      cantidad_precio_fijo: installation.cantidad_precio_fijo ?? null,
       defaultProposalMode: availableProposalModes[0] ?? "investment",
       direccion: installation.direccion,
       id: installation.id,
       modalidad: installation.modalidad,
       nombre_instalacion: installation.nombre_instalacion,
+      pago: installation.pago ?? null,
     },
     language,
     resumeToken,
@@ -597,6 +1166,29 @@ export async function generateContractFromAccessUseCase(
     installation.modalidad,
   );
 
+  const existingContract = await deps.repositories.contracts.findByStudyId(study.id);
+
+  if (existingContract) {
+    const existingReservation = await deps.repositories.reservations.findByContractId(
+      existingContract.id,
+    );
+    const existingStep = await resolveExistingContractNextStep(deps, {
+      contract: existingContract,
+      ctx: {
+        assignedKwp,
+        client,
+        installation,
+        language: normalizeAppLanguage(study.language),
+        study,
+      },
+      reservation: existingReservation,
+    });
+
+    if (existingStep) {
+      return existingStep;
+    }
+  }
+
   const contract = await getOrCreateGeneratedContract(deps, {
     assignedKwp,
     clientId: client.id,
@@ -611,44 +1203,17 @@ export async function generateContractFromAccessUseCase(
     study,
   });
 
-  const existingReservation = await deps.repositories.reservations.findByContractId(
-    contract.id,
-  );
-
-  const alreadySigned =
-    contract.status !== "generated" ||
-    Boolean(contract.signed_at) ||
-    Boolean(contract.uploaded_at) ||
-    Boolean(existingReservation);
-
-  if (alreadySigned) {
-    return {
-      alreadySigned: true,
-      contract: {
-        confirmed_at: contract.confirmed_at ?? null,
-        contract_number: contract.contract_number,
-        id: contract.id,
-        proposal_mode: contract.proposal_mode,
-        signed_at: contract.signed_at ?? null,
-        status: contract.status,
-        uploaded_at: contract.uploaded_at ?? null,
-      },
-      message: "Este pre-contrato ya fue firmado anteriormente.",
-      reservationSummary: existingReservation
-        ? {
-            paymentDeadlineAt: existingReservation.payment_deadline_at ?? null,
-            paymentStatus: existingReservation.payment_status ?? null,
-            reservationStatus: existingReservation.reservation_status ?? null,
-          }
-        : null,
-      success: false,
-    };
-  }
-
   const language = normalizeAppLanguage(study.language);
+  const commercial = buildContractCommercialSummary({
+    assignedKwp,
+    installation,
+    proposalMode: contract.proposal_mode,
+    study,
+  });
   const previewHtml = buildBasicContractHtml({
     assignedKwp,
     client,
+    commercial,
     contractId: contract.id,
     contractNumber: contract.contract_number,
     installation,
@@ -661,6 +1226,7 @@ export async function generateContractFromAccessUseCase(
     contract,
     preview: {
       assignedKwp,
+      commercial,
       client: {
         apellidos: client.apellidos,
         dni: client.dni,
@@ -687,11 +1253,13 @@ export async function generateContractFromAccessUseCase(
           installation,
           deps.env.sapiensBankAccountIban,
         ),
+        modalidad: installation.modalidad ?? null,
         nombre_instalacion: installation.nombre_instalacion,
         porcentaje_autoconsumo: installation.porcentaje_autoconsumo ?? null,
         potencia_instalada_kwp: installation.potencia_instalada_kwp ?? null,
       },
       proposalMode: contract.proposal_mode,
+      extraConsumption: study?.invoice_data?.extraConsumption ?? null,
     },
     previewHtml,
     success: true,
@@ -728,6 +1296,12 @@ export async function generateContractFromStudyUseCase(
   const previewHtml = buildBasicContractHtml({
     assignedKwp: ctx.assignedKwp,
     client: ctx.client,
+    commercial: buildContractCommercialSummary({
+      assignedKwp: ctx.assignedKwp,
+      installation: ctx.installation,
+      proposalMode: contract.proposal_mode,
+      study: ctx.study,
+    }),
     contractId: contract.id,
     contractNumber: contract.contract_number,
     installation: ctx.installation,
@@ -740,6 +1314,12 @@ export async function generateContractFromStudyUseCase(
     contract,
     preview: {
       assignedKwp: ctx.assignedKwp,
+      commercial: buildContractCommercialSummary({
+        assignedKwp: ctx.assignedKwp,
+        installation: ctx.installation,
+        proposalMode: contract.proposal_mode,
+        study: ctx.study,
+      }),
       client: {
         apellidos: ctx.client.apellidos,
         dni: ctx.client.dni,
@@ -766,11 +1346,13 @@ export async function generateContractFromStudyUseCase(
           ctx.installation,
           deps.env.sapiensBankAccountIban,
         ),
+        modalidad: ctx.installation.modalidad ?? null,
         nombre_instalacion: ctx.installation.nombre_instalacion,
         porcentaje_autoconsumo: ctx.installation.porcentaje_autoconsumo ?? null,
         potencia_instalada_kwp: ctx.installation.potencia_instalada_kwp ?? null,
       },
       proposalMode: contract.proposal_mode,
+      extraConsumption: ctx.study?.invoice_data?.extraConsumption ?? null,
     },
     previewHtml,
     success: true,
@@ -809,7 +1391,22 @@ export async function signContractUseCase(
     throw notFound("Contrato no encontrado", "El contrato no existe");
   }
 
-  if (contract.status !== "generated") {
+  const ctx = await getContractContextFromStudy(deps, contract.study_id);
+  const existingReservation = await deps.repositories.reservations.findByContractId(
+    contract.id,
+  );
+
+  if (contract.status !== "generated" || existingReservation) {
+    const existingStep = await resolveExistingContractNextStep(deps, {
+      contract,
+      ctx,
+      reservation: existingReservation,
+    });
+
+    if (existingStep) {
+      return existingStep;
+    }
+
     return {
       alreadySigned: true,
       contract: {
@@ -822,36 +1419,6 @@ export async function signContractUseCase(
     };
   }
 
-  const existingReservation = await deps.repositories.reservations.findByContractId(
-    contract.id,
-  );
-
-  if (existingReservation) {
-    return {
-      alreadySigned: true,
-      contract: {
-        contract_number: contract.contract_number,
-        id: contract.id,
-        status: contract.status,
-      },
-      error: "Este pre-contrato ya tiene una reserva asociada",
-      message: "Este pre-contrato ya fue firmado anteriormente",
-      reservationSummary: {
-        currency: existingReservation.currency ?? null,
-        paymentDeadlineAt: existingReservation.payment_deadline_at ?? null,
-        paymentStatus: existingReservation.payment_status ?? null,
-        reservationId: existingReservation.id,
-        reservationMode:
-          (existingReservation.metadata as any)?.reservation_mode ?? null,
-        reservationStatus: existingReservation.reservation_status ?? null,
-        signalAmount: existingReservation.signal_amount ?? null,
-        stripeCheckoutSessionId:
-          existingReservation.stripe_checkout_session_id ?? null,
-      },
-    };
-  }
-
-  const ctx = await getContractContextFromStudy(deps, contract.study_id);
   const uploadedContract = await deps.services.documents.uploadClientDocument({
     apellidos: ctx.client.apellidos,
     buffer: params.signedContractFile.buffer,
@@ -882,6 +1449,7 @@ export async function signContractUseCase(
     deps.env.sapiensBankAccountIban,
   );
   const currency = String(params.currency || "eur").trim().toLowerCase();
+  const nowIso = new Date().toISOString();
 
   const reservation = await deps.repositories.reservations.createPendingReservation(
     {
@@ -889,7 +1457,7 @@ export async function signContractUseCase(
       contractId: contract.id,
       installationId: ctx.installation.id,
       notes:
-        "Reserva creada tras firma del pre-contrato y pendiente de selección de método de pago",
+        "Reserva creada tras firma del pre-contrato y pendiente de transferencia bancaria",
       paymentDeadlineAt,
       reservedKwp: ctx.assignedKwp,
       studyId: ctx.study.id,
@@ -899,21 +1467,6 @@ export async function signContractUseCase(
   if (!reservation?.id) {
     throw internalServerError("La reserva se creó pero no devolvió id");
   }
-
-  await deps.repositories.reservations.update(reservation.id, {
-    currency,
-    metadata: {
-      installation_iban_aportaciones: bankAccountIban,
-      payment_method: null,
-      payment_method_selected_at: null,
-      payment_options_available: ["stripe", "bank_transfer"],
-      reservation_amount_source: reservationAmountSource,
-      reservation_mode: reservationMode,
-    },
-    signal_amount: signalAmount,
-  });
-
-  const nowIso = new Date().toISOString();
   const updatedContract = await deps.repositories.contracts.update(contract.id, {
     contract_supabase_bucket: uploadedContract.bucket,
     contract_supabase_path: uploadedContract.path,
@@ -926,9 +1479,13 @@ export async function signContractUseCase(
       currency,
       installation_iban_aportaciones: bankAccountIban,
       payment_deadline_at: paymentDeadlineAt,
-      payment_method: null,
+      payment_flow_status: "pending_payment_instructions",
+      payment_method: ENABLE_PAYMENT_METHOD_SELECTOR ? null : "bank_transfer",
+      payment_method_selected_at: ENABLE_PAYMENT_METHOD_SELECTOR ? null : nowIso,
       payment_status: "pending",
-      payment_step: "pending_method_selection",
+      payment_step: ENABLE_PAYMENT_METHOD_SELECTOR
+        ? "pending_method_selection"
+        : "awaiting_bank_transfer",
       reservation_amount_source: reservationAmountSource,
       reservation_created: true,
       reservation_id: reservation.id,
@@ -937,12 +1494,79 @@ export async function signContractUseCase(
       signal_amount: signalAmount,
     },
     signed_at: nowIso,
-    status: "uploaded",
+    status: "signed",
     uploaded_at: nowIso,
   });
 
-  return {
+  if (ENABLE_PAYMENT_METHOD_SELECTOR) {
+    await deps.repositories.reservations.update(reservation.id, {
+      currency,
+      metadata: {
+        installation_iban_aportaciones: bankAccountIban,
+        payment_flow_status: "pending_method_selection",
+        payment_method: null,
+        payment_method_selected_at: null,
+        payment_options_available: ["stripe", "bank_transfer"],
+        reservation_amount_source: reservationAmountSource,
+        reservation_mode: reservationMode,
+      },
+      signal_amount: signalAmount,
+    });
+
+    return {
+      contract: updatedContract,
+      drive: {
+        contractFileUrl: null,
+        contractFolderUrl: null,
+        contractsRootFolderUrl: null,
+      },
+      storage: {
+        bucket: uploadedContract.bucket,
+        contractPath: uploadedContract.path,
+        folderPath: uploadedContract.folderPath,
+      },
+      message:
+        "Pre-contrato firmado y reserva creada correctamente. Ahora el cliente debe seleccionar la forma de pago.",
+      payment: {
+        availableMethods: [
+          {
+            id: "bank_transfer",
+            label: "Transferencia bancaria",
+          },
+          {
+            id: "stripe",
+            label: "Tarjeta",
+          },
+        ],
+        step: "select_method",
+      },
+      reservation: {
+        currency,
+        id: reservation.id,
+        installationName: ctx.installation.nombre_instalacion,
+        paymentDeadlineAt,
+        paymentStatus: "pending",
+        reservationAmountSource,
+        reservationMode,
+        reservationStatus: "pending_payment",
+        reservedKwp: ctx.assignedKwp,
+        signalAmount,
+      },
+      success: true,
+    };
+  }
+
+  const pendingTransfer = await ensurePendingBankTransferForContract(deps, {
     contract: updatedContract,
+    ctx,
+    reservation,
+    reservationAmountSource,
+    reservationMode,
+    signalAmount,
+  });
+
+  return {
+    ...pendingTransfer,
     drive: {
       contractFileUrl: null,
       contractFolderUrl: null,
@@ -953,34 +1577,6 @@ export async function signContractUseCase(
       contractPath: uploadedContract.path,
       folderPath: uploadedContract.folderPath,
     },
-    message:
-      "Pre-contrato firmado y reserva creada correctamente. Ahora el cliente debe seleccionar la forma de pago.",
-    payment: {
-      availableMethods: [
-        {
-          id: "bank_transfer",
-          label: "Transferencia bancaria",
-        },
-        {
-          id: "stripe",
-          label: "Tarjeta",
-        },
-      ],
-      step: "select_method",
-    },
-    reservation: {
-      currency,
-      id: reservation.id,
-      installationName: ctx.installation.nombre_instalacion,
-      paymentDeadlineAt,
-      paymentStatus: "pending",
-      reservationAmountSource,
-      reservationMode,
-      reservationStatus: "pending_payment",
-      reservedKwp: ctx.assignedKwp,
-      signalAmount,
-    },
-    success: true,
   };
 }
 
@@ -1090,129 +1686,12 @@ export async function startBankTransferPaymentUseCase(
     signalAmount,
   } = await buildPaymentSelectionContext(deps, contractId);
 
-  if (!ctx.client.email) {
-    throw badRequest(
-      "El cliente no tiene email para enviar las instrucciones de transferencia",
-    );
-  }
-
-  if (!contract.contract_supabase_path && !contract.contract_drive_file_id) {
-    throw badRequest("El contrato no tiene PDF firmado asociado");
-  }
-
-  const bankAccountIban = resolveInstallationBankIban(
-    ctx.installation,
-    deps.env.sapiensBankAccountIban,
-  );
-  const bankBeneficiary = resolveInstallationBankBeneficiary(
-    ctx.installation,
-    "Sapiens Energía",
-  );
-  const bankSupportEmail = resolveInstallationContactEmail(
-    ctx.installation,
-    deps.env.sapiensContactEmail,
-  );
-  const currency = String(
-    reservation.currency || contract?.metadata?.currency || "eur",
-  )
-    .trim()
-    .toLowerCase();
-  const paymentDeadlineAt =
-    reservation.payment_deadline_at ??
-    new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString();
-  const precontractFile = contract.contract_supabase_path
-    ? await deps.services.documents.downloadFileAsBuffer({
-        bucket: contract.contract_supabase_bucket,
-        path: contract.contract_supabase_path,
-      })
-    : await deps.services.drive.downloadFileAsBuffer(
-        contract.contract_drive_file_id,
-      );
-  const clientFullName = `${ctx.client.nombre} ${ctx.client.apellidos}`.trim();
-  const transferConcept = `${clientFullName} - ${contract.contract_number}`;
-  const nowIso = new Date().toISOString();
-
-  await deps.services.mail.sendBankTransferReservationEmail({
-    bankAccountIban,
-    bankBeneficiary,
-    bankSupportEmail,
-    clientName: `${ctx.client.nombre} ${ctx.client.apellidos}`.trim(),
-    contractNumber: contract.contract_number,
-    currency,
-    installationName: ctx.installation.nombre_instalacion,
-    language: ctx.language,
-    paymentDeadlineAt,
-    precontractPdfBuffer: precontractFile.buffer,
-    precontractPdfFilename:
-      precontractFile.fileName || `PRECONTRATO_${contract.contract_number}.pdf`,
-    reservedKwp: Number(reservation.reserved_kwp ?? ctx.assignedKwp ?? 0),
+  return ensurePendingBankTransferForContract(deps, {
+    contract,
+    ctx,
+    reservation,
+    reservationAmountSource,
+    reservationMode,
     signalAmount,
-    to: ctx.client.email,
-    transferConcept,
   });
-
-  await deps.repositories.reservations.update(reservation.id, {
-    currency,
-    metadata: {
-      ...(reservation.metadata ?? {}),
-      bank_account_iban: bankAccountIban,
-      bank_beneficiary: bankBeneficiary,
-      bank_support_email: bankSupportEmail,
-      bank_transfer_email_sent_at: nowIso,
-      payment_method: "bank_transfer",
-      payment_method_selected_at: nowIso,
-      reservation_amount_source: reservationAmountSource,
-      reservation_mode: reservationMode,
-      transfer_concept: transferConcept,
-    },
-    signal_amount: signalAmount,
-  });
-
-  const updatedContract = await deps.repositories.contracts.update(contract.id, {
-    metadata: {
-      ...(contract.metadata ?? {}),
-      bank_account_iban: bankAccountIban,
-      bank_beneficiary: bankBeneficiary,
-      bank_support_email: bankSupportEmail,
-      bank_transfer_email_sent_at: nowIso,
-      currency,
-      payment_method: "bank_transfer",
-      payment_method_selected_at: nowIso,
-      payment_step: "awaiting_bank_transfer",
-      reservation_amount_source: reservationAmountSource,
-      reservation_mode: reservationMode,
-      signal_amount: signalAmount,
-      transfer_concept: transferConcept,
-    },
-  });
-
-  return {
-    bankTransfer: {
-      beneficiary: bankBeneficiary,
-      concept: transferConcept,
-      emailSentTo: ctx.client.email,
-      iban: bankAccountIban,
-      paymentDeadlineAt,
-      supportEmail: bankSupportEmail,
-    },
-    contract: {
-      contractNumber: updatedContract.contract_number,
-      id: updatedContract.id,
-      status: updatedContract.status,
-    },
-    message:
-      "Método de pago seleccionado correctamente. Se ha enviado un email con las instrucciones de transferencia bancaria.",
-    reservation: {
-      currency,
-      id: reservation.id,
-      paymentDeadlineAt,
-      paymentMethod: "bank_transfer",
-      paymentStatus: reservation.payment_status ?? "pending",
-      reservationAmountSource,
-      reservationMode,
-      reservationStatus: reservation.reservation_status ?? "pending_payment",
-      signalAmount,
-    },
-    success: true,
-  };
 }

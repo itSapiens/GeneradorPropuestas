@@ -1,13 +1,24 @@
 import {
+  fillTranslationTemplate,
+  formatCurrencyByLanguage,
   getContractTexts,
   getLocaleFromLanguage,
   getProposalModeLabel,
   type AppLanguage,
 } from "./contractLocalization";
+import type { ContractCommercialSummary } from "./contractCommercial";
+
+function formatNumber(value: number, language: AppLanguage, digits = 2) {
+  return new Intl.NumberFormat(getLocaleFromLanguage(language), {
+    maximumFractionDigits: digits,
+    minimumFractionDigits: digits,
+  }).format(value);
+}
 
 export function buildBasicContractHtml(params: {
   assignedKwp: number;
   client: any;
+  commercial: ContractCommercialSummary;
   contractId: string;
   contractNumber: string;
   installation: any;
@@ -26,6 +37,60 @@ export function buildBasicContractHtml(params: {
   const signedDate = new Date().toLocaleDateString(
     getLocaleFromLanguage(params.language),
   );
+  const selectedPrice =
+    params.commercial.selectedPrice !== null
+      ? formatCurrencyByLanguage(
+          params.commercial.selectedPrice,
+          "EUR",
+          params.language,
+        )
+      : "-";
+  const reservationAmount = formatCurrencyByLanguage(
+    params.commercial.reservationAmount,
+    "EUR",
+    params.language,
+  );
+  const annualMaintenance =
+    params.commercial.annualMaintenance > 0
+      ? formatCurrencyByLanguage(
+          params.commercial.annualMaintenance,
+          "EUR",
+          params.language,
+        )
+      : formatCurrencyByLanguage(0, "EUR", params.language);
+  const investmentPrice =
+    params.commercial.investmentPrice !== null
+      ? formatCurrencyByLanguage(
+          params.commercial.investmentPrice,
+          "EUR",
+          params.language,
+        )
+      : "-";
+  const serviceMonthlyFee =
+    params.commercial.serviceMonthlyFee !== null
+      ? formatCurrencyByLanguage(
+          params.commercial.serviceMonthlyFee,
+          "EUR",
+          params.language,
+        )
+      : "-";
+  const selectedPriceSuffix =
+    params.commercial.selectedPriceUnit === "monthly"
+      ? texts.perMonth
+      : texts.oneTimePayment;
+  const availableModes = params.commercial.availableModes
+    .map((mode) => getProposalModeLabel(mode, params.language))
+    .join(" · ");
+  const reservationHelp =
+    params.commercial.reservationMode === "fija"
+      ? texts.fixedReservationAmount
+      : texts.reservationByAssignedPower;
+  const annualMaintenanceHelp = fillTranslationTemplate(
+    texts.overAssignedPower,
+    {
+      value: formatNumber(params.assignedKwp, params.language),
+    },
+  );
 
   return `
     <!doctype html>
@@ -34,11 +99,25 @@ export function buildBasicContractHtml(params: {
         <meta charset="UTF-8" />
         <title>${texts.title} ${params.contractNumber}</title>
         <style>
+          @page { size: A4; margin: 0; }
+          * { box-sizing: border-box; }
+          html, body {
+            margin: 0;
+            padding: 0;
+            background: #eef2ff;
+          }
           body {
             font-family: Arial, sans-serif;
             color: #111827;
-            padding: 40px;
             line-height: 1.6;
+          }
+          .page {
+            width: 100%;
+            max-width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            padding: 16mm;
+            background: #ffffff;
           }
           .title {
             font-size: 28px;
@@ -50,6 +129,35 @@ export function buildBasicContractHtml(params: {
             font-size: 14px;
             color: #6b7280;
             margin-bottom: 32px;
+          }
+          .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 20px;
+          }
+          .metric {
+            border: 1px solid #dbeafe;
+            border-radius: 16px;
+            padding: 16px 18px;
+            background: #f8fbff;
+          }
+          .metric-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #6b7280;
+            margin-bottom: 6px;
+          }
+          .metric-value {
+            font-size: 21px;
+            font-weight: 700;
+            color: #07005f;
+          }
+          .metric-help {
+            font-size: 12px;
+            color: #4b5563;
+            margin-top: 6px;
           }
           .box {
             border: 1px solid #e5e7eb;
@@ -76,10 +184,41 @@ export function buildBasicContractHtml(params: {
         </style>
       </head>
       <body>
+        <main class="page">
         <div class="title">${texts.title}</div>
         <div class="subtitle">${texts.contractNumber} ${
           params.contractNumber
         } · ${texts.date} ${signedDate}</div>
+
+        <div class="summary-grid">
+          <div class="metric">
+            <div class="metric-label">${texts.selectedMode}</div>
+            <div class="metric-value">${getProposalModeLabel(
+              params.proposalMode,
+              params.language,
+            )}</div>
+            <div class="metric-help">${texts.availableModes}: ${availableModes}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">${
+              params.proposalMode === "service"
+                ? texts.selectedServicePrice
+                : texts.selectedInvestmentPrice
+            }</div>
+            <div class="metric-value">${selectedPrice}</div>
+            <div class="metric-help">${selectedPriceSuffix}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">${texts.reservation}</div>
+            <div class="metric-value">${reservationAmount}</div>
+            <div class="metric-help">${reservationHelp}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">${texts.annualMaintenance}</div>
+            <div class="metric-value">${annualMaintenance}</div>
+            <div class="metric-help">${annualMaintenanceHelp}</div>
+          </div>
+        </div>
 
         <div class="box">
           <h3>${texts.clientData}</h3>
@@ -111,19 +250,20 @@ export function buildBasicContractHtml(params: {
             params.language,
           )}</p>
           <p><strong>${texts.assignedKwp}:</strong> ${params.assignedKwp ?? "-"}</p>
-          <p><strong>Potencia instalada:</strong> ${
-            params.installation.potencia_instalada_kwp ?? "-"
-          } kWp</p>
-          <p><strong>Batería:</strong> ${
-            params.installation.almacenamiento_kwh ?? "-"
-          } kWh</p>
-          <p><strong>Horas efectivas:</strong> ${
-            params.installation.horas_efectivas ?? "-"
-          } h/año</p>
-          <p><strong>Autoconsumo estimado:</strong> ${
-            params.installation.porcentaje_autoconsumo ?? "-"
-          }%</p>
+          ${params.commercial.availableModes.includes("investment") ? `<p><strong>${texts.investmentPrice}:</strong> ${investmentPrice}</p>` : ""}
+          ${params.commercial.availableModes.includes("service") ? `<p><strong>${texts.servicePrice}:</strong> ${serviceMonthlyFee}${serviceMonthlyFee !== "-" ? ` ${texts.perMonth}` : ""}</p>` : ""}
+          <p><strong>${texts.reservation}:</strong> ${reservationAmount}</p>
+          <p><strong>${texts.annualMaintenance}:</strong> ${annualMaintenance}</p>
         </div>
+
+        ${(() => {
+          const ec = params.study?.invoice_data?.extraConsumption;
+          if (!ec || (!ec.hvac && !ec.ev)) return "";
+          const items: string[] = [];
+          if (ec.ev) items.push(`${texts.extraConsumptionEv}${ec.evAnnualKm ? ` (${ec.evAnnualKm} ${texts.extraConsumptionEvKm})` : ""}`);
+          if (ec.hvac) items.push(`${texts.extraConsumptionHvac}${ec.hvacSquareMeters ? ` (${ec.hvacSquareMeters} ${texts.extraConsumptionHvacM2})` : ""}`);
+          return `<div class="box"><h3>${texts.extraConsumption}</h3><p>${items.join(", ")}</p></div>`;
+        })()}
 
         <div class="box">
           <h3>${texts.basicConditions}</h3>
@@ -143,6 +283,7 @@ export function buildBasicContractHtml(params: {
           <p><strong>${texts.clientSignature}:</strong></p>
           <div style="height: 80px;"></div>
         </div>
+        </main>
       </body>
     </html>
   `;

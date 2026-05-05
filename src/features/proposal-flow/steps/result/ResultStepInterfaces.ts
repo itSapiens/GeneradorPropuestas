@@ -16,13 +16,29 @@ export interface Proposal {
 }
 
 export interface SignedReservation {
+  currency?: string;
+  id?: string;
+  paymentDeadlineAt?: string;
   reservedKwp: number;
   installationName: string;
   paymentStatus: string;
+  reservationStatus?: string;
   signalAmount: number;
 }
 
 export interface SignedContractResult {
+  bankTransfer?: {
+    beneficiary: string;
+    concept: string;
+    emailSentTo: string | null;
+    iban: string;
+    paymentDeadlineAt: string;
+    supportEmail: string;
+  } | null;
+  emailDeliveryStatus?: "sent" | "pending_retry";
+  message?: string;
+  nextStep?: "sign_contract" | "select_payment_method" | "pending_bank_transfer" | "completed";
+  paymentFlowStatus?: string | null;
   reservation?: SignedReservation;
 }
 

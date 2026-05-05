@@ -36,7 +36,7 @@ export default function LanguageSwitcher() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="fixed top-8 right-6 z-[101]">
+    <div className="fixed top-12 md:top-10 right-6 z-[101]">
       <div className="relative">
         <button
           type="button"

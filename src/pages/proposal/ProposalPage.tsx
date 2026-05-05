@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Icon } from "@iconify/react";
 import { sileo } from "sileo";
+import { ENABLE_PAYMENT_METHOD_SELECTOR } from "@/src/features/contract-flow/lib/paymentFlow.constants";
 
 type ProposalMode = "investment" | "service";
 type PaymentMethodId = "stripe" | "bank_transfer";
@@ -24,6 +25,17 @@ type ContractPreviewData = {
   contractNumber: string;
   proposalMode: ProposalMode;
   assignedKwp: number;
+  commercial: {
+    annualMaintenance: number;
+    availableModes: ProposalMode[];
+    investmentPrice: number | null;
+    reservationAmount: number;
+    reservationMode: "fija" | "segun_potencia";
+    selectedMode: ProposalMode;
+    selectedPrice: number | null;
+    selectedPriceUnit: "one_time" | "monthly";
+    serviceMonthlyFee: number | null;
+  };
   client: {
     id: string;
     nombre: string;
@@ -36,6 +48,7 @@ type ContractPreviewData = {
     id: string;
     nombre_instalacion: string;
     direccion: string;
+    modalidad?: "inversion" | "servicio" | "ambas" | null;
     empresa?: {
       id?: string | null;
       nombre?: string | null;
@@ -72,17 +85,39 @@ type AlreadySignedContractAccessResponse = {
     uploaded_at?: string | null;
   };
   message: string;
+  nextStep?: "sign_contract" | "select_payment_method" | "pending_bank_transfer" | "completed";
+  emailDeliveryStatus?: "sent" | "pending_retry";
+  bankTransfer?: {
+    iban: string;
+    beneficiary: string;
+    concept: string;
+    paymentDeadlineAt: string;
+    emailSentTo: string | null;
+    supportEmail: string;
+  } | null;
+  reservation?: {
+    id: string;
+    reservationStatus: string;
+    paymentStatus: string;
+    paymentDeadlineAt: string;
+    signalAmount: number;
+    currency: string;
+    installationName: string;
+    reservedKwp: number;
+  };
   reservationSummary?: {
     paymentDeadlineAt?: string | null;
     paymentStatus?: string | null;
     reservationStatus?: string | null;
   } | null;
-  success: false;
+  success: boolean;
 };
 
 type SignedContractResponse = {
   success: boolean;
   message: string;
+  nextStep?: "sign_contract" | "select_payment_method" | "pending_bank_transfer" | "completed";
+  emailDeliveryStatus?: "sent" | "pending_retry";
   contract: {
     id: string;
     status: string;
@@ -97,6 +132,14 @@ type SignedContractResponse = {
     installationName: string;
     reservedKwp: number;
   };
+  bankTransfer?: {
+    iban: string;
+    beneficiary: string;
+    concept: string;
+    paymentDeadlineAt: string;
+    emailSentTo: string | null;
+    supportEmail: string;
+  } | null;
   payment?: {
     step: "select_method";
     availableMethods: {
@@ -435,7 +478,17 @@ export default function ContratacionDesdePropuestaPage() {
         );
 
         if ((data as AlreadySignedContractAccessResponse)?.alreadySigned) {
-          setAlreadySignedContract(data as AlreadySignedContractAccessResponse);
+          if (
+            (data as AlreadySignedContractAccessResponse).nextStep ===
+              "pending_bank_transfer" &&
+            (data as AlreadySignedContractAccessResponse).reservation
+          ) {
+            setSignedContractResult(
+              data as unknown as SignedContractResponse,
+            );
+          } else {
+            setAlreadySignedContract(data as AlreadySignedContractAccessResponse);
+          }
           return;
         }
 
@@ -508,6 +561,15 @@ export default function ContratacionDesdePropuestaPage() {
     effectiveMode === "investment"
       ? t("result.modes.investment", "Inversión")
       : t("result.modes.service", "Servicio");
+  const commercial = generatedContract?.preview?.commercial ?? null;
+  const availableModesLabel =
+    commercial?.availableModes
+      ?.map((mode) =>
+        mode === "service"
+          ? t("result.modes.service", "Servicio")
+          : t("result.modes.investment", "Inversión"),
+      )
+      .join(" · ") ?? modeLabel;
 
   const handleSubmitSignedContract = async () => {
     if (!generatedContract?.contract?.id || !generatedContract?.preview) {
@@ -564,18 +626,31 @@ export default function ContratacionDesdePropuestaPage() {
 
       setSignedContractResult(response.data);
       clearSignature();
-      setIsPaymentMethodModalOpen(true);
+      setIsPaymentMethodModalOpen(ENABLE_PAYMENT_METHOD_SELECTOR);
 
-      sileo.success({
-        title: t(
-          "contractFlow.toasts.signedSuccessTitle",
-          "Precontrato firmado correctamente",
-        ),
-        description: t(
-          "contractFlow.toasts.signedSuccessDescription",
-          "Ahora debes seleccionar la forma de pago para continuar con la reserva.",
-        ),
-      });
+      if (response.data.nextStep === "pending_bank_transfer") {
+        sileo.success({
+          title: t(
+            "contractFlow.toasts.signedSuccessTitle",
+            "Contrato firmado correctamente",
+          ),
+          description:
+            response.data.emailDeliveryStatus === "pending_retry"
+              ? "La reserva ya está creada. Reintentaremos el envío de instrucciones de transferencia cuando vuelvas a entrar."
+              : "Te hemos enviado las instrucciones de transferencia al correo. El pago queda pendiente de confirmación.",
+        });
+      } else {
+        sileo.success({
+          title: t(
+            "contractFlow.toasts.signedSuccessTitle",
+            "Precontrato firmado correctamente",
+          ),
+          description: t(
+            "contractFlow.toasts.signedSuccessDescription",
+            "Ahora debes seleccionar la forma de pago para continuar con la reserva.",
+          ),
+        });
+      }
     } catch (error: any) {
       console.error("Error firmando contrato:", error);
       console.error("status:", error?.response?.status);
@@ -791,6 +866,97 @@ export default function ContratacionDesdePropuestaPage() {
   }
 
   if (!generatedContract) {
+    if (signedContractResult?.reservation) {
+      return (
+        <div className="min-h-screen bg-slate-50 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(87,217,211,0.16),transparent_30%),radial-gradient(circle_at_top_right,rgba(148,194,255,0.18),transparent_28%),linear-gradient(to_bottom,rgba(7,0,95,0.02),rgba(7,0,95,0.01))]" />
+          <div className="relative z-10 min-h-screen px-4 py-8 md:px-8 md:py-10">
+            <div className="mx-auto max-w-4xl rounded-[2.5rem] border border-brand-navy/5 bg-[#F8FAFC] p-8 shadow-2xl shadow-brand-navy/5">
+              <div className="rounded-[1.8rem] border border-emerald-200 bg-emerald-50 p-6">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">
+                  {t("contractFlow.banner.title", "Contrato firmado")}
+                </p>
+                <h1 className="mt-3 text-3xl font-black text-brand-navy">
+                  Contrato firmado correctamente
+                </h1>
+                <p className="mt-3 text-sm leading-6 text-brand-gray">
+                  {signedContractResult.message ||
+                    "Te hemos enviado por email las instrucciones para realizar la transferencia bancaria. El pago está pendiente de confirmación."}
+                </p>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="rounded-[1.6rem] border border-brand-navy/5 bg-brand-navy/[0.02] p-5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+                    Instalación
+                  </p>
+                  <p className="mt-2 text-sm font-bold text-brand-navy">
+                    {signedContractResult.reservation.installationName}
+                  </p>
+                </div>
+                <div className="rounded-[1.6rem] border border-brand-navy/5 bg-brand-navy/[0.02] p-5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+                    Estado
+                  </p>
+                  <p className="mt-2 text-sm font-bold text-brand-navy">
+                    {signedContractResult.emailDeliveryStatus === "pending_retry"
+                      ? "Pendiente de reenvío de instrucciones"
+                      : "Pago pendiente de confirmación"}
+                  </p>
+                </div>
+                <div className="rounded-[1.6rem] border border-brand-navy/5 bg-brand-navy/[0.02] p-5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+                    Importe de reserva
+                  </p>
+                  <p className="mt-2 text-sm font-bold text-brand-navy">
+                    {formatCurrencyByLanguage(
+                      signedContractResult.reservation.signalAmount,
+                      signedContractResult.reservation.currency || "EUR",
+                    )}
+                  </p>
+                </div>
+                <div className="rounded-[1.6rem] border border-brand-navy/5 bg-brand-navy/[0.02] p-5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+                    Referencia
+                  </p>
+                  <p className="mt-2 text-sm font-bold text-brand-navy">
+                    {signedContractResult.bankTransfer?.concept || "-"}
+                  </p>
+                </div>
+                <div className="rounded-[1.6rem] border border-brand-navy/5 bg-brand-navy/[0.02] p-5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+                    Email
+                  </p>
+                  <p className="mt-2 text-sm font-bold text-brand-navy">
+                    {signedContractResult.bankTransfer?.emailSentTo || "-"}
+                  </p>
+                </div>
+                <div className="rounded-[1.6rem] border border-brand-navy/5 bg-brand-navy/[0.02] p-5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-navy/45">
+                    Fecha límite
+                  </p>
+                  <p className="mt-2 text-sm font-bold text-brand-navy">
+                    {new Date(
+                      signedContractResult.reservation.paymentDeadlineAt,
+                    ).toLocaleDateString(locale)}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={goHome}
+                className="mt-8 inline-flex items-center gap-2 rounded-[1.2rem] brand-gradient px-5 py-4 text-sm font-bold text-brand-navy shadow-lg shadow-brand-mint/15"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                {t("contractFlow.leftPanel.backHome", "Volver al inicio")}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     if (alreadySignedContract) {
       const signedMode =
         alreadySignedContract.contract.proposal_mode === "service"
@@ -1021,7 +1187,7 @@ export default function ContratacionDesdePropuestaPage() {
                         "Vista previa del contrato",
                       )}
                       srcDoc={generatedContract.previewHtml}
-                      className="w-full h-[360px] sm:h-[460px] md:h-[620px] bg-[#F8FAFC]"
+                      className="w-full h-[420px] sm:h-[560px] md:h-[780px] bg-[#F8FAFC]"
                     />
                   </div>
                 </div>
@@ -1042,6 +1208,71 @@ export default function ContratacionDesdePropuestaPage() {
                       {t("contractFlow.contractCard.dni", "DNI")}:{" "}
                       {generatedContract.preview.client.dni}
                     </p>
+                  </div>
+
+                  <div className="rounded-[1.4rem] bg-[#F8FAFC] border border-brand-navy/5 p-4">
+                    <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-brand-navy/40 mb-3">
+                      Resumen económico
+                    </p>
+
+                    <div className="space-y-2 text-sm text-brand-navy/80">
+                      <p>
+                        <span className="font-bold text-brand-navy">
+                          Modalidades disponibles:
+                        </span>{" "}
+                        {availableModesLabel}
+                      </p>
+                      <p>
+                        <span className="font-bold text-brand-navy">
+                          {commercial?.selectedMode === "service"
+                            ? "Precio del servicio:"
+                            : "Precio de la inversión:"}
+                        </span>{" "}
+                        {commercial?.selectedPrice != null
+                          ? formatCurrencyByLanguage(commercial.selectedPrice)
+                          : "-"}{" "}
+                        {commercial?.selectedPriceUnit === "monthly"
+                          ? "/ mes"
+                          : commercial?.selectedPrice != null
+                            ? "pago único"
+                            : ""}
+                      </p>
+                      <p>
+                        <span className="font-bold text-brand-navy">
+                          Reserva:
+                        </span>{" "}
+                        {formatCurrencyByLanguage(
+                          commercial?.reservationAmount ?? 0,
+                        )}
+                      </p>
+                      <p>
+                        <span className="font-bold text-brand-navy">
+                          Mantenimiento anual:
+                        </span>{" "}
+                        {formatCurrencyByLanguage(
+                          commercial?.annualMaintenance ?? 0,
+                        )}
+                      </p>
+                      {commercial?.availableModes?.includes("investment") && commercial?.investmentPrice != null ? (
+                        <p>
+                          <span className="font-bold text-brand-navy">
+                            Inversión:
+                          </span>{" "}
+                          {formatCurrencyByLanguage(commercial.investmentPrice)}
+                        </p>
+                      ) : null}
+                      {commercial?.availableModes?.includes("service") && commercial?.serviceMonthlyFee != null ? (
+                        <p>
+                          <span className="font-bold text-brand-navy">
+                            Servicio:
+                          </span>{" "}
+                          {formatCurrencyByLanguage(
+                            commercial.serviceMonthlyFee,
+                          )}{" "}
+                          / mes
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
 
                   <div className="rounded-[1.4rem] bg-[#F8FAFC] border border-brand-navy/5 p-4">
@@ -1076,7 +1307,7 @@ export default function ContratacionDesdePropuestaPage() {
                     <p className="text-xs text-brand-gray mt-3 leading-relaxed">
                       {t(
                         "contractFlow.signature.help",
-                        "Firma dentro del recuadro. Al confirmar, se generará el PDF firmado, se creará la reserva provisional y podrás elegir la forma de pago.",
+                        "Firma dentro del recuadro. Al confirmar, se generará el PDF firmado, se creará la reserva provisional y se enviarán las instrucciones de transferencia bancaria.",
                       )}
                     </p>
                   </div>
@@ -1104,6 +1335,20 @@ export default function ContratacionDesdePropuestaPage() {
                         },
                       )}
                     </p>
+
+                    <div className="mt-3 pt-3 border-t border-brand-mint/30 flex items-center justify-between">
+                      <p className="text-sm font-bold text-brand-navy/70">
+                        {t(
+                          "contractFlow.reservation.signalLabel",
+                          "Pago de reserva",
+                        )}
+                      </p>
+                      <p className="text-lg font-bold text-brand-navy">
+                        {formatCurrencyByLanguage(
+                          commercial?.reservationAmount ?? 0,
+                        )}
+                      </p>
+                    </div>
                   </div>
 
                   <div className="space-y-3">
@@ -1161,7 +1406,9 @@ export default function ContratacionDesdePropuestaPage() {
         </div>
       </div>
 
-      {isPaymentMethodModalOpen && signedContractResult?.reservation ? (
+      {ENABLE_PAYMENT_METHOD_SELECTOR &&
+      isPaymentMethodModalOpen &&
+      signedContractResult?.reservation ? (
         <div className="fixed inset-0 z-[210] bg-brand-navy/50 backdrop-blur-sm overflow-y-auto">
           <div className="min-h-full px-4 py-4 md:px-8 md:py-8 flex items-start md:items-center justify-center">
             <div className="w-full max-w-3xl rounded-[2rem] md:rounded-[2.5rem] bg-[#F8FAFC] border border-brand-navy/5 shadow-2xl overflow-hidden">
@@ -1266,32 +1513,6 @@ export default function ContratacionDesdePropuestaPage() {
                     </p>
                   </button>
 
-                  {/* <button
-                    type="button"
-                    onClick={handleSelectStripePayment}
-                    disabled={isSelectingPaymentMethod}
-                    className="rounded-[1.5rem] border border-brand-mint/20 bg-brand-mint/10 p-6 text-left shadow-sm hover:shadow-md transition disabled:opacity-60"
-                  >
-                    <div className="w-12 h-12 rounded-2xl bg-brand-navy text-white flex items-center justify-center mb-4">
-                      <Icon
-                        icon="solar:card-send-bold-duotone"
-                        className="h-6 w-6"
-                      />
-                    </div>
-
-                    <p className="text-lg font-bold text-brand-navy">
-                      {t(
-                        "contractFlow.modal.stripeTitle",
-                        "Tarjeta bancaria",
-                      )}
-                    </p>
-                    <p className="mt-2 text-sm text-brand-gray leading-relaxed">
-                      {t(
-                        "contractFlow.modal.stripeDescription",
-                        "Te redirigiremos a Stripe para completar el pago seguro de la señal con tarjeta.",
-                      )}
-                    </p>
-                  </button> */}
                 </div>
 
                 <div className="pt-2">

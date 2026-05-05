@@ -19,4 +19,5 @@ export interface ProposalPdfSummary {
   companyName?: string | null;
   companyEmail?: string | null;
   companyPhone?: string | null;
+  energyPriceKwh?: number | null;
 }

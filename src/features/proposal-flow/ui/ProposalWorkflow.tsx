@@ -46,6 +46,7 @@ import type {
   ValidationBillDataFormInput,
 } from "@/src/entities/proposal/domain/proposal.types";
 import type { InstallationAvailabilityError } from "@/src/features/proposal-flow/model/useInstallationFlow";
+import { ENABLE_PAYMENT_METHOD_SELECTOR } from "@/src/features/contract-flow/lib/paymentFlow.constants";
 
 interface ProposalWorkflowProps {
   t: TFunction;
@@ -300,18 +301,20 @@ export default function ProposalWorkflow({
         />
       </AnimatePresence>
 
-      <AnimatePresence>
-        <PaymentMethodModal
-          open={isPaymentMethodModalOpen}
-          signedContractResult={signedContractResult}
-          isSelectingPaymentMethod={isSelectingPaymentMethod}
-          currentAppLanguage={currentAppLanguage}
-          onClose={() => setIsPaymentMethodModalOpen(false)}
-          onSelectBankTransferPayment={handleSelectBankTransferPayment}
-          onSelectStripePayment={handleSelectStripePayment}
-          t={t}
-        />
-      </AnimatePresence>
+      {ENABLE_PAYMENT_METHOD_SELECTOR ? (
+        <AnimatePresence>
+          <PaymentMethodModal
+            open={isPaymentMethodModalOpen}
+            signedContractResult={signedContractResult}
+            isSelectingPaymentMethod={isSelectingPaymentMethod}
+            currentAppLanguage={currentAppLanguage}
+            onClose={() => setIsPaymentMethodModalOpen(false)}
+            onSelectBankTransferPayment={handleSelectBankTransferPayment}
+            onSelectStripePayment={handleSelectStripePayment}
+            t={t}
+          />
+        </AnimatePresence>
+      ) : null}
 
       <ExtraConsumptionModal
         open={showExtraConsumptionModal}

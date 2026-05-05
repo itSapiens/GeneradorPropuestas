@@ -377,7 +377,7 @@ export const serverRepositories = {
     async findActive() {
       const { data, error } = await supabase
         .from("installations")
-        .select("*")
+        .select("*, empresa:empresas(*)")
         .eq("active", true)
         .order("nombre_instalacion", { ascending: true });
 

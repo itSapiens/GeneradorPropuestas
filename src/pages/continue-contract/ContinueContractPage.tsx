@@ -30,6 +30,8 @@ type InstallationPreview = {
   porcentaje_autoconsumo?: number | null;
   coste_kwh_inversion?: number | null;
   coste_kwh_servicio?: number | null;
+  pago?: "segun_factura" | "fijo" | string | null;
+  cantidad_precio_fijo?: number | null;
   availableProposalModes: ProposalMode[];
   defaultProposalMode: ProposalMode;
 };
@@ -123,6 +125,21 @@ function formatInstallationModalidad(
     "Inversión y servicio",
   );
 }
+
+function getFixedInstallationPaymentAmount(
+  installation: InstallationPreview | null | undefined,
+) {
+  const paymentMode = String(installation?.pago ?? "")
+    .trim()
+    .toLowerCase();
+  const fixedAmount = Number(installation?.cantidad_precio_fijo ?? 0);
+
+  if (paymentMode !== "fijo") return null;
+  if (!Number.isFinite(fixedAmount) || fixedAmount <= 0) return null;
+
+  return Math.round(fixedAmount * 100) / 100;
+}
+
 function formatCurrency(value: number, language: AppLanguage = "es") {
   const localeMap: Record<AppLanguage, string> = {
     es: "es-ES",
@@ -249,6 +266,12 @@ export default function ContinuarContratacionPage() {
               : null;
 
         const nextAmountToPayInvestment = (() => {
+          const fixedAmount = getFixedInstallationPaymentAmount(installation);
+
+          if (fixedAmount !== null) {
+            return fixedAmount;
+          }
+
           const kwh = installation.coste_kwh_inversion;
           const kwp = nextRecommendedPowerKwp;
           const hours = installation.horas_efectivas;

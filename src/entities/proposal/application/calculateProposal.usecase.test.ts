@@ -86,4 +86,38 @@ describe("calculateEnergyStudy", () => {
       );
     });
   });
+
+  describe("fixed payment", () => {
+    it("uses the fixed amount for service and investment", () => {
+      const result = calculateEnergyStudy({
+        ...BASE_INPUT,
+        fixedPaymentAmount: 75,
+        paymentMode: "fijo",
+      });
+
+      expect(result.annualServiceFee).toBe(900);
+      expect(result.serviceCost).toBe(900);
+      expect(result.investmentCost).toBe(75);
+      expect(result.annualSavingsService).toBeCloseTo(
+        Math.max(result.annualGrossSolarValue - 900, 0),
+        2,
+      );
+    });
+
+    it("keeps invoice-based service fee when fixed amount is missing", () => {
+      const result = calculateEnergyStudy({
+        ...BASE_INPUT,
+        fixedPaymentAmount: null,
+        paymentMode: "fijo",
+      });
+
+      expect(result.annualServiceFee).toBeCloseTo(
+        result.annualSelfConsumedEnergyKwh * BASE_INPUT.serviceCostKwh,
+        2,
+      );
+      expect(result.investmentCost).toBe(
+        result.recommendedPowerKwp * BASE_INPUT.investmentCostKwh,
+      );
+    });
+  });
 });
