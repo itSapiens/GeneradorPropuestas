@@ -30,7 +30,6 @@ type TemplateValues = {
   investmentDiscount: string;
   serviceEnergyPrice: string;
   investmentEnergyPrice: string;
-  serviceAnnualCost: string;
   serviceMonthlyFee: string;
   investmentUpfrontCost: string;
   serviceAnnualSavings: string;
@@ -125,6 +124,32 @@ function removeSectionBetweenMarkers(
   if (end === -1) return html;
 
   return `${html.slice(0, start)}${html.slice(end)}`;
+}
+
+function removeMarkedDivBlock(html: string, marker: string, className: string): string {
+  const markerStart = html.indexOf(marker);
+  if (markerStart === -1) return html;
+
+  const blockStartRegex = new RegExp(`<div\\s+class=["'][^"']*\\b${className}\\b[^"']*["'][^>]*>`);
+  const afterMarker = html.slice(markerStart + marker.length);
+  const blockMatch = blockStartRegex.exec(afterMarker);
+  if (!blockMatch) return html.replace(marker, "");
+
+  const blockStart = markerStart + marker.length + blockMatch.index;
+  let depth = 0;
+  const tagRegex = /<\/?div\b[^>]*>/gi;
+  tagRegex.lastIndex = blockStart;
+
+  for (let tagMatch = tagRegex.exec(html); tagMatch; tagMatch = tagRegex.exec(html)) {
+    const tag = tagMatch[0];
+    depth += tag.startsWith("</") ? -1 : 1;
+
+    if (depth === 0) {
+      return `${html.slice(0, markerStart)}${html.slice(tagRegex.lastIndex)}`;
+    }
+  }
+
+  return html;
 }
 
 function replaceOrbContent(
@@ -562,7 +587,6 @@ function buildTemplateValues(payload: ProposalPdfPayload, language: AppLanguage)
     investmentDiscount: `−${investmentDiscount}%`,
     serviceEnergyPrice: formatEnergyPrice(serviceEnergyPrice, language),
     investmentEnergyPrice: formatEnergyPrice(investmentEnergyPrice, language),
-    serviceAnnualCost: `${formatCurrency(annualServiceFee, language)}${texts.annualSuffix}`,
     serviceMonthlyFee: formatCurrency(monthlyFee, language),
     investmentUpfrontCost: formatCurrency(upfrontCost, language),
     serviceAnnualSavings: formatCurrency(serviceAnnualSavings, language),
@@ -664,7 +688,6 @@ export function buildProposalPdfHtml(payload: ProposalPdfPayload): string {
     ["−41%", values.serviceDiscount],
     ["−73%", values.investmentDiscount],
     ["0,117", values.serviceEnergyPrice],
-    ["486 €/año", values.serviceAnnualCost],
     [
       "22 €/mes · sin entrada",
       `${values.serviceMonthlyFee}${texts.monthSuffix} · ${texts.noEntry}`,
@@ -672,7 +695,6 @@ export function buildProposalPdfHtml(payload: ProposalPdfPayload): string {
     ["22€/mes", `${values.serviceMonthlyFee}${texts.monthSuffix}`],
     ["22 €", values.serviceMonthlyFee],
     ["0,053", values.investmentEnergyPrice],
-    ["222 €/año", values.investmentUpfrontCost],
     [
       "4.593€ pago único",
       `${values.investmentUpfrontCost} ${texts.investmentCardTitle.toLowerCase()}`,
@@ -810,6 +832,8 @@ export function buildProposalPdfHtml(payload: ProposalPdfPayload): string {
   );
 
   if (!(hasService && hasInvestment)) {
+    const singleModeClass = hasService ? "single-service-grid" : "single-investment-grid";
+
     html = replaceText(
       html,
       "Dos formas de participar",
@@ -821,9 +845,14 @@ export function buildProposalPdfHtml(payload: ProposalPdfPayload): string {
       `<div class="modalities-grid">`,
       `<div class="modalities-grid" style="grid-template-columns: 1fr;">`,
     );
+    html = replaceRaw(
+      html,
+      `<div class="orbs-comparison-grid">`,
+      `<div class="orbs-comparison-grid single-modality-grid ${singleModeClass}">`,
+    );
 
     if (!hasService) {
-      html = removeSectionBetweenMarkers(html, "<!-- A -->", "<!-- B -->");
+      html = removeMarkedDivBlock(html, "<!-- A -->", "destination-row");
       html = removeFirstElementByClass(html, "card-a");
       html = html.replace(
         `<div class="modality-card card-b recommended-card">
@@ -833,11 +862,7 @@ export function buildProposalPdfHtml(payload: ProposalPdfPayload): string {
     }
 
     if (!hasInvestment) {
-      html = removeSectionBetweenMarkers(
-        html,
-        "<!-- B -->",
-        "<!-- Resumen Ahorro Grande",
-      );
+      html = removeMarkedDivBlock(html, "<!-- B -->", "destination-row");
       html = removeFirstElementByClass(html, "card-b");
     }
 

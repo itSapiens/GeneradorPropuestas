@@ -84,6 +84,10 @@ describe("buildProposalPdfHtml", () => {
     expect(html).toContain("* Proyección estimada un IPC del 2% anual.");
     expect(html).toContain("0,083");
     expect(html).toContain("0,057");
+    expect(html).not.toContain("486 €/año");
+    expect(html).not.toContain("222 €/año");
+    expect(html).not.toContain("cost-badge-a");
+    expect(html).not.toContain("cost-badge-b");
     expect(html).not.toContain("183,72 €/año");
     expect(html).toContain("Informe · Empresa Titular");
     expect(html).toContain("titular@example.com");
@@ -125,8 +129,13 @@ describe("buildProposalPdfHtml", () => {
       ],
     });
 
+    expect(html).toContain("orbs-comparison-grid single-modality-grid single-service-grid");
     expect(html).toContain(">Servicio</text>");
     expect(html).toContain("Ahorro anual");
+    expect(html).toContain(`class="destinations-col"`);
+    expect(html).toContain(`class="destination-row"`);
+    expect(html).not.toContain(`<div class="eyebrow orb-label label-b">`);
+    expect(html).not.toContain(`<div class="orb-footer-label footer-label-b">`);
     expect(html).not.toContain("Modalidad disponible");
     expect(html).not.toContain("Tu contratación");
     expect(html).not.toContain("Elige tu opción");
