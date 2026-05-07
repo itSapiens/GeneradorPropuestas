@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
     "start": "tsx server.ts",
+    "contracts:regularize-bank-transfer": "tsx scripts/regularizeSignedContractsBankTransfer.ts",
     "storage:ensure-bucket": "tsx scripts/ensureSupabaseDocumentsBucket.ts",
     "storage:migrate-drive": "tsx scripts/migrateDriveDocumentsToSupabase.ts"
   },

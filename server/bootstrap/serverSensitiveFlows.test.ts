@@ -931,6 +931,92 @@ describe("server sensitive frontend flows", () => {
     ).toBe(bankTransfer.body.bankTransfer.concept);
   });
 
+  it("recovers an already signed contract that never selected a payment method", async () => {
+    testServer = await startTestServer();
+
+    const { confirm, generated } = await createStudyAndGeneratedContract(
+      testServer.baseUrl,
+    );
+    const continueToken = extractTokenFromContinueUrl(
+      confirm.email.continueContractUrl,
+    );
+    const legacyContractPdfPath = "legacy/contracts/contrato-firmado.pdf";
+
+    testServer.state.files.set(legacyContractPdfPath, {
+      buffer: Buffer.from("%PDF-1.4 legacy signed contract"),
+      fileName: "contrato-firmado.pdf",
+      mimeType: "application/pdf",
+    });
+
+    const originalContract = testServer.state.contracts.get(
+      generated.contract.id,
+    );
+    testServer.state.contracts.set(generated.contract.id, {
+      ...originalContract,
+      contract_supabase_bucket: "generador-propuestas-documentos",
+      contract_supabase_path: legacyContractPdfPath,
+      metadata: {
+        ...(originalContract?.metadata ?? {}),
+        payment_method: null,
+        payment_method_selected_at: null,
+        payment_step: "pending_method_selection",
+      },
+      signed_at: new Date().toISOString(),
+      status: "signed",
+      uploaded_at: new Date().toISOString(),
+    });
+
+    const validateResponse = await postJson(
+      testServer.baseUrl,
+      "/api/contracts/proposal-access/validate",
+      {
+        apellidos: "López",
+        dni: "12345678Z",
+        nombre: "Ana",
+        token: continueToken,
+      },
+    );
+    const validate = await readJsonResponse(validateResponse);
+    expect(validate.status).toBe(200);
+
+    const recoverResponse = await postJson(
+      testServer.baseUrl,
+      "/api/contracts/generate-from-access",
+      {
+        proposalMode: "investment",
+        resumeToken: validate.body.resumeToken,
+      },
+    );
+    const recovered = await readJsonResponse(recoverResponse);
+
+    expect(recoverResponse.status).toBe(200);
+    expect(recovered.body.alreadySigned).toBe(true);
+    expect(recovered.body.nextStep).toBe("pending_bank_transfer");
+    expect(recovered.body.bankTransfer.emailSentTo).toBe(
+      "cliente@sapiens.test",
+    );
+    expect(recovered.body.bankTransfer.concept).toMatch(/^Ana López - CT-/);
+    expect(recovered.body.reservation.paymentMethod).toBe("bank_transfer");
+    expect(recovered.body.reservation.paymentStatus).toBe("pending");
+    expect(testServer.state.reservations.size).toBe(1);
+    expect(testServer.spies.sendBankTransferReservationEmail).toHaveBeenCalledOnce();
+
+    const recoveredReservation = [...testServer.state.reservations.values()][0];
+    expect(recoveredReservation.contract_id).toBe(generated.contract.id);
+    expect(recoveredReservation.metadata.payment_method).toBe("bank_transfer");
+    expect(
+      recoveredReservation.metadata.payment_instructions_sent_count,
+    ).toBe(1);
+
+    const recoveredContract = testServer.state.contracts.get(
+      generated.contract.id,
+    );
+    expect(recoveredContract?.metadata.payment_method).toBe("bank_transfer");
+    expect(recoveredContract?.metadata.payment_flow_status).toBe(
+      "pending_payment",
+    );
+  });
+
   it("keeps the stripe payment, status polling, webhook and retry flow working", async () => {
     testServer = await startTestServer();
 
