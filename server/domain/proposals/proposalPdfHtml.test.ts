@@ -79,8 +79,8 @@ describe("buildProposalPdfHtml", () => {
     expect(html).toContain("Ahorro a 25 años");
     expect(html).toContain("IVA no incluido");
     expect(html).not.toContain("IVA incluido");
-    expect(html).toContain(">Servicio</text>");
-    expect(html).toContain(">Inversión</text>");
+    expect(html).toContain(">Servicio</span>");
+    expect(html).toContain(">Inversión</span>");
     expect(html).toContain("* Proyección estimada un IPC del 2% anual.");
     expect(html).toContain("0,083");
     expect(html).toContain("0,057");
@@ -130,7 +130,7 @@ describe("buildProposalPdfHtml", () => {
     });
 
     expect(html).toContain("orbs-comparison-grid single-modality-grid single-service-grid");
-    expect(html).toContain(">Servicio</text>");
+    expect(html).toContain(">Servicio</span>");
     expect(html).toContain("Ahorro anual");
     expect(html).toContain(`class="destinations-col"`);
     expect(html).toContain(`class="destination-row"`);
@@ -203,7 +203,7 @@ describe("buildProposalPdfHtml", () => {
     });
 
     expect(html).not.toContain("A 12 ANOS (ACUMULADO)");
-    expect(html).toContain(">Investimento</text>");
+    expect(html).toContain(">Investimento</span>");
     expect(html).toContain("Aforro anual");
     expect(html).toContain("* Proxección estimada cun IPC do 2% anual.");
     expect(html).toContain("A enerxía, <em>nas túas mans</em> sen tocar o teu tellado.");
@@ -241,7 +241,7 @@ describe("buildProposalPdfHtml", () => {
     expect(html).not.toContain("0,000");
     expect(html).toContain("15,00 €");
     expect(html).toContain("pagamento único");
-    expect(html).toContain(">Investimento</text>");
+    expect(html).toContain("Investimento</div>");
     expect(html).toContain("Aforro a 25 anos");
   });
 });

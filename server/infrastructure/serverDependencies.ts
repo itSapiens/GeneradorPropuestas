@@ -94,6 +94,7 @@ export function createServerDependencies(): ServerDependencies {
           return convertHtmlToPdfWithGotenberg({
             gotenbergUrl: GOTENBERG_URL,
             html: payload.html,
+            waitForExpression: payload.waitForExpression,
           });
         },
       },

@@ -165,7 +165,7 @@ export interface ServerDependencies {
       }): Promise<void>;
     };
     pdf: {
-      convertHtmlToPdf(payload: { html: string }): Promise<Buffer>;
+      convertHtmlToPdf(payload: { html: string; waitForExpression?: string }): Promise<Buffer>;
     };
     stripe: {
       constructWebhookEvent(payload: {

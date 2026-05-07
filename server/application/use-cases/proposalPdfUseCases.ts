@@ -21,5 +21,5 @@ export async function generateProposalPdfUseCase(
     proposals,
   });
 
-  return deps.services.pdf.convertHtmlToPdf({ html });
+  return deps.services.pdf.convertHtmlToPdf({ html, waitForExpression: "window.chartReady === true" });
 }

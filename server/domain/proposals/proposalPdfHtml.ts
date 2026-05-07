@@ -303,24 +303,112 @@ function formatSvgNumber(value: number): string {
   return Number.isFinite(value) ? value.toFixed(2).replace(/\.?0+$/, "") : "0";
 }
 
-function clampSvgLabelY(value: number): number {
-  return Math.min(Math.max(value, 28), 170);
-}
-
-function buildStablePricePath(points: number[], minValue: number, maxValue: number): string {
-  const width = 400;
-  const top = 18;
-  const bottom = 182;
-  const height = bottom - top;
+function buildChartPath(
+  points: number[],
+  chart: { left: number; right: number; top: number; bottom: number },
+  minValue: number,
+  maxValue: number,
+): string {
+  const width = chart.right - chart.left;
+  const height = chart.bottom - chart.top;
   const range = maxValue > minValue ? maxValue - minValue : 1;
 
   return points
     .map((value, index) => {
-      const x = (width / (points.length - 1)) * index;
-      const y = bottom - ((Math.max(value, minValue) - minValue) / range) * height;
+      const x = chart.left + (width / (points.length - 1)) * index;
+      const y = chart.bottom - ((Math.max(value, minValue) - minValue) / range) * height;
       return `${index === 0 ? "M" : "L"}${formatSvgNumber(x)},${formatSvgNumber(y)}`;
     })
     .join(" ");
+}
+
+function chartPointY(
+  value: number,
+  chart: { top: number; bottom: number },
+  minValue: number,
+  maxValue: number,
+): number {
+  const height = chart.bottom - chart.top;
+  const range = maxValue > minValue ? maxValue - minValue : 1;
+  return chart.bottom - ((Math.max(value, minValue) - minValue) / range) * height;
+}
+
+function buildChartAreaPath(
+  upperPoints: number[],
+  lowerPoints: number[],
+  chart: { left: number; right: number; top: number; bottom: number },
+  minValue: number,
+  maxValue: number,
+): string {
+  const width = chart.right - chart.left;
+  const range = maxValue > minValue ? maxValue - minValue : 1;
+  const topPath = upperPoints.map((value, index) => {
+    const x = chart.left + (width / (upperPoints.length - 1)) * index;
+    const y = chart.bottom - ((Math.max(value, minValue) - minValue) / range) * (chart.bottom - chart.top);
+    return `${index === 0 ? "M" : "L"}${formatSvgNumber(x)},${formatSvgNumber(y)}`;
+  });
+  const bottomPath = lowerPoints
+    .map((value, index) => {
+      const x = chart.left + (width / (lowerPoints.length - 1)) * index;
+      const y = chart.bottom - ((Math.max(value, minValue) - minValue) / range) * (chart.bottom - chart.top);
+      return `L${formatSvgNumber(x)},${formatSvgNumber(y)}`;
+    })
+    .reverse();
+
+  return `${topPath.join(" ")} ${bottomPath.join(" ")} Z`;
+}
+
+function buildAreaToBaselinePath(
+  points: number[],
+  chart: { left: number; right: number; top: number; bottom: number },
+  minValue: number,
+  maxValue: number,
+): string {
+  return `${buildChartPath(points, chart, minValue, maxValue)} L${chart.right},${chart.bottom} L${chart.left},${chart.bottom} Z`;
+}
+
+function niceChartStep(rawStep: number): number {
+  const steps = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1];
+  return steps.find((step) => step >= rawStep) ?? 0.1;
+}
+
+function getChartScale(values: number[]): { min: number; max: number; ticks: number[] } {
+  const finiteValues = values.filter((value) => Number.isFinite(value) && value > 0);
+  const rawMin = Math.min(...finiteValues);
+  const rawMax = Math.max(...finiteValues);
+  const boundsStep = rawMax < 0.5 ? 0.01 : niceChartStep((rawMax - rawMin || rawMax) / 8);
+  const min = Math.max(0, Math.floor((rawMin * 0.92) / boundsStep) * boundsStep);
+  const max = Math.ceil((rawMax * 1.06) / boundsStep) * boundsStep;
+  const step = niceChartStep((max - min || rawMax * 0.2 || 0.01) / 5);
+  const tickCount = Math.max(Math.round((max - min) / step), 1);
+  const ticks = Array.from({ length: tickCount + 1 }, (_, index) => min + step * index);
+
+  return { min, max, ticks };
+}
+
+function distributeChartLabels(
+  labels: Array<{ key: string; y: number }>,
+  minY: number,
+  maxY: number,
+  gap = 24,
+): Record<string, number> {
+  const sorted = [...labels].sort((a, b) => a.y - b.y);
+
+  for (let index = 0; index < sorted.length; index += 1) {
+    sorted[index].y = Math.max(sorted[index].y, index === 0 ? minY : sorted[index - 1].y + gap);
+  }
+
+  for (let index = sorted.length - 1; index >= 0; index -= 1) {
+    sorted[index].y = Math.min(
+      sorted[index].y,
+      index === sorted.length - 1 ? maxY : sorted[index + 1].y - gap,
+    );
+  }
+
+  return sorted.reduce<Record<string, number>>((acc, label) => {
+    acc[label.key] = label.y;
+    return acc;
+  }, {});
 }
 
 function buildStabilityOrbitHtml(params: {
@@ -383,91 +471,162 @@ function buildStabilityGraphHtml(params: {
   serviceUsesFixedDisplay?: boolean;
   texts: ReturnType<typeof getProposalPdfTexts>;
 }): string {
-  const years = Array.from({ length: PROJECTION_YEARS + 1 }, (_, index) => index);
-  const currentLine = years.map((year) => params.currentPrice * Math.pow(1 + PROJECTION_IPC_RATE, year));
-  const serviceLine = years.map(() => params.serviceEnergyPrice);
-  const investmentLine = years.map(() => params.investmentEnergyPrice);
-  const activeValues = [
-    ...currentLine,
-    ...(params.service && !params.serviceUsesFixedDisplay ? serviceLine : []),
-    ...(params.investment && !params.investmentUsesFixedDisplay ? investmentLine : []),
-  ].filter((value) => value > 0);
-  const current25Price = currentLine[currentLine.length - 1] ?? params.currentPrice;
-  const minValue = Math.max(Math.min(...activeValues) * 0.72, 0);
-  const maxValue = Math.max(...activeValues, current25Price) * 1.08;
-  const currentPath = buildStablePricePath(currentLine, minValue, maxValue);
-  const servicePath = buildStablePricePath(serviceLine, minValue, maxValue);
-  const investmentPath = buildStablePricePath(investmentLine, minValue, maxValue);
+  const years = Array.from({ length: PROJECTION_YEARS + 1 }, (_, i) => i);
+  const currentLine = years.map((y) => params.currentPrice * Math.pow(1 + PROJECTION_IPC_RATE, y));
+  const chart = { left: 58, right: 690, top: 30, bottom: 178 };
 
-  const lineY = (value: number) => {
-    const top = 18;
-    const bottom = 182;
-    const height = bottom - top;
-    const range = maxValue > minValue ? maxValue - minValue : 1;
-    return bottom - ((Math.max(value, minValue) - minValue) / range) * height;
+  const series = [
+    {
+      color: "#5E6472",
+      gradientId: "currentPriceGradient",
+      key: "current",
+      label: params.texts.currentBillLegend,
+      points: currentLine,
+      stopColor: "#5E6472",
+    },
+    params.service && !params.serviceUsesFixedDisplay
+      ? {
+          color: "#4F9BFF",
+          gradientId: "servicePriceGradient",
+          key: "service",
+          label: params.texts.serviceLegend,
+          points: years.map(() => params.serviceEnergyPrice),
+          stopColor: "#4F9BFF",
+        }
+      : null,
+    params.investment && !params.investmentUsesFixedDisplay
+      ? {
+          color: "#23C7B5",
+          gradientId: "investmentPriceGradient",
+          key: "investment",
+          label: params.texts.investmentLegend,
+          points: years.map(() => params.investmentEnergyPrice),
+          stopColor: "#23C7B5",
+        }
+      : null,
+  ].filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+  const allValues = series.flatMap((item) => item.points);
+  const scale = getChartScale(allValues);
+
+  const gridLines = scale.ticks
+    .map((tick) => {
+      const y = chartPointY(tick, chart, scale.min, scale.max);
+      return `<g>
+          <line x1="${chart.left}" x2="${chart.right}" y1="${formatSvgNumber(y)}" y2="${formatSvgNumber(y)}" stroke="#E8ECF5" stroke-width="1" />
+          <text x="${chart.left - 12}" y="${formatSvgNumber(y + 3)}" text-anchor="end" font-size="9" fill="#8790B2" font-family="Cabin, Arial, sans-serif" font-weight="600">${formatEnergyPrice(tick, params.language)}</text>
+        </g>`;
+    })
+    .join("");
+  const yearLabels: Record<number, string> = {
+    0: "Inicio",
+    12: "Año 12",
+    25: "Año 25",
   };
+  const milestoneYears = [0, 12, 25];
+  const milestoneGuides = milestoneYears
+    .map((year) => {
+      const x = chart.left + ((chart.right - chart.left) / PROJECTION_YEARS) * year;
+      return `<g>
+          <line x1="${formatSvgNumber(x)}" x2="${formatSvgNumber(x)}" y1="${chart.top}" y2="${chart.bottom}" stroke="#DCE3F1" stroke-width="1" stroke-dasharray="3 5" />
+        </g>`;
+    })
+    .join("");
+  const seriesAreas = series
+    .map(
+      (item) =>
+        `<path d="${buildAreaToBaselinePath(item.points, chart, scale.min, scale.max)}" fill="url(#${item.gradientId})" />`,
+    )
+    .join("");
+  const seriesLines = series
+    .map(
+      (item) =>
+        `<path d="${buildChartPath(item.points, chart, scale.min, scale.max)}" fill="none" stroke="${item.color}" stroke-width="${item.key === "current" ? 4 : 3}" stroke-linecap="round" stroke-linejoin="round" />`,
+    )
+    .join("");
+  const milestoneDots = series
+    .flatMap((item) =>
+      milestoneYears.map((year) => {
+        const value = item.points[year] ?? item.points[item.points.length - 1] ?? 0;
+        const x = chart.left + ((chart.right - chart.left) / PROJECTION_YEARS) * year;
+        const y = chartPointY(value, chart, scale.min, scale.max);
 
-  const serviceStartY = lineY(params.serviceEnergyPrice);
-  const investmentStartY = lineY(params.investmentEnergyPrice);
-  let serviceLabelY = clampSvgLabelY(serviceStartY);
-  let investmentLabelY = clampSvgLabelY(investmentStartY);
+        return `<circle cx="${formatSvgNumber(x)}" cy="${formatSvgNumber(y)}" r="3.7" fill="${item.color}" stroke="#FFFFFF" stroke-width="2" />`;
+      }),
+    )
+    .join("");
+  const milestoneLabels = series
+    .flatMap((item, seriesIndex) =>
+      milestoneYears.map((year) => {
+        const value = item.points[year] ?? item.points[item.points.length - 1] ?? 0;
+        const x = chart.left + ((chart.right - chart.left) / PROJECTION_YEARS) * year;
+        const y = chartPointY(value, chart, scale.min, scale.max);
+        const boxWidth = 52;
+        const boxHeight = 17;
+        const preferredY = item.key === "current"
+          ? y + 10
+          : item.key === "service"
+            ? y - 26
+            : y + 10;
+        const boxX = Math.min(Math.max(x - boxWidth / 2, chart.left + 2), chart.right - boxWidth - 2);
+        const boxY = Math.min(
+          Math.max(preferredY + (seriesIndex === 0 ? 0 : seriesIndex * 2), chart.top + 2),
+          chart.bottom - boxHeight - 2,
+        );
 
-  if (params.service && params.investment && Math.abs(serviceLabelY - investmentLabelY) < 18) {
-    const midpoint = (serviceLabelY + investmentLabelY) / 2;
-    serviceLabelY = clampSvgLabelY(midpoint - 9);
-    investmentLabelY = clampSvgLabelY(midpoint + 9);
-  }
-  const serviceEndLabel = params.serviceUsesFixedDisplay
-    ? `${formatCurrency(params.serviceFixedAmount ?? 0, params.language)} ${params.texts.monthSuffix.trim()}`
-    : `${formatEnergyPrice(params.serviceEnergyPrice, params.language)} €/kWh`;
-  const investmentEndLabel = params.investmentUsesFixedDisplay
-    ? formatCurrency(params.investmentFixedAmount ?? 0, params.language)
-    : `${formatEnergyPrice(params.investmentEnergyPrice, params.language)} €/kWh`;
-  const graphPill = (
-    text: string,
-    x: number,
-    y: number,
-    width: number,
-    color: string,
-    anchor: "start" | "end" = "start",
-  ) => {
-    const textX = anchor === "end" ? x + width - 6 : x + 6;
-    return `<rect x="${formatSvgNumber(x)}" y="${formatSvgNumber(y - 8)}" width="${formatSvgNumber(width)}" height="16" rx="8" fill="#FFFFFF" stroke="${color}" stroke-width="0.8" stroke-opacity="0.38"></rect>
-                          <text x="${formatSvgNumber(textX)}" y="${formatSvgNumber(y + 2.8)}" font-size="7.8" fill="${color}" text-anchor="${anchor}" font-family="Arial, sans-serif" font-weight="800">${escapeHtml(text)}</text>`;
-  };
+        return `<g>
+          <rect x="${formatSvgNumber(boxX)}" y="${formatSvgNumber(boxY)}" width="${boxWidth}" height="${boxHeight}" rx="6" fill="#FFFFFF" fill-opacity="0.94" stroke="${item.color}" stroke-opacity="0.36" />
+          <text x="${formatSvgNumber(boxX + boxWidth / 2)}" y="${formatSvgNumber(boxY + 12)}" text-anchor="middle" font-size="8.5" fill="${item.color}" font-family="Cabin, Arial, sans-serif" font-weight="800">${formatEnergyPrice(value, params.language)}</text>
+        </g>`;
+      }),
+    )
+    .join("");
+  const legendItems = series
+    .map(
+      (item) =>
+        `<span style="display:inline-flex;align-items:center;gap:5px;"><i style="width:16px;height:3px;border-radius:9px;background:${item.color};display:inline-block;"></i>${escapeHtml(item.label)}</span>`,
+    )
+    .join("");
 
   return `<div class="proposal-stability-graph" style="margin:0 0 28px;">
-                  <div class="eyebrow graph-section-eyebrow">${params.texts.stabilityTitle}</div>
-                  <div class="graph-block condensed-graph p2-graph-block" style="padding:22px 28px;background:#fff;border:1px solid #E4EAF7;border-radius:10px;box-shadow:none;">
+                  <div class="eyebrow graph-section-eyebrow">${escapeHtml(params.texts.stabilityTitle)}</div>
+                  <div class="graph-block condensed-graph p2-graph-block clean-stability-chart" style="padding:18px 24px 20px;background:#fff;border:1px solid #E2E8F5;border-radius:10px;box-shadow:none;overflow:hidden;">
                     <div style="max-width:720px;margin:0 auto;">
-                        <svg viewBox="0 0 400 214" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block;overflow:visible;">
-                          <defs>
-                            <linearGradient id="proposalGraphFade" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stop-color="#2ED1BC" stop-opacity="0.18"></stop>
-                              <stop offset="100%" stop-color="#2ED1BC" stop-opacity="0"></stop>
-                            </linearGradient>
-                          </defs>
-                          <rect x="0" y="0" width="400" height="200" rx="10" fill="#FFFFFF"></rect>
-                          <line x1="0" x2="400" y1="34" y2="34" stroke="#E8ECF8" stroke-width="1"></line>
-                          <line x1="0" x2="400" y1="78" y2="78" stroke="#E8ECF8" stroke-width="1"></line>
-                          <line x1="0" x2="400" y1="122" y2="122" stroke="#E8ECF8" stroke-width="1"></line>
-                          <line x1="0" x2="400" y1="174" y2="174" stroke="#BDEFE8" stroke-width="2.2"></line>
-                          <path d="${currentPath}" stroke="#706F6F" stroke-width="4.8" fill="none" stroke-linejoin="round" stroke-linecap="round"></path>
-                          ${params.service && !params.serviceUsesFixedDisplay ? `<path d="${servicePath}" stroke="#7AB1FF" stroke-width="3.8" fill="none" stroke-linecap="round"></path>` : ""}
-                          ${params.investment && !params.investmentUsesFixedDisplay ? `<path d="${investmentPath}" stroke="#2ED1BC" stroke-width="3.8" fill="none" stroke-linecap="round"></path>` : ""}
-                          <circle cx="400" cy="34" r="4.5" fill="#706F6F" stroke="#fff" stroke-width="1.5"></circle>
-                          ${graphPill(`${formatEnergyPrice(current25Price, params.language)} €/kWh`, 306, 24, 90, "#706F6F", "end")}
-                          ${params.service ? `${graphPill(params.texts.serviceLegend, 4, serviceLabelY, 86, "#7AB1FF")}
-                          ${graphPill(serviceEndLabel, 306, serviceLabelY, 90, "#7AB1FF", "end")}` : ""}
-                          ${params.investment ? `${graphPill(params.texts.investmentLegend, 4, investmentLabelY, 96, "#2ED1BC")}
-                          ${graphPill(investmentEndLabel, 306, investmentLabelY, 90, "#2ED1BC", "end")}` : ""}
-                          <text x="4" y="198" font-size="10" fill="#7A81A8" font-family="monospace" font-weight="bold">${params.texts.year1}</text>
-                          <text x="396" y="198" font-size="10" fill="#7A81A8" text-anchor="end" font-family="monospace" font-weight="bold">${params.texts.year25}</text>
-                        </svg>
-                        <div style="font-size:8.5px;color:#7A81A8;margin-top:8px;">${getProjectionFootnote(params.language)}</div>
+                      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px;">
+                        <div style="font-size:10px;line-height:1.35;color:#5D668F;font-weight:600;max-width:330px;">${escapeHtml(getProjectionFootnote(params.language))}</div>
+                        <div style="display:flex;gap:12px;align-items:center;color:#7A81A8;font-size:9px;font-weight:700;white-space:nowrap;">${legendItems}</div>
+                      </div>
+                      <svg viewBox="0 0 748 230" role="img" aria-label="${escapeHtml(params.texts.stabilityTitle)}" style="display:block;width:100%;height:230px;">
+                        <defs>
+                          ${series
+                            .map(
+                              (item) =>
+                                `<linearGradient id="${item.gradientId}" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stop-color="${item.stopColor}" stop-opacity="${item.key === "current" ? "0.12" : "0.16"}" />
+                                  <stop offset="100%" stop-color="${item.stopColor}" stop-opacity="0" />
+                                </linearGradient>`,
+                            )
+                            .join("")}
+                        </defs>
+                        <rect x="0" y="0" width="748" height="230" rx="8" fill="#FFFFFF" />
+                        ${gridLines}
+                        ${milestoneGuides}
+                        <line x1="${chart.left}" x2="${chart.right}" y1="${chart.bottom}" y2="${chart.bottom}" stroke="#DCE3F1" stroke-width="1" />
+                        ${seriesAreas}
+                        ${seriesLines}
+                        ${milestoneDots}
+                        ${milestoneLabels}
+                        ${milestoneYears
+                          .map((year) => {
+                            const x = chart.left + ((chart.right - chart.left) / PROJECTION_YEARS) * year;
+                            return `<text x="${formatSvgNumber(x)}" y="214" text-anchor="middle" font-size="9.5" fill="#7A81A8" font-family="Cabin, Arial, sans-serif" font-weight="800">${yearLabels[year]}</text>`;
+                          })
+                          .join("")}
+                      </svg>
                     </div>
                   </div>
-                </div>`;
+                </div>
+                <script>window.chartReady = true;</script>`;
 }
 
 function buildTemplateValues(payload: ProposalPdfPayload, language: AppLanguage): TemplateValues {

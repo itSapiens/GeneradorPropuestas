@@ -76,6 +76,7 @@ async function readErrorBody(response: Response) {
 export async function convertHtmlToPdfWithGotenberg(payload: {
   gotenbergUrl: string;
   html: string;
+  waitForExpression?: string;
   timeoutMs?: number;
 }): Promise<Buffer> {
   const gotenbergUrl = normalizeBaseUrl(payload.gotenbergUrl);
@@ -94,6 +95,9 @@ export async function convertHtmlToPdfWithGotenberg(payload: {
       "index.html",
     );
     formData.append("emulatedMediaType", "print");
+    if (payload.waitForExpression) {
+      formData.append("waitForExpression", payload.waitForExpression);
+    }
 
     const response = await fetch(
       `${gotenbergUrl}/forms/chromium/convert/html`,
