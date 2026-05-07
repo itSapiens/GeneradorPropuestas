@@ -179,7 +179,7 @@ export default function MainAppContent() {
       if (
         event.altKey &&
         event.shiftKey &&
-        event.key.toLowerCase() === "a"
+        (event.code === "KeyA" || event.key.toLowerCase() === "a")
       ) {
         event.preventDefault();
         openManualInvoiceModal();
