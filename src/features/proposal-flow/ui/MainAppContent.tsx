@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { sileo } from "sileo";
 
 import { formatCurrency, formatNumber } from "@/src/shared/lib/utils";
 import type { ExtractedBillData } from "@/src/entities/proposal/domain/proposal.types";
@@ -31,6 +32,14 @@ import { useInstallationFlow } from "@/src/features/proposal-flow/model/useInsta
 import { useExtraConsumptionFlow } from "@/src/features/extra-consumption/model/useExtraConsumptionFlow";
 import { useStudyPersistence } from "@/src/features/proposal-flow/model/useStudyPersistence";
 import { useProposalCalculationEffect } from "@/src/features/proposal-flow/model/useProposalCalculationEffect";
+import {
+  buildManualExtractionFromData,
+  type ManualInvoiceData,
+} from "@/src/features/proposal-flow/lib/manualInvoiceData";
+import {
+  mapExtractedToBillData,
+} from "@/src/features/proposal-flow/lib/extractionMappers";
+import { applyExtractedBillToValidationForm } from "@/src/features/proposal-flow/lib/validationFormValues";
 
 export default function MainAppContent() {
   const { t, i18n } = useTranslation();
@@ -57,6 +66,8 @@ export default function MainAppContent() {
     null,
   );
   const [savedStudy, setSavedStudy] = useState<any | null>(null);
+  const [isManualInvoiceModalOpen, setIsManualInvoiceModalOpen] =
+    useState(false);
 
   const {
     register,
@@ -116,6 +127,67 @@ export default function MainAppContent() {
     setCurrentStep,
     setValue,
     t,
+  });
+
+  const openManualInvoiceModal = () => {
+    if (!privacyAccepted) {
+      sileo.warning({
+        title: t(
+          "toasts.upload.privacyRequiredTitle",
+          "Debes aceptar la política de privacidad",
+        ),
+        description: t(
+          "toasts.upload.privacyRequiredDescription",
+          "Para introducir los datos de la factura, primero debes aceptar el tratamiento de datos.",
+        ),
+      });
+      return;
+    }
+
+    setIsManualInvoiceModalOpen(true);
+  };
+
+  const closeManualInvoiceModal = () => {
+    setIsManualInvoiceModalOpen(false);
+  };
+
+  const handleManualInvoiceSubmit = (data: ManualInvoiceData) => {
+    const extraction = buildManualExtractionFromData(data);
+    const mappedData = mapExtractedToBillData(extraction);
+
+    setUploadedInvoiceFile(null);
+    setRawExtraction(extraction);
+    setExtractedData(mappedData);
+    applyExtractedBillToValidationForm(mappedData, setValue);
+    setCurrentStep("validation");
+    setIsManualInvoiceModalOpen(false);
+
+    sileo.success({
+      title: t(
+        "manualInvoice.savedTitle",
+        "Datos manuales cargados",
+      ),
+      description: t(
+        "manualInvoice.savedDescription",
+        "Revisa el titular y continúa con el estudio.",
+      ),
+    });
+  };
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.altKey &&
+        event.shiftKey &&
+        event.key.toLowerCase() === "a"
+      ) {
+        event.preventDefault();
+        openManualInvoiceModal();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   });
 
   const normalizedContractModalidad = normalizeInstallationModalidad(
@@ -188,6 +260,9 @@ export default function MainAppContent() {
       privacyAccepted={privacyAccepted}
       setPrivacyAccepted={setPrivacyAccepted}
       handleFileSelect={handleFileSelect}
+      isManualInvoiceModalOpen={isManualInvoiceModalOpen}
+      closeManualInvoiceModal={closeManualInvoiceModal}
+      handleManualInvoiceSubmit={handleManualInvoiceSubmit}
       register={register}
       control={control}
       handleSubmit={handleSubmit}

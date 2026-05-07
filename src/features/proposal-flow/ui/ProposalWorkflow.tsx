@@ -25,6 +25,7 @@ import PaymentMethodModal from "@/src/features/contract-flow/ui/PaymentMethodMod
 import LanguageSwitcher from "@/src/features/language-switcher/ui/LanguageSwitcher";
 import ProposalStepper from "@/src/shared/ui/stepper/ProposalStepper";
 import UploadStep from "@/src/features/proposal-flow/steps/upload/UploadStep";
+import ManualInvoiceModal from "@/src/features/proposal-flow/steps/upload/ManualInvoiceModal";
 import ValidationStep from "@/src/features/proposal-flow/steps/validation/ValidationStep";
 import MapStep from "@/src/features/proposal-flow/steps/map/MapStep";
 import CalculationStep from "@/src/features/proposal-flow/steps/calculation/CalculationStep";
@@ -38,13 +39,14 @@ import type {
   ApiInstallation,
   AppLanguage,
   GeneratedContractResponse,
+  ValidationBillData,
   ProposalMode,
   SignedContractResponse,
   Step,
   StudyComparisonResult,
-  ValidationBillData,
   ValidationBillDataFormInput,
 } from "@/src/entities/proposal/domain/proposal.types";
+import type { ManualInvoiceData } from "@/src/features/proposal-flow/lib/manualInvoiceData";
 import type { InstallationAvailabilityError } from "@/src/features/proposal-flow/model/useInstallationFlow";
 import { ENABLE_PAYMENT_METHOD_SELECTOR } from "@/src/features/contract-flow/lib/paymentFlow.constants";
 
@@ -55,6 +57,9 @@ interface ProposalWorkflowProps {
   privacyAccepted: boolean;
   setPrivacyAccepted: Dispatch<SetStateAction<boolean>>;
   handleFileSelect: (file: File) => Promise<void>;
+  isManualInvoiceModalOpen: boolean;
+  closeManualInvoiceModal: () => void;
+  handleManualInvoiceSubmit: (data: ManualInvoiceData) => void;
   register: UseFormRegister<ValidationBillDataFormInput>;
   control: Control<
     ValidationBillDataFormInput,
@@ -133,6 +138,9 @@ export default function ProposalWorkflow({
   privacyAccepted,
   setPrivacyAccepted,
   handleFileSelect,
+  isManualInvoiceModalOpen,
+  closeManualInvoiceModal,
+  handleManualInvoiceSubmit,
   register,
   control,
   handleSubmit,
@@ -320,6 +328,13 @@ export default function ProposalWorkflow({
         open={showExtraConsumptionModal}
         onConfirm={proceedAfterExtraConsumption}
         onSkip={() => proceedAfterExtraConsumption(EMPTY_EXTRA_CONSUMPTION)}
+        t={t}
+      />
+
+      <ManualInvoiceModal
+        open={isManualInvoiceModalOpen}
+        onClose={closeManualInvoiceModal}
+        onSubmit={handleManualInvoiceSubmit}
         t={t}
       />
     </Layout>

@@ -1,7 +1,7 @@
 import axios from "axios";
 
 type ConfirmStudyParams = {
-  invoiceFile: File;
+  invoiceFile?: File | null;
   proposalFile: File;
   customer: Record<string, unknown>;
   location?: Record<string, unknown> | null;
@@ -41,7 +41,9 @@ export async function confirmStudy({
       : null);
 
   const formData = new FormData();
-  formData.append("invoice", invoiceFile);
+  if (invoiceFile) {
+    formData.append("invoice", invoiceFile);
+  }
   formData.append("proposal", proposalFile);
   formData.append("customer", JSON.stringify(customer ?? {}));
   formData.append("location", JSON.stringify(location ?? {}));

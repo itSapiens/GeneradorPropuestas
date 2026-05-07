@@ -114,12 +114,6 @@ export function useStudyPersistence({
       result: CalculationResult,
       installation: ApiInstallation,
     ) => {
-      if (!uploadedInvoiceFile) {
-        throw new Error(
-          "No se encuentra la factura original subida por el cliente",
-        );
-      }
-
       const billData = toBaseBillData(
         validatedData,
         extraConsumption ?? EMPTY_EXTRA_CONSUMPTION,

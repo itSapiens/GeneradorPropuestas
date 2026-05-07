@@ -6,7 +6,7 @@ import z from "zod";
 export type Step = "upload" | "validation" | "map" | "calculation" | "result";
 
 export type BillType = "2TD" | "3TD" | null;
-export type ExtractionMethod = "ai";
+export type ExtractionMethod = "ai" | "manual";
 
 type NullableNumber = number | null;
 
