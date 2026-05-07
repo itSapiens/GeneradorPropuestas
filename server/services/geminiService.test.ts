@@ -85,4 +85,51 @@ IBAN: ES58 2100 7322 3121 0015 ****
       },
     });
   });
+
+  it("extracts key data from Switch invoice OCR text", () => {
+    const text = `
+Factura electricidad
+DATOS DEL CLIENTE
+Titular: AUTO BERTRAN, S.L.
+DNI/CIF: B58595174
+Dirección suministro: Avda. Onze Setembre 243 Pta Loc
+CUPS: ES0031406276833001ZT0F
+Potencia contratada: P1 37.00 P2 37.00 P3 37.00
+P4 37.00 P5 37.00 P6 43.65
+Tarifa de acceso: 3.0TD
+IMPORTE FACTURA: 1.454,48 €
+Periodo de Facturación: De 01/02/2026 al 28/02/2026
+Nº de Cuenta: ES63 0075 0338 2606 0014 ****
+AUTO BERTRAN, S.L.
+Onze Setembre 243 Pta Loc
+08820 Prat de Llobregat
+Energía: 851.59 €
+Su consumo medio diario en esta factura ha sido de 144.86 kWh
+Su consumo acumulado del último año ha sido de 37,900.03 kWh
+`;
+
+    expect(__test__.extractLocalDataFromText(text)).toMatchObject({
+      customer: {
+        fullName: "AUTO BERTRAN, S.L.",
+        dni: "B58595174",
+        cups: "ES0031406276833001ZT0F",
+        iban: "ES63 0075 0338 2606 0014 ****",
+        ibanNeedsCompletion: true,
+      },
+      location: {
+        address:
+          "Avda. Onze Setembre 243 Pta Loc, 08820 Prat de Llobregat",
+      },
+      invoice_data: {
+        type: "3TD",
+        billedDays: 28,
+        currentInvoiceConsumptionKwh: 4056.08,
+        averageMonthlyConsumptionKwh: 3158.34,
+        invoiceVariableEnergyAmountEur: 851.59,
+        invoiceTotalAmountEur: 1454.48,
+        contractedPowerP1: 37,
+        contractedPowerP2: 37,
+      },
+    });
+  });
 });

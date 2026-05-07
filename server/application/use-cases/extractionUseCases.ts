@@ -9,6 +9,7 @@ const EXTRACTION_CACHE_TTL_MS = Number(
 const EXTRACTION_CACHE_MAX_ENTRIES = Number(
   process.env.EXTRACTION_CACHE_MAX_ENTRIES || 100,
 );
+const EXTRACTION_CACHE_VERSION = "2026-05-07-switch-v2";
 
 type ExtractionCacheEntry = { data: any; ts: number };
 const extractionCache = new Map<string, ExtractionCacheEntry>();
@@ -56,6 +57,7 @@ export async function extractBillUseCase(
 
   const cacheKey = crypto
     .createHash("sha256")
+    .update(EXTRACTION_CACHE_VERSION)
     .update(uploadedFile.buffer)
     .digest("hex");
 

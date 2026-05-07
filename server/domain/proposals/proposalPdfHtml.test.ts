@@ -71,18 +71,27 @@ describe("buildProposalPdfHtml", () => {
     expect(html).toContain(`class="orbs-comparison-grid"`);
     expect(html).toContain(`class="stability-orbit-notes"`);
     expect(html).toContain(`class="proposal-stability-graph"`);
-    expect(html).toContain("Precio actual factura:");
-    expect(html).toContain("<strong>Servicio</strong>");
-    expect(html).toContain("Inversión:");
+    expect(html).not.toContain("Precio actual factura:");
+    expect(html).toContain("orbit-mode-note orbit-note-service");
+    expect(html).toContain("orbit-mode-note orbit-note-investment");
+    expect(html).toContain("Ahorro anual");
+    expect(html).toContain("Ahorro mensual");
+    expect(html).toContain("Ahorro a 25 años");
+    expect(html).toContain("IVA no incluido");
+    expect(html).not.toContain("IVA incluido");
+    expect(html).toContain(">Servicio</text>");
+    expect(html).toContain(">Inversión</text>");
+    expect(html).toContain("* Proyección estimada un IPC del 2% anual.");
     expect(html).toContain("0,083");
     expect(html).toContain("0,057");
+    expect(html).not.toContain("183,72 €/año");
     expect(html).toContain("Informe · Empresa Titular");
     expect(html).toContain("titular@example.com");
     expect(html).toContain(`href="https://app.example.com/continuar"`);
     expect(html).not.toContain("Informe · Solar Común");
     expect(html).not.toContain("Inversión Compra");
-    expect(html).toContain("A 12 AÑOS (ACUMULADO)");
-    expect(html).toContain("A 25 AÑOS (ACUMULADO)");
+    expect(html).not.toContain("A 12 AÑOS (ACUMULADO)");
+    expect(html).not.toContain("A 25 AÑOS (ACUMULADO)");
     expect(html).toContain("8 uds.");
     expect(html).not.toContain(`class="savings-summary-block"`);
     expect(html).not.toContain(`class="annual-savings-strip"`);
@@ -116,7 +125,8 @@ describe("buildProposalPdfHtml", () => {
       ],
     });
 
-    expect(html).toContain("Servicio:");
+    expect(html).toContain(">Servicio</text>");
+    expect(html).toContain("Ahorro anual");
     expect(html).not.toContain("Modalidad disponible");
     expect(html).not.toContain("Tu contratación");
     expect(html).not.toContain("Elige tu opción");
@@ -183,8 +193,10 @@ describe("buildProposalPdfHtml", () => {
       ],
     });
 
-    expect(html).toContain("A 12 ANOS (ACUMULADO)");
-    expect(html).toContain("Investimento:");
+    expect(html).not.toContain("A 12 ANOS (ACUMULADO)");
+    expect(html).toContain(">Investimento</text>");
+    expect(html).toContain("Aforro anual");
+    expect(html).toContain("* Proxección estimada cun IPC do 2% anual.");
     expect(html).toContain("A enerxía, <em>nas túas mans</em> sen tocar o teu tellado.");
     expect(html).toContain("O teu impacto ambiental · 25 anos");
     expect(html).toContain("Reservamos a túa participación?");
@@ -220,6 +232,7 @@ describe("buildProposalPdfHtml", () => {
     expect(html).not.toContain("0,000");
     expect(html).toContain("15,00 €");
     expect(html).toContain("pagamento único");
-    expect(html).toContain("Investimento:</span><strong style=\"color:#2ED1BC;\">15,00 €</strong>");
+    expect(html).toContain(">Investimento</text>");
+    expect(html).toContain("Aforro a 25 anos");
   });
 });

@@ -63,16 +63,46 @@ export function useExtraConsumptionFlow({
 
   const onValidationSubmit = useCallback(
     (data: ValidationBillData) => {
+      const hiddenExtractionFields: Array<keyof ValidationBillData> = [
+        "billType",
+        "currentInvoiceConsumptionKwh",
+        "averageMonthlyConsumptionKwh",
+        "billedDays",
+        "invoiceTotalAmountEur",
+        "periodConsumptionP1",
+        "periodConsumptionP2",
+        "periodConsumptionP3",
+        "periodConsumptionP4",
+        "periodConsumptionP5",
+        "periodConsumptionP6",
+        "periodPriceP1",
+        "periodPriceP2",
+        "periodPriceP3",
+        "periodPriceP4",
+        "periodPriceP5",
+        "periodPriceP6",
+        "contractedPowerText",
+        "contractedPowerKw",
+        "contractedPowerP1",
+        "contractedPowerP2",
+      ];
+
       const normalizedData: ValidationBillData = {
         ...(extractedData ?? {}),
         ...data,
-        monthlyConsumption:
-          data.averageMonthlyConsumptionKwh ??
-          extractedData?.averageMonthlyConsumptionKwh ??
-          data.monthlyConsumption ??
-          extractedData?.monthlyConsumption ??
-          0,
       };
+
+      for (const field of hiddenExtractionFields) {
+        if (extractedData?.[field] !== undefined) {
+          (normalizedData as any)[field] = extractedData[field];
+        }
+      }
+
+      normalizedData.monthlyConsumption =
+        normalizedData.averageMonthlyConsumptionKwh ??
+        data.monthlyConsumption ??
+        extractedData?.monthlyConsumption ??
+        0;
 
       setExtractedData(normalizedData);
       setProposalResults(null);

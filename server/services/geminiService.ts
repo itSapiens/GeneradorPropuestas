@@ -127,7 +127,9 @@ const SYSTEM_INSTRUCTION = [
   "  'Energía consumida: X kWh', 'Total energía: X kWh'. IMPORTANTE: es la suma de todos los periodos.",
   "  Si ves 'P1: 120 kWh + P2: 200 kWh + P3: 80 kWh = 400 kWh', el valor correcto es 400.",
   "- invoice_data.consumptionKwh: mismo valor que currentInvoiceConsumptionKwh.",
-  "- invoice_data.averageMonthlyConsumptionKwh: déjalo en null. El servidor lo recalcula.",
+  "- invoice_data.averageMonthlyConsumptionKwh: déjalo en null salvo que la factura muestre un consumo anual acumulado explícito.",
+  "- Si la factura muestra 'Su consumo medio diario en esta factura ha sido de X kWh' y el periodo tiene N días, currentInvoiceConsumptionKwh = X * N.",
+  "- Si la factura muestra 'Su consumo acumulado del último año ha sido de X kWh', averageMonthlyConsumptionKwh = X / 12.",
   "- invoice_data.billedDays: número de días que cubre la factura. Busca 'X días facturados', 'periodo de X días'.",
   "- invoice_data.periods.Pn: consumo en kWh por cada periodo. Para 2TD: P1=punta, P2=llano, P3=valle.",
   "  Busca tablas como 'Punta: X kWh', 'Llano: X kWh', 'Valle: X kWh' o 'P1: X kWh', 'P2: X kWh', etc.",
@@ -157,6 +159,7 @@ const SYSTEM_INSTRUCTION = [
   "    contractedPowerP2 = Y   (valle)",
   "    contractedPowerKw = X solo si X == Y, en otro caso null",
   "- Si solo hay una potencia (típico en 2.0TD antigua), ponla en contractedPowerKw y deja P1/P2 en null.",
+  "- Si ves una tabla 'Potencia contratada: P1 37.00 P2 37.00 ... P6 43.65', NO la metas en invoice_data.periods: son kW de potencia, no kWh de consumo. Pon P1 y P2 en contractedPowerP1/contractedPowerP2 y conserva todo en contractedPowerText.",
   "",
   "VALIDACIONES INTERNAS ANTES DE RESPONDER:",
   "- Verifica que currentInvoiceConsumptionKwh == sum(periods.P1..P6) si todos los periodos están presentes.",
@@ -384,14 +387,50 @@ function sleep(ms: number): Promise<void> {
 }
 
 function extractBillTypeFromText(text: string): BillType {
+  if (/Tarifa de acceso:\s*[3S]\s*[.,O0]?\s*TD\b/i.test(text)) {
+    return "3TD";
+  }
+
   const raw =
     extractRegexValue(
       text,
       /Peaje de (?:transporte y distribución|acceso a la red \(ATR\)):\s*(2(?:\.0)?TD|3(?:\.0)?TD)\b/i,
     ) ??
+    extractRegexValue(text, /Tarifa de acceso:\s*(2(?:\.0)?TD|3(?:\.0)?TD)\b/i) ??
     extractRegexValue(text, /\bPVPC\s+(2(?:\.0)?TD|3(?:\.0)?TD)\b/i);
 
   return normalizeBillType(raw);
+}
+
+function parseDateDayMonthYear(value: string): Date | null {
+  const match = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!match) return null;
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+}
+
+function inclusiveDaysBetween(startRaw: string, endRaw: string): number | null {
+  const start = parseDateDayMonthYear(startRaw);
+  const end = parseDateDayMonthYear(endRaw);
+  if (!start || !end) return null;
+
+  const diffMs = end.getTime() - start.getTime();
+  if (diffMs < 0) return null;
+
+  return Math.round(diffMs / 86_400_000) + 1;
 }
 
 function extractInvoiceConsumption(text: string): number | null {
@@ -412,12 +451,59 @@ function extractInvoiceConsumption(text: string): number | null {
 }
 
 function extractBilledDays(text: string): number | null {
+  const switchPeriod = text.match(
+    /Periodo de Facturaci[oó]n:\s*(?:De\s*)?(\d{1,2}\/\d{1,2}\/\d{4})\s*(?:a|al|-)\s*(\d{1,2}\/\d{1,2}\/\d{4})/i,
+  );
+  const switchOpenPeriod = text.match(
+    /Periodo de Facturaci[oó]n:\s*(?:De\s*)?(\d{1,2})\/(\d{1,2})\/(\d{4})\s*(?:a|al|-)\s*(?:\n|$)/i,
+  );
+
   return (
+    (switchPeriod?.[1] && switchPeriod?.[2]
+      ? inclusiveDaysBetween(switchPeriod[1], switchPeriod[2])
+      : null) ??
+    (switchOpenPeriod?.[1] && switchOpenPeriod?.[2] && switchOpenPeriod?.[3]
+      ? new Date(
+          Date.UTC(Number(switchOpenPeriod[3]), Number(switchOpenPeriod[2]), 0),
+        ).getUTCDate()
+      : null) ??
     parseSpanishNumber(
       extractRegexValue(text, /(\d{1,3})\s*días\s*\*\s*[\d.,]+\s*€\/día/i),
     ) ??
     parseSpanishNumber(
       extractRegexValue(text, /D[ií]AS FACTURADOS:\s*(\d{1,3})\b/i),
+    )
+  );
+}
+
+function extractSwitchDailyConsumption(text: string): number | null {
+  return parseSpanishNumber(
+    extractRegexValue(
+      text,
+      /Su\s*consumo medio diario en esta factura ha sido de\s*([\d.,]+)\s*kWh/i,
+    ),
+  );
+}
+
+function extractAnnualAccumulatedConsumption(text: string): number | null {
+  return (
+    parseSpanishNumber(
+      extractRegexValue(
+        text,
+        /Su consumo acumulado del [uú]ltimo a[nñ]o ha sido de\s*([\d.,]+)\s*kWh/i,
+      ),
+    ) ??
+    parseSpanishNumber(
+      extractRegexValue(
+        text,
+        /[uú]l?t?imo a[nñ]o[^\d]{0,60}([\d.,]+)\s*kWh/i,
+      ),
+    ) ??
+    parseSpanishNumber(
+      extractRegexValue(
+        text,
+        /[uú]ltimos 12 meses ha sido de\s*[\d.,]+\s*kWh[\s\S]{0,220}?([\d.,]+)\s*kWh/i,
+      ),
     )
   );
 }
@@ -442,6 +528,9 @@ function extractPostcodeAverageConsumption(text: string): number | null {
 function extractInvoiceVariableEnergyAmount(text: string): number | null {
   return (
     parseSpanishNumber(
+      extractRegexValue(text, /\bEnerg[ií]a:\s*([\d.,]+)\s*€/i),
+    ) ??
+    parseSpanishNumber(
       extractRegexValue(
         text,
         /Facturación por energía consumida\s*\("TÉRMINO VARIABLE"\)\s*([\d.,]+)\s*€/i,
@@ -458,6 +547,15 @@ function extractInvoiceVariableEnergyAmount(text: string): number | null {
 
 function extractInvoiceTotalAmount(text: string): number | null {
   return (
+    parseSpanishNumber(
+      extractRegexValue(text, /IMPORTE FACTURA:\s*([\d.,]+)\s*€/i),
+    ) ??
+    parseSpanishNumber(
+      extractRegexValue(
+        text,
+        /El destino del importe de su factura,\s*([\d.,]+)\s*€/i,
+      ),
+    ) ??
     parseSpanishNumber(
       extractRegexValue(text, /TOTAL\s+IMPORTE\s+FACTURA\s*([\d.,]+)\s*€/i),
     ) ??
@@ -496,7 +594,10 @@ function parseSpanishNumber(raw: unknown): number | null {
   const hasDot = value.includes(".");
 
   if (hasComma && hasDot) {
-    value = value.replace(/\./g, "").replace(",", ".");
+    value =
+      value.lastIndexOf(".") > value.lastIndexOf(",")
+        ? value.replace(/,/g, "")
+        : value.replace(/\./g, "").replace(",", ".");
   } else if (hasComma) {
     value = value.replace(",", ".");
   } else if (hasDot) {
@@ -585,13 +686,18 @@ function compactInvoiceText(rawText?: string): string {
   ).slice(0, MAX_TEXT_CHARS);
 }
 
-function buildPrompt(fileName: string, sourceMode: "text" | "pdf"): string {
+function buildPrompt(
+  fileName: string,
+  sourceMode: "text" | "binary" | "image-with-ocr",
+): string {
   // Las reglas de extracción viven en SYSTEM_INSTRUCTION. Aquí solo
   // damos contexto puntual sobre el archivo que se va a analizar.
   const sourceHint =
     sourceMode === "text"
       ? "A continuación tienes el texto extraído del PDF (puede contener pequeños errores de OCR). Analízalo y devuelve el JSON conforme al schema."
-      : "A continuación tienes el PDF original adjunto como fichero binario. Analízalo y devuelve el JSON conforme al schema.";
+      : sourceMode === "image-with-ocr"
+        ? "A continuación tienes una imagen original de la factura y una transcripción OCR auxiliar. Usa la imagen como fuente principal y el OCR solo como apoyo, porque puede contener errores."
+        : "A continuación tienes el documento original adjunto como fichero binario. Analízalo y devuelve el JSON conforme al schema.";
 
   return [
     `Archivo: ${fileName}`,
@@ -629,6 +735,35 @@ function extractContractedPowerInfo(text: string): {
         p1 != null && p2 != null && Math.abs(p1 - p2) < 0.0001 ? p1 : null,
       contractedPowerP1: p1,
       contractedPowerP2: p2,
+    };
+  }
+
+  const switchPowerMatches = [
+    ...text.matchAll(/\bP([1-6])\s*([\d.,]+)(?:\s*kW)?/gi),
+  ];
+
+  if (switchPowerMatches.length >= 2) {
+    const values = emptyPeriods();
+    for (const match of switchPowerMatches) {
+      values[`P${match[1]}` as keyof PeriodValues] = parseSpanishNumber(
+        match[2],
+      );
+    }
+
+    const parts = (["P1", "P2", "P3", "P4", "P5", "P6"] as const)
+      .filter((period) => values[period] != null)
+      .map((period) => `${period} ${formatSpanishPower(values[period]!)} kW`);
+
+    return {
+      contractedPowerText: parts.join(" · "),
+      contractedPowerKw:
+        values.P1 != null &&
+        values.P2 != null &&
+        Math.abs(values.P1 - values.P2) < 0.0001
+          ? values.P1
+          : null,
+      contractedPowerP1: values.P1,
+      contractedPowerP2: values.P2,
     };
   }
 
@@ -872,7 +1007,7 @@ function parseAddressParts(fullAddress: string | null): {
   const provinceFromParens = normalized.match(/\(([^)]+)\)\s*$/)?.[1]?.trim() ?? null;
 
   const afterPostal = postalCode ? normalized.split(postalCode)[1] ?? "" : "";
-  const afterPostalTrimmed = afterPostal.replace(/^[,\s-]+/, "").trim();
+  const afterPostalTrimmed = afterPostal.replace(/^[,.:;\s-]+/, "").trim();
   const province =
     provinceFromParens ??
     (afterPostalTrimmed ? findProvinceInTail(afterPostalTrimmed) : null);
@@ -896,7 +1031,9 @@ function parseAddressParts(fullAddress: string | null): {
       }
     }
 
-    city = safeString(cityCandidate.replace(/[,\s-]+$/, ""));
+    city = safeString(
+      cityCandidate.replace(/^[,.:;\s-]+/, "").replace(/[,\s-]+$/, ""),
+    );
   }
 
   let street = normalized;
@@ -943,9 +1080,15 @@ function extractRegexValue(text: string, regex: RegExp): string | null {
 }
 
 function extractFullNameFromText(text: string): string | null {
-  return extractRegexValue(
-    text,
-    /Titular(?:\s+Potencia)?:\s*([A-ZÁÉÍÓÚÜÑ][A-ZÁÉÍÓÚÜÑ\s.'-]{3,}?)(?:\s+Potencia punta:|\n)/i,
+  return (
+    extractRegexValue(
+      text,
+      /Titular:\s*([A-ZÁÉÍÓÚÜÑ0-9][A-ZÁÉÍÓÚÜÑ0-9\s.,'&-]{3,}?)(?:\s+Fecha Factura|\n|DNI\/?CIF|DNI|NIF|Direcci[oó]n)/i,
+    ) ??
+    extractRegexValue(
+      text,
+      /Titular(?:\s+Potencia)?:\s*([A-ZÁÉÍÓÚÜÑ][A-ZÁÉÍÓÚÜÑ\s.'-]{3,}?)(?:\s+Potencia punta:|\n)/i,
+    )
   );
 }
 
@@ -956,14 +1099,17 @@ function extractSupplyAddress(text: string): string | null {
     .map((line) => line.trim());
 
   const startIndex = lines.findIndex((line) =>
-    /Dirección de suministro:/i.test(line),
+    /Direcci[oó]n(?:\s+de)?\s+suministro:/i.test(line),
   );
 
   if (startIndex === -1) return null;
 
   const addressLines: string[] = [];
   const startLine = lines[startIndex] ?? "";
-  const inlineAddress = startLine.split(/Dirección de suministro:/i)[1]?.trim();
+  const inlineAddress = startLine
+    .split(/Direcci[oó]n(?:\s+de)?\s+suministro:/i)[1]
+    ?.split(/\s+(?:Referencia Contrato|CUPS|Potencia contratada|Tarifa de acceso):/i)[0]
+    ?.trim();
 
   if (inlineAddress) {
     addressLines.push(inlineAddress);
@@ -973,7 +1119,7 @@ function extractSupplyAddress(text: string): string | null {
     const line = lines[i]?.trim() ?? "";
     if (!line) continue;
     if (
-      /^(N[º°o]\s*DE\s*CONTRATO|RESUMEN DE FACTURA|PERIODO DE FACTURACIÓN|NIF titular del contrato|Número de contrato de acceso|Forma de pago)/i.test(
+      /^(N[º°o]\s*DE\s*CONTRATO|RESUMEN DE FACTURA|PERIODO DE FACTURACIÓN|NIF titular del contrato|Número de contrato de acceso|Forma de pago|CUPS|Potencia contratada|Tarifa de acceso|Energ[ií]a|Importe|Historial)/i.test(
         line,
       )
     ) {
@@ -982,7 +1128,16 @@ function extractSupplyAddress(text: string): string | null {
     addressLines.push(line);
   }
 
-  const candidate = cleanAddressCandidate(addressLines.join(" "));
+  let candidate = cleanAddressCandidate(addressLines.join(" "));
+
+  const switchPostalBlock = text.match(
+    /\b\d{5}[^\S\r\n]*[:.,-]?[^\S\r\n]*[A-ZÁÉÍÓÚÜÑ][^\r\n]{2,60}/i,
+  )?.[0];
+
+  if (candidate && !/\b\d{5}\b/.test(candidate) && switchPostalBlock) {
+    candidate = `${candidate}, ${switchPostalBlock}`;
+  }
+
   return candidate && /\b\d{5}\b/.test(candidate) ? candidate : null;
 }
 
@@ -1032,13 +1187,14 @@ function extractLocalDataFromText(text?: string): PartialExtraction {
   const fullName = extractFullNameFromText(source);
   const splitName = splitFullName(fullName);
   const addressParts = parseAddressParts(extractSupplyAddress(source));
-    const contractedPowerInfo = extractContractedPowerInfo(source);
 
   const dni =
+    extractRegexValue(source, /DNI\/?CIF:\s*([A-Z0-9]+)\b/i) ??
     extractRegexValue(source, /NIF:\s*([A-Z0-9]+)\b/i) ??
     extractRegexValue(source, /NIF titular del contrato:\s*([A-Z0-9]+)\b/i);
 
   const cups =
+    extractRegexValue(source, /CUPS:\s*([A-Z0-9]{20,22})\b/i) ??
     extractRegexValue(
       source,
       /Código unificado de punto de suministro CUPS:\s*([A-Z0-9\s]+)\b/i,
@@ -1048,23 +1204,44 @@ function extractLocalDataFromText(text?: string): PartialExtraction {
       /Identificación punto de suministro \(CUPS\):\s*([A-Z0-9\s]+)\b/i,
     );
 
-  const iban = extractRegexValue(
-    source,
-    /IBAN:\s*([A-Z]{2}\s*\d{2}(?:\s*[\d*]{4}){4,5})/i,
-  );
+  const iban =
+    extractRegexValue(
+      source,
+      /IBAN:\s*([A-Z]{2}\s*\d{2}(?:\s*[\d*]{4}){4,5})/i,
+    ) ??
+    extractRegexValue(
+      source,
+      /N\S{0,3}\s*de Cuenta:\s*([A-Z]{2}\s*\d{2}(?:\s*[\d*]{4}){4,5})/i,
+    );
 
-  const normalizedType = extractBillTypeFromText(source);
+  let normalizedType = extractBillTypeFromText(source);
   const billedDays = extractBilledDays(source);
-  const totalConsumption = extractInvoiceConsumption(source);
+  const dailyConsumption = extractSwitchDailyConsumption(source);
+  const totalConsumption =
+    extractInvoiceConsumption(source) ??
+    (dailyConsumption != null && billedDays != null
+      ? Math.round(dailyConsumption * billedDays * 100) / 100
+      : null);
+  const annualConsumption = extractAnnualAccumulatedConsumption(source);
   const postcodeAverage = extractPostcodeAverageConsumption(source);
   const invoiceVariableEnergyAmountEur =
     extractInvoiceVariableEnergyAmount(source);
   const invoiceTotalAmountEur = extractInvoiceTotalAmount(source);
 
-  const estimatedMonthly = estimateMonthlyConsumption(
-    totalConsumption,
-    billedDays,
-  );
+  const estimatedMonthly =
+    annualConsumption != null
+      ? Math.round((annualConsumption / 12) * 100) / 100
+      : null;
+  const periodConsumptions = extractPeriodConsumptions(source, normalizedType);
+  const contractedPowerInfo = extractContractedPowerInfo(source);
+
+  if (
+    normalizedType == null &&
+    contractedPowerInfo.contractedPowerText &&
+    /P[4-6]\s/i.test(contractedPowerInfo.contractedPowerText)
+  ) {
+    normalizedType = "3TD";
+  }
 
   return {
     customer: {
@@ -1092,9 +1269,9 @@ function extractLocalDataFromText(text?: string): PartialExtraction {
       postcodeAverageConsumptionKwh: postcodeAverage,
       invoiceVariableEnergyAmountEur,
       invoiceTotalAmountEur,
-      periods: extractPeriodConsumptions(source, normalizedType),
+      periods: periodConsumptions,
       periodPricesEurPerKwh: extractPeriodPrices(source),
-            contractedPowerText: contractedPowerInfo.contractedPowerText,
+      contractedPowerText: contractedPowerInfo.contractedPowerText,
       contractedPowerKw: contractedPowerInfo.contractedPowerKw,
       contractedPowerP1: contractedPowerInfo.contractedPowerP1,
       contractedPowerP2: contractedPowerInfo.contractedPowerP2,
@@ -1337,6 +1514,30 @@ function mergeExtractions(
     },
   };
 
+  const annualLikeConsumption =
+    merged.invoice_data.averageMonthlyConsumptionKwh != null
+      ? merged.invoice_data.averageMonthlyConsumptionKwh * 12
+      : null;
+
+  if (
+    annualLikeConsumption != null &&
+    merged.invoice_data.currentInvoiceConsumptionKwh != null &&
+    Math.abs(
+      merged.invoice_data.currentInvoiceConsumptionKwh - annualLikeConsumption,
+    ) /
+      annualLikeConsumption <
+      0.02 &&
+    localData.invoice_data?.currentInvoiceConsumptionKwh != null
+  ) {
+    merged.invoice_data.currentInvoiceConsumptionKwh =
+      localData.invoice_data.currentInvoiceConsumptionKwh;
+    merged.invoice_data.consumptionKwh =
+      localData.invoice_data.currentInvoiceConsumptionKwh;
+    merged.extraction.warnings.push(
+      "La IA confundió el consumo anual acumulado con el consumo de la factura; se ha corregido usando el consumo medio diario y los días facturados.",
+    );
+  }
+
   const estimatedMonthlyFromPeriod = estimateMonthlyConsumption(
     merged.invoice_data.currentInvoiceConsumptionKwh,
     merged.invoice_data.billedDays,
@@ -1344,11 +1545,12 @@ function mergeExtractions(
 
   if (estimatedMonthlyFromPeriod != null) {
     const extractedAverage = merged.invoice_data.averageMonthlyConsumptionKwh;
+    const localAverage = localData.invoice_data?.averageMonthlyConsumptionKwh;
 
     if (extractedAverage == null) {
       merged.invoice_data.averageMonthlyConsumptionKwh =
         estimatedMonthlyFromPeriod;
-    } else {
+    } else if (localAverage == null) {
       const deviation =
         Math.abs(extractedAverage - estimatedMonthlyFromPeriod) /
         estimatedMonthlyFromPeriod;
@@ -1473,11 +1675,26 @@ export async function extractDataFromBill(
   const ai = getAiClient();
   const textToAnalyze = compactInvoiceText(input.extractedText);
   const useText = textToAnalyze.length > 50;
+  const isImage =
+    (input.mimeType || "").toLowerCase().startsWith("image/") &&
+    Boolean(input.buffer);
+  const useImageWithOcr = isImage && useText;
 
-  const prompt = buildPrompt(input.fileName, useText ? "text" : "pdf");
+  const prompt = buildPrompt(
+    input.fileName,
+    useImageWithOcr ? "image-with-ocr" : useText ? "text" : "binary",
+  );
   const contents: any[] = [prompt];
 
-  if (useText) {
+  if (useImageWithOcr && input.buffer) {
+    contents.push(`OCR auxiliar:\n${textToAnalyze}`);
+    contents.push({
+      inlineData: {
+        mimeType: input.mimeType || "image/jpeg",
+        data: bufferToBase64(input.buffer),
+      },
+    });
+  } else if (useText) {
     contents.push(textToAnalyze);
   } else if (input.buffer) {
     contents.push({
@@ -1572,6 +1789,11 @@ export async function extractDataFromBill(
 
   const aiData = normalizeExtraction(parsed);
   const localData = useText ? extractLocalDataFromText(textToAnalyze) : {};
+  if (useImageWithOcr) {
+    // En fotos reales el OCR suele deformar poblaciones/direcciones. Gemini ve
+    // la imagen original, así que dejamos que mande sobre la dirección.
+    localData.location = undefined;
+  }
 
   return mergeExtractions(aiData, localData);
 }

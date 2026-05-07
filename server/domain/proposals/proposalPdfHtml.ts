@@ -31,7 +31,6 @@ type TemplateValues = {
   serviceEnergyPrice: string;
   investmentEnergyPrice: string;
   serviceAnnualCost: string;
-  investmentAnnualCost: string;
   serviceMonthlyFee: string;
   investmentUpfrontCost: string;
   serviceAnnualSavings: string;
@@ -69,6 +68,7 @@ const LOCALES: Record<AppLanguage, string> = {
 };
 
 const PROJECTION_YEARS = 25;
+const PROJECTION_IPC_RATE = 0.02;
 
 function normalizeLanguage(language?: AppLanguage): AppLanguage {
   return language && language in LOCALES ? language : "es";
@@ -188,6 +188,40 @@ function formatEnergyPrice(value: number, language: AppLanguage): string {
   return formatNumber(value, language, 3, 3);
 }
 
+function getSavingsNoteLabels(language: AppLanguage): {
+  annual: string;
+  monthly: string;
+  total25Years: string;
+} {
+  if (language === "gl") {
+    return {
+      annual: "Aforro anual",
+      monthly: "Aforro mensual",
+      total25Years: "Aforro a 25 anos",
+    };
+  }
+
+  if (language === "ca" || language === "val") {
+    return {
+      annual: "Estalvi anual",
+      monthly: "Estalvi mensual",
+      total25Years: "Estalvi a 25 anys",
+    };
+  }
+
+  return {
+    annual: "Ahorro anual",
+    monthly: "Ahorro mensual",
+    total25Years: "Ahorro a 25 años",
+  };
+}
+
+function getProjectionFootnote(language: AppLanguage): string {
+  if (language === "gl") return "* Proxección estimada cun IPC do 2% anual.";
+  if (language === "ca" || language === "val") return "* Projecció estimada amb un IPC del 2% anual.";
+  return "* Proyección estimada un IPC del 2% anual.";
+}
+
 function formatKwh(value: number, language: AppLanguage): string {
   return `${formatNumber(value, language, 0)} kWh`;
 }
@@ -244,6 +278,10 @@ function formatSvgNumber(value: number): string {
   return Number.isFinite(value) ? value.toFixed(2).replace(/\.?0+$/, "") : "0";
 }
 
+function clampSvgLabelY(value: number): number {
+  return Math.min(Math.max(value, 28), 170);
+}
+
 function buildStablePricePath(points: number[], minValue: number, maxValue: number): string {
   const width = 400;
   const top = 18;
@@ -277,75 +315,30 @@ function buildStabilityOrbitHtml(params: {
   serviceUsesFixedDisplay?: boolean;
   texts: ReturnType<typeof getProposalPdfTexts>;
 }): string {
-  const years = Array.from({ length: PROJECTION_YEARS + 1 }, (_, index) => index);
-  const currentLine = years.map((year) => params.currentPrice * Math.pow(1.03, year));
-  const current25Price = currentLine[currentLine.length - 1] ?? params.currentPrice;
-  const current25Cost = years
-    .slice(1)
-    .reduce((total, year) => total + params.currentComparableAnnualCost * Math.pow(1.03, year - 1), 0);
-  const texts = params.texts;
+  const labels = getSavingsNoteLabels(params.language);
+  const modeSummary = (
+    proposal: ProposalPdfSummary | undefined,
+    label: string,
+    color: string,
+    total25Years: number,
+    className: string,
+  ) => {
+    if (!proposal) return "";
 
-  const current12Cost = Array.from({ length: 12 }, (_, i) => i)
-    .reduce((sum, year) => sum + params.currentComparableAnnualCost * Math.pow(1.03, year), 0);
-  const service12Cost = params.serviceTotalCost25Years > 0
-    ? params.serviceTotalCost25Years / PROJECTION_YEARS * 12 : 0;
-  const investment12Cost = params.investmentTotalCost25Years;
-  const activeLabels = [
-    params.service ? texts.serviceLegend : "",
-    params.investment ? texts.investmentLegend : "",
-  ].filter(Boolean);
-  const comparisonLabel = `${activeLabels.join(" / ")} ${texts.stabilityVsActual}`;
+    const annualSavings = positive(proposal.annualSavings);
+    const monthlySavings = annualSavings / 12;
 
-  const priceLine = (label: string, color: string, value: string) =>
-    `<div class="orbit-price-pill">
-      <span style="color:${color};">${label}</span>
-      <strong style="color:${color};">${value}</strong>
-    </div>`;
-
-  const servicePriceLine = params.service
-    ? priceLine(
-        texts.serviceLegend,
-        "#7AB1FF",
-        params.serviceUsesFixedDisplay
-          ? `${formatCurrency(params.serviceFixedAmount ?? 0, params.language)} ${texts.monthSuffix.trim()}`
-          : `${formatEnergyPrice(params.serviceEnergyPrice, params.language)} €/kWh`,
-      )
-    : "";
-  const investmentPriceLine = params.investment
-    ? priceLine(
-        texts.investmentLegend,
-        "#2ED1BC",
-        params.investmentUsesFixedDisplay
-          ? formatCurrency(params.investmentFixedAmount ?? 0, params.language)
-          : `${formatEnergyPrice(params.investmentEnergyPrice, params.language)} €/kWh`,
-      )
-    : "";
-
-  const accumulatedLine = (label: string, color: string, value: number) =>
-    `<div class="orbit-row"><span>${label}:</span><strong style="color:${color};">${formatCurrency(value, params.language)}</strong></div>`;
+    return `<div class="stability-orbit-note orbit-mode-note ${className}" style="border-color:${color};">
+        <div class="orbit-kicker" style="color:${color};">${escapeHtml(label)}</div>
+        <div class="orbit-row"><span>${labels.annual}</span><strong style="color:${color};">${formatCurrency(annualSavings, params.language)}</strong></div>
+        <div class="orbit-row"><span>${labels.monthly}</span><strong style="color:${color};">${formatCurrency(monthlySavings, params.language)}</strong></div>
+        <div class="orbit-row"><span>${labels.total25Years}</span><strong style="color:${color};">${formatCurrency(total25Years, params.language)}</strong></div>
+      </div>`;
+  };
 
   return `<div class="stability-orbit-notes">
-      <div class="stability-orbit-note orbit-note-main">
-        <div class="orbit-kicker">${escapeHtml(comparisonLabel)}</div>
-        <div style="font-size:9px;font-weight:800;color:#07005f;">${formatEnergyPrice(params.currentPrice, params.language)} €/kWh</div>
-        <div class="orbit-price-line">
-          ${servicePriceLine}
-          ${investmentPriceLine}
-        </div>
-        <div style="margin-top:4px;color:#6b7280;">${texts.year1} -> ${texts.year25}: ${formatEnergyPrice(params.currentPrice, params.language)} -> ${formatEnergyPrice(current25Price, params.language)} €/kWh</div>
-      </div>
-      <div class="stability-orbit-note orbit-note-12">
-        <div class="orbit-kicker">${escapeHtml(texts.stabilityAt12Years)}</div>
-        ${accumulatedLine(texts.currentBillLegend, "#17235c", current12Cost)}
-        ${params.service ? accumulatedLine(texts.serviceLegend, "#7AB1FF", service12Cost) : ""}
-        ${params.investment ? accumulatedLine(texts.investmentLegend, "#2ED1BC", investment12Cost) : ""}
-      </div>
-      <div class="stability-orbit-note orbit-note-25">
-        <div class="orbit-kicker">${escapeHtml(texts.stabilityAt25Years)}</div>
-        ${accumulatedLine(texts.currentBillLegend, "#17235c", current25Cost)}
-        ${params.service ? accumulatedLine(texts.serviceLegend, "#7AB1FF", params.serviceTotalCost25Years) : ""}
-        ${params.investment ? accumulatedLine(texts.investmentLegend, "#2ED1BC", params.investmentTotalCost25Years) : ""}
-      </div>
+      ${modeSummary(params.service, params.texts.serviceLegend, "#7AB1FF", params.serviceTotalCost25Years, "orbit-note-service")}
+      ${modeSummary(params.investment, params.texts.investmentLegend, "#2ED1BC", params.investmentTotalCost25Years, "orbit-note-investment")}
     </div>`;
 }
 
@@ -366,7 +359,7 @@ function buildStabilityGraphHtml(params: {
   texts: ReturnType<typeof getProposalPdfTexts>;
 }): string {
   const years = Array.from({ length: PROJECTION_YEARS + 1 }, (_, index) => index);
-  const currentLine = years.map((year) => params.currentPrice * Math.pow(1.03, year));
+  const currentLine = years.map((year) => params.currentPrice * Math.pow(1 + PROJECTION_IPC_RATE, year));
   const serviceLine = years.map(() => params.serviceEnergyPrice);
   const investmentLine = years.map(() => params.investmentEnergyPrice);
   const activeValues = [
@@ -380,48 +373,49 @@ function buildStabilityGraphHtml(params: {
   const currentPath = buildStablePricePath(currentLine, minValue, maxValue);
   const servicePath = buildStablePricePath(serviceLine, minValue, maxValue);
   const investmentPath = buildStablePricePath(investmentLine, minValue, maxValue);
-  const current25Cost = years
-    .slice(1)
-    .reduce((total, year) => total + params.currentComparableAnnualCost * Math.pow(1.03, year - 1), 0);
 
-  const legendItem = (color: string, label: string, value: string) =>
-    `<div style="display:flex;align-items:center;gap:5px;font-size:7.6px;color:#4A568A;">
-      <span style="width:7px;height:7px;border-radius:50%;background:${color};display:inline-block;box-shadow:0 0 10px ${color}55;"></span>
-      <span>${label}</span>
-      <strong style="color:#0B1957;">${value}</strong>
-    </div>`;
+  const lineY = (value: number) => {
+    const top = 18;
+    const bottom = 182;
+    const height = bottom - top;
+    const range = maxValue > minValue ? maxValue - minValue : 1;
+    return bottom - ((Math.max(value, minValue) - minValue) / range) * height;
+  };
 
-  const serviceLegend = params.service
-    ? legendItem(
-        "#7AB1FF",
-        params.texts.serviceLegend,
-        params.serviceUsesFixedDisplay
-          ? `${formatCurrency(params.serviceFixedAmount ?? 0, params.language)} ${params.texts.monthSuffix.trim()} · ${formatCurrency(params.serviceTotalCost25Years, params.language)}`
-          : `${formatEnergyPrice(params.serviceEnergyPrice, params.language)} €/kWh ${params.texts.stablePrice} · ${formatCurrency(params.serviceTotalCost25Years, params.language)}`,
-      )
-    : "";
-  const investmentLegend = params.investment
-    ? legendItem(
-        "#2ED1BC",
-        params.texts.investmentLegend,
-        params.investmentUsesFixedDisplay
-          ? `${formatCurrency(params.investmentFixedAmount ?? 0, params.language)} · ${formatCurrency(params.investmentTotalCost25Years, params.language)}`
-          : `${formatEnergyPrice(params.investmentEnergyPrice, params.language)} €/kWh ${params.texts.stablePrice} · ${formatCurrency(params.investmentTotalCost25Years, params.language)}`,
-      )
-    : "";
+  const serviceStartY = lineY(params.serviceEnergyPrice);
+  const investmentStartY = lineY(params.investmentEnergyPrice);
+  let serviceLabelY = clampSvgLabelY(serviceStartY);
+  let investmentLabelY = clampSvgLabelY(investmentStartY);
+
+  if (params.service && params.investment && Math.abs(serviceLabelY - investmentLabelY) < 18) {
+    const midpoint = (serviceLabelY + investmentLabelY) / 2;
+    serviceLabelY = clampSvgLabelY(midpoint - 9);
+    investmentLabelY = clampSvgLabelY(midpoint + 9);
+  }
+  const serviceEndLabel = params.serviceUsesFixedDisplay
+    ? `${formatCurrency(params.serviceFixedAmount ?? 0, params.language)} ${params.texts.monthSuffix.trim()}`
+    : `${formatEnergyPrice(params.serviceEnergyPrice, params.language)} €/kWh`;
+  const investmentEndLabel = params.investmentUsesFixedDisplay
+    ? formatCurrency(params.investmentFixedAmount ?? 0, params.language)
+    : `${formatEnergyPrice(params.investmentEnergyPrice, params.language)} €/kWh`;
+  const graphPill = (
+    text: string,
+    x: number,
+    y: number,
+    width: number,
+    color: string,
+    anchor: "start" | "end" = "start",
+  ) => {
+    const textX = anchor === "end" ? x + width - 6 : x + 6;
+    return `<rect x="${formatSvgNumber(x)}" y="${formatSvgNumber(y - 8)}" width="${formatSvgNumber(width)}" height="16" rx="8" fill="#FFFFFF" stroke="${color}" stroke-width="0.8" stroke-opacity="0.38"></rect>
+                          <text x="${formatSvgNumber(textX)}" y="${formatSvgNumber(y + 2.8)}" font-size="7.8" fill="${color}" text-anchor="${anchor}" font-family="Arial, sans-serif" font-weight="800">${escapeHtml(text)}</text>`;
+  };
 
   return `<div class="proposal-stability-graph" style="margin:0 0 28px;">
                   <div class="eyebrow graph-section-eyebrow">${params.texts.stabilityTitle}</div>
-                  <div class="graph-block condensed-graph p2-graph-block" style="padding:26px 28px;background:#fff;border:1px solid #E4EAF7;border-radius:10px;box-shadow:none;">
-                    <div style="display:grid;grid-template-columns:190px minmax(0,1fr);gap:26px;align-items:center;">
-                      <div>
-                        <div style="font-size:8.4px;text-transform:uppercase;letter-spacing:0.14em;color:#7A81A8;font-weight:700;margin-bottom:7px;">${params.texts.currentBillLegend}</div>
-                        <div style="font-size:30px;line-height:1;color:#0B1957;font-weight:800;">${formatEnergyPrice(params.currentPrice, params.language)} <span style="font-size:10px;font-weight:600;color:#7A81A8;">€/kWh</span></div>
-                        <div style="margin-top:7px;font-size:10px;color:#4A568A;">${params.texts.year25}: <strong>${formatEnergyPrice(current25Price, params.language)} €/kWh</strong></div>
-                        <div style="margin-top:14px;font-size:10px;color:#4A568A;">${params.texts.totalCost25Years}:<br><strong style="font-size:16px;color:#0B1957;">${formatCurrency(current25Cost, params.language)}</strong></div>
-                      </div>
-                      <div>
-                        <svg viewBox="0 0 400 204" preserveAspectRatio="none" style="width:100%;height:220px;display:block;overflow:visible;">
+                  <div class="graph-block condensed-graph p2-graph-block" style="padding:22px 28px;background:#fff;border:1px solid #E4EAF7;border-radius:10px;box-shadow:none;">
+                    <div style="max-width:720px;margin:0 auto;">
+                        <svg viewBox="0 0 400 214" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block;overflow:visible;">
                           <defs>
                             <linearGradient id="proposalGraphFade" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="0%" stop-color="#2ED1BC" stop-opacity="0.18"></stop>
@@ -437,16 +431,15 @@ function buildStabilityGraphHtml(params: {
                           ${params.service && !params.serviceUsesFixedDisplay ? `<path d="${servicePath}" stroke="#7AB1FF" stroke-width="3.8" fill="none" stroke-linecap="round"></path>` : ""}
                           ${params.investment && !params.investmentUsesFixedDisplay ? `<path d="${investmentPath}" stroke="#2ED1BC" stroke-width="3.8" fill="none" stroke-linecap="round"></path>` : ""}
                           <circle cx="400" cy="34" r="4.5" fill="#706F6F" stroke="#fff" stroke-width="1.5"></circle>
-                          <text x="396" y="25" font-size="10" fill="#706F6F" text-anchor="end" font-family="monospace" font-weight="bold">${formatEnergyPrice(current25Price, params.language)} €/kWh</text>
+                          ${graphPill(`${formatEnergyPrice(current25Price, params.language)} €/kWh`, 306, 24, 90, "#706F6F", "end")}
+                          ${params.service ? `${graphPill(params.texts.serviceLegend, 4, serviceLabelY, 86, "#7AB1FF")}
+                          ${graphPill(serviceEndLabel, 306, serviceLabelY, 90, "#7AB1FF", "end")}` : ""}
+                          ${params.investment ? `${graphPill(params.texts.investmentLegend, 4, investmentLabelY, 96, "#2ED1BC")}
+                          ${graphPill(investmentEndLabel, 306, investmentLabelY, 90, "#2ED1BC", "end")}` : ""}
                           <text x="4" y="198" font-size="10" fill="#7A81A8" font-family="monospace" font-weight="bold">${params.texts.year1}</text>
                           <text x="396" y="198" font-size="10" fill="#7A81A8" text-anchor="end" font-family="monospace" font-weight="bold">${params.texts.year25}</text>
                         </svg>
-                        <div style="display:grid;gap:6px;margin-top:10px;">
-                          ${legendItem("#706F6F", params.texts.currentBillLegend, `${formatEnergyPrice(params.currentPrice, params.language)} -> ${formatEnergyPrice(current25Price, params.language)} €/kWh · ${formatCurrency(current25Cost, params.language)}`)}
-                          ${serviceLegend}
-                          ${investmentLegend}
-                        </div>
-                      </div>
+                        <div style="font-size:8.5px;color:#7A81A8;margin-top:8px;">${getProjectionFootnote(params.language)}</div>
                     </div>
                   </div>
                 </div>`;
@@ -570,7 +563,6 @@ function buildTemplateValues(payload: ProposalPdfPayload, language: AppLanguage)
     serviceEnergyPrice: formatEnergyPrice(serviceEnergyPrice, language),
     investmentEnergyPrice: formatEnergyPrice(investmentEnergyPrice, language),
     serviceAnnualCost: `${formatCurrency(annualServiceFee, language)}${texts.annualSuffix}`,
-    investmentAnnualCost: `${formatCurrency(investmentTotalCost25Years / PROJECTION_YEARS, language)}${texts.annualSuffix}`,
     serviceMonthlyFee: formatCurrency(monthlyFee, language),
     investmentUpfrontCost: formatCurrency(upfrontCost, language),
     serviceAnnualSavings: formatCurrency(serviceAnnualSavings, language),
@@ -680,7 +672,7 @@ export function buildProposalPdfHtml(payload: ProposalPdfPayload): string {
     ["22€/mes", `${values.serviceMonthlyFee}${texts.monthSuffix}`],
     ["22 €", values.serviceMonthlyFee],
     ["0,053", values.investmentEnergyPrice],
-    ["222 €/año", values.investmentAnnualCost],
+    ["222 €/año", values.investmentUpfrontCost],
     [
       "4.593€ pago único",
       `${values.investmentUpfrontCost} ${texts.investmentCardTitle.toLowerCase()}`,
