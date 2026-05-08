@@ -405,7 +405,7 @@
 .solar-comun-informe-wrapper.new-vibrant-design .participation-block {
     background: linear-gradient(90deg, #72DCCE 0%, #7FD2E8 45%, #87AFFF 100%);
     border-radius: 8px;
-    padding: 22px 28px;
+    padding: 30px 36px;
     box-shadow: none;
 }
 
@@ -424,8 +424,35 @@
 .solar-comun-informe-wrapper.new-vibrant-design .participation-separator { background: rgba(11,25,87,0.08); }
 
 .solar-comun-informe-wrapper.new-vibrant-design .stat-col {}
-.solar-comun-informe-wrapper.new-vibrant-design .stat-label { color: rgba(11,25,87,0.8); font-size: 8.2px; }
-.solar-comun-informe-wrapper.new-vibrant-design .stat-value { font-size: 21px; color: var(--text-main); }
+.solar-comun-informe-wrapper.new-vibrant-design .stat-label { color: rgba(11,25,87,0.8); font-size: 9.5px; }
+.solar-comun-informe-wrapper.new-vibrant-design .power-label { font-size: 9.5px !important; }
+.solar-comun-informe-wrapper.new-vibrant-design .stat-value { font-size: 26px; color: var(--text-main); }
+.solar-comun-informe-wrapper.new-vibrant-design .stat-icon {
+    display: block;
+    color: rgba(11,25,87,0.55);
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    align-self: center;
+}
+.solar-comun-informe-wrapper.new-vibrant-design .stat-col {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 9px;
+}
+.solar-comun-informe-wrapper.new-vibrant-design .stat-col > div,
+.solar-comun-informe-wrapper.new-vibrant-design .power-col > div {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.solar-comun-informe-wrapper.new-vibrant-design .power-col {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
 
 /* ============================================================
    AJUSTES PÁGINA 2 - CENTRADO VISUAL
@@ -521,7 +548,7 @@
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .impact-item {
-    padding: 24px 12px;
+    padding: 14px 14px;
     border-radius: 8px;
     background: #fff;
     border: 1px solid rgba(11,25,87,0.04);
@@ -534,7 +561,7 @@
 .solar-comun-informe-wrapper.new-vibrant-design .impact-shadow-energy_vFinal { filter: drop-shadow(0 4px 8px rgba(255,183,77,0.25)); }
 .solar-comun-informe-wrapper.new-vibrant-design .impact-shadow-diesel_vFinal { filter: drop-shadow(0 4px 8px rgba(100,181,246,0.25)); }
 
-.solar-comun-informe-wrapper.new-vibrant-design .impact-icon-wrapper { width: 68px; height: 68px; margin-bottom: 10px;}
+.solar-comun-informe-wrapper.new-vibrant-design .impact-icon-wrapper { width: 48px; height: 48px; margin-bottom: 8px;}
 
 .solar-comun-informe-wrapper.new-vibrant-design .impact-value { font-size: 28px; font-weight: 700;}
 
@@ -567,13 +594,24 @@
     background: linear-gradient(90deg, #52CFC0 0%, #6F9DF7 100%);
     color: #fff;
     font-weight: 700;
-    font-size: 12px;
-    padding: 13px 20px;
-    border-radius: 4px;
-    box-shadow: none;
+    font-size: 14px;
+    padding: 16px 26px;
+    border-radius: 6px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.solar-comun-informe-wrapper.new-vibrant-design .cta-contact { font-size: 10px; color: rgba(255,255,255,0.82); margin-top: 6px; }
+.solar-comun-informe-wrapper.new-vibrant-design .cta-contact {
+    font-size: 11px;
+    color: rgba(255,255,255,0.95);
+    font-weight: 600;
+    margin-top: 9px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
 
 /* ============================================================
    RESPONSIVE (ZOOM) - Mantenido igual
@@ -742,7 +780,7 @@ body {
 }
 .solar-comun-informe-wrapper.new-vibrant-design .participation-separator {
     width: 1px;
-    height: 66px;
+    align-self: stretch;
 }
 .solar-comun-informe-wrapper.new-vibrant-design .stat-col {
     text-align: left;
@@ -780,7 +818,7 @@ body {
 }
 .solar-comun-informe-wrapper.new-vibrant-design .impact-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .solar-comun-informe-wrapper.new-vibrant-design .impact-item {
     text-align: center;
@@ -1442,21 +1480,33 @@ body {
                         <div aria-hidden="true" class="participation-bg-orb"></div>
                         <div class="participation-grid">
                             <div class="power-col">
-                                <div class="eyebrow power-label">Potencia pico</div>
-                                <div class="power-value">4,0<span class="power-unit">kWp</span></div>
+                                <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"><path d="M15.89 10.318a20 20 0 0 0-2.002-.26h-.11a3 3 0 0 1-.07-.5c0-1.002.08-2.633 0-3.424a2 2 0 0 0-.09-.55c-.25-.511-.71 0-1.07.36c-.892.95-2.764 3.193-3.935 4.654c-.44.56-.79 1.001-.94 1.231a.62.62 0 0 0-.07.691a1 1 0 0 0 .63.29c.59.09 1.892.11 2.492.14c0 1.002-.14 3.424-.19 4.515v.51a.61.61 0 0 0 .36.61a.56.56 0 0 0 .611-.11q.15-.134.28-.29c.38-.44 1.162-1.41 2.002-2.492a44 44 0 0 0 2.723-3.954a1.34 1.34 0 0 0 .22-.86a1.17 1.17 0 0 0-.84-.561m-.33 1.171c-.75 1.181-2.583 3.513-3.764 5.005c0-.54.05-1.151.06-1.722V12.71a.81.81 0 0 0-.36-.7a1.4 1.4 0 0 0-.48-.1H8.834a.2.2 0 0 1 0-.06c1-1.372 3.183-4.245 4.184-5.426h.05v.06c0 .811-.11 2.122-.14 3.003a6 6 0 0 0 0 .921a.55.55 0 0 0 .2.36c.23.105.478.17.73.19q.936.1 1.852.31zm5.054-.801a2 2 0 0 0-1.502-1.32a.31.31 0 0 0-.39.19a.31.31 0 0 0 .19.38a1.36 1.36 0 0 1 .64 1.07q.054.273.06.551q.024.28 0 .56a1.6 1.6 0 0 1-.61 1.122a.34.34 0 0 0-.15.46a.33.33 0 0 0 .45.15a2.3 2.3 0 0 0 1.352-1.451c.2-.55.2-1.152 0-1.702z"/><path d="M23.738 9.788a6.72 6.72 0 0 0-2.623-3.784a.303.303 0 1 0-.37.48a6.23 6.23 0 0 1 1.932 3.554a9 9 0 0 1 .2 1.741a8.5 8.5 0 0 1-.14 1.742a5.64 5.64 0 0 1-2.002 3.473a.343.343 0 0 0-.08.48a.343.343 0 0 0 .48.08a6.36 6.36 0 0 0 2.623-3.793a7.65 7.65 0 0 0-.05-4.004zM5.27 9.647c-.513.34-.928.81-1.201 1.362a2.3 2.3 0 0 0-.2.81c-.013.284.021.568.1.841c.18.6.545 1.129 1.04 1.512a.36.36 0 0 0 .491 0a.35.35 0 0 0 0-.49a2.32 2.32 0 0 1-.49-1.783q.024-.268.09-.53c.095-.468.293-.91.58-1.291a.3.3 0 0 0 0-.42a.3.3 0 0 0-.41-.01m-1.531 8.107a4.86 4.86 0 0 1-2.353-3.453a9 9 0 0 1-.22-1.882q-.029-.946.11-1.882c.26-1.641.931-3.003 2.172-3.383a.3.3 0 0 0 .23-.36a.29.29 0 0 0-.35-.23C1.777 6.814.646 8.355.205 10.327a8.3 8.3 0 0 0-.2 2.132a9 9 0 0 0 .34 2.112a5.52 5.52 0 0 0 3.123 3.804a.34.34 0 1 0 .27-.62"/></g></svg>
+                                <div>
+                                    <div class="eyebrow power-label">Potencia pico</div>
+                                    <div class="power-value">4,0<span class="power-unit">kWp</span></div>
+                                </div>
                             </div>
                             <div class="participation-separator"></div>
                             <div class="stat-col">
-                                <div class="eyebrow stat-label">Paneles</div>
-                                <div class="stat-value">8 uds.</div>
+                                <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"><path d="M23.621 5.719c-.13-1.16-.07-3.511-.91-4.151c-1.92-1.49-6.151-1.09-8.812-1.2c-3.49-.15-7.161.14-10.612.23a.34.34 0 0 0 0 .68c3.46-.05 7.001-.28 10.562-.08c2.45.14 6.651-.14 8.252 1.13c.4.32.41 2.67.49 3.49a41.6 41.6 0 0 1 .08 8.783a13.7 13.7 0 0 1-.45 2.89c-2.35 1.31-19.654 2.37-20.704.54a12.7 12.7 0 0 1-.53-3.02c.39-.09 6.87 0 7 0c5.002 0 3.002-.25 11.323-.14c3-.08 1.38-.71 0-.75c-3.1-.22-4.66-.37-7.131-.34c-3.421 0-10.922.54-11.213.64a42.6 42.6 0 0 1 .12-9.252c0-.52.09-1 .16-1.54a7.7 7.7 0 0 1 .21-1.891a.3.3 0 0 0-.42-.42c-.42.41-.34 1.74-.41 2.22s-.14 1.04-.2 1.57a43.4 43.4 0 0 0-.36 8.462c.025 1.658.25 3.307.67 4.911c.79 1.45 5.762 1.56 7.502 1.59a4.17 4.17 0 0 0-.63 2.621l-2.15.16a.3.3 0 0 0-.355.295a.3.3 0 0 0 .354.295a70 70 0 0 0 7.862.2c1.38-.06 2.8-.22 4.24-.33a.34.34 0 0 0 0-.67h-1.84a10 10 0 0 0-.8-2.76c1.39-.1 7.552-.56 8.292-1.74a10.3 10.3 0 0 0 .62-3.382a39 39 0 0 0-.21-9.041m-8.712 16.893c-3.1-.08-4.3-.09-6.541 0a6.8 6.8 0 0 0 .75-2.56c1.47 0 3 0 4.801-.15a6.34 6.34 0 0 0 .99 2.71"/><path d="M11.918 15.91c-.85-.45-1.89.42-1.13 1.19a.93.93 0 0 0 1.36-.09a.91.91 0 0 0-.23-1.1M5.787 10.3a.29.29 0 0 0-.25.34c.07.46.5.08 2.22.3l.05 1.34a.34.34 0 1 0 .671 0l.1-1.27a20.5 20.5 0 0 0 2.77.06c0 .72 0 .58.05.72c0 1.12.55 1.29.75-.74h2.861c.05.42 0-.08.15 1.3c-.06.41.68.48.69-.05v-1.26c1.61 0 1.8.14 1.82-.2c.18-.52-.12-.47-1.8-.63V8.12l.85-.11a.34.34 0 0 0-.06-.671h-.79a16 16 0 0 0-.13-2q.506-.033 1-.14a.34.34 0 0 0 .1-.47c-.21-.33-.83-.37-1.23-.37a12 12 0 0 0-.38-1.63a.301.301 0 0 0-.48-.215a.3.3 0 0 0-.1.344q.11.751.12 1.51c-.71 0-.89-.1-2.88-.06a6.7 6.7 0 0 0-.27-1.55c-.2-.36-.51-.14-.51.31v1.27c-1.88.07-1.14.08-2.421.15c-.15-1.68 0-1.52-.15-1.73a.37.37 0 0 0-.55.25c-.05.31-.1 1.11-.13 1.51c-.09 0-1.56 0-1.65.07a.3.3 0 0 0 0 .58q.784.137 1.58.16c-.06.72-.07.82-.09 1.841q-.902.188-1.82.22a.29.29 0 0 0-.33.25c-.07.51.86.39 2.15.37v2.09q-.963.021-1.91.2m2.871-.21c.05-.68.1-1.35.14-2c1.27.09 1.37.1 2.27.12c0 .59.1 1.19.16 1.78zm6.261 0a22 22 0 0 0-2.7-.17V8.17c.43 0 2.57-.06 2.57-.06c.04 1.13.06 1.28.13 1.99zm-.16-4.881v2c-1.14-.1-1-.1-2.6-.17c0-.57-.09-1.13-.15-1.69zm-3.7.22c-.07 1.43-.07 1.17-.07 1.58q-1.106-.06-2.211 0a14 14 0 0 0-.07-1.71c.81.12 1.58.15 2.35.13"/></g></svg>
+                                <div>
+                                    <div class="eyebrow stat-label">Paneles</div>
+                                    <div class="stat-value">8 uds.</div>
+                                </div>
                             </div>
                             <div class="stat-col">
-                                <div class="eyebrow stat-label">Producción anual</div>
-                                <div class="stat-value">4.492 kWh</div>
+                                <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M20.783 6.425a4.7 4.7 0 0 0-1.512-.3c-1.661-.12-4.323-.12-5.514-.12c.41-.911 1.22-2.702 1.611-3.523c.05-.12.26-.39.26-.6s-.41-.621-.69-.13c0 .06-.11.21-.21.42c-.56 1.13-1.932 4.063-1.932 4.063a.42.42 0 0 0 0 .38a.37.37 0 0 0 .33.17c2.253-.02 4.505.087 6.746.32h.14q-.06.115-.13.22a30 30 0 0 1-2.002 2.313a148 148 0 0 1-4.123 4.173c-1.11 1.13-6.755 6.405-9.237 8.397l-.39.3a9.7 9.7 0 0 1 1-2.272c1.131-2.082 2.942-4.814 4.574-7.506a.76.76 0 0 0 0-.93a.93.93 0 0 0-.53-.32a5 5 0 0 0-1.152 0l-3.272.08H4.1c.08-.181.2-.401.28-.621C5.28 8.407 7.692 2.472 8.463.93c.43-.11 1.45-.13 1.541-.14c.75-.06 1.521-.09 2.292-.11h3.503a.31.31 0 0 0 .31-.34a.31.31 0 0 0-.31-.341h-4.104c-.58 0-1.17 0-1.771.07H8.313a.68.68 0 0 0-.46.24C7.131 1.601 4.44 7.876 3.428 10.518q-.224.54-.38 1.101a.6.6 0 0 0 .14.61c.166.14.366.233.58.27q.5.048 1 0l3.233.01q.215.027.42.091c-1.91 3.072-4.002 6.145-4.943 8.217a5.5 5.5 0 0 0-.57 1.891a1.29 1.29 0 0 0 .49 1.19a.71.71 0 0 0 .73 0a7.4 7.4 0 0 0 1.141-.81c2.482-2.001 8.127-7.416 9.248-8.546a139 139 0 0 0 5.384-5.755a5.1 5.1 0 0 0 1.2-1.902a.56.56 0 0 0-.32-.46" clip-rule="evenodd"/></svg>
+                                <div>
+                                    <div class="eyebrow stat-label">Producción anual</div>
+                                    <div class="stat-value">4.492 kWh</div>
+                                </div>
                             </div>
                             <div class="stat-col">
-                                <div class="eyebrow stat-label">Distancia planta</div>
-                                <div class="stat-value">< 5 km</div>
+                                <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"><path d="M19.262 4.047c-.08-1.824-1.884-1.565-2.462-1.206c-.28.195-.502.464-.638.777a1.42 1.42 0 0 0 .31 1.535a1.83 1.83 0 0 0 1.375.638a1.664 1.664 0 0 0 1.415-1.744m-1.495.498a.62.62 0 0 1-.418-.229a.6.6 0 0 1-.21-.269s-.06-.06-.05-.09a1 1 0 0 1 .22-.508a.538.538 0 0 1 .937.339c.05.349-.12.767-.479.757M10.999 5.96a.8.8 0 0 0 .22-.069c.896-.439.817-.548.817-.628c0-.409-.937-.538-.997-.548a1 1 0 0 0-.29 0a.9.9 0 0 0-.258.11c-.848.478-.828.647-.788.827c.03.389 1.236.309 1.296.309M7.161 7.167a.7.7 0 0 0 .16-.13c.638-.697.518-.807.488-.877c-.14-.349-1.076-.12-1.096-.12a.8.8 0 0 0-.25.12q-.11.084-.199.19c-.638.837-.388.996-.329 1.086c.21.2 1.206-.26 1.226-.27m-3.777 4.178c.229.08.338 0 .897-.718q.078-.105.14-.22a.8.8 0 0 0 .099-.249c.26-.997.06-1.076 0-1.126c-.28-.17-.997.488-.997.568q-.096.114-.16.25q-.07.136-.1.288c-.238 1.127.03 1.177.12 1.207m-.009 3.578q.015-.135 0-.27a1 1 0 0 0-.06-.248c-.35-.997-.529-.927-.618-.927c-.32 0-.529.837-.558.996a1 1 0 0 0 0 .31q.029.15.09.288c.428 1.057.687.928.777.908s.309-.04.369-1.057M4.23 18.4a.5.5 0 0 0-.099-.169c-.618-.737-.797-.568-.817-.568c-.32.1-.28.997-.28.997a.5.5 0 0 0 .07.24a.8.8 0 0 0 .14.208c.628.648.847.569.997.479s0-1.166-.01-1.186m2.342 3.189a1.8 1.8 0 0 0-.379-.309s-1.076-.548-1.295-.289c-.22.26.448 1.117.468 1.127q.105.135.24.239q.143.095.298.17c1.127.498 1.256.179 1.306.08c.05-.1.12-.26-.638-1.018m12.929-1.764a1.6 1.6 0 0 0-.17.19q-.073.11-.13.229c-.388.947-.219.997-.149 1.086c.27.25 1.087-.369 1.107-.379a.9.9 0 0 0 .189-.229q.087-.125.14-.269c.368-1.057.09-1.136 0-1.186s-.34-.07-.987.558m1.694-5.432c-.24 0-.329 0-.618 1.196c0 .11-.05.22-.07.339s0 .229 0 .339c0 1.255.21 1.216.32 1.246c.368.1.777-.838.857-1.067q.054-.19.08-.389a1.8 1.8 0 0 0 0-.399c-.16-1.325-.45-1.265-.569-1.265m.578-2.961a1.8 1.8 0 0 0-.14-.359c-.617-1.186-.896-.997-.996-.997s-.3.19-.11 1.336q.033.29.14.558s.548 1.207.917 1.097c.12 0 .359-.08.269-1.296a1.2 1.2 0 0 0-.08-.339"/><path d="M14.408 6.3q.243.673.578 1.306q.39.712.897 1.345a22 22 0 0 0 1.595 1.715a.329.329 0 1 0 .469-.459a17 17 0 0 1-1.436-1.734a7 7 0 0 1-.718-1.256a8.5 8.5 0 0 1-.458-1.176a9 9 0 0 1-.26-1.256a6 6 0 0 1 0-.868c.003-.254.046-.507.13-.747a2.64 2.64 0 0 1 3.02-1.814A2.5 2.5 0 0 1 20.4 4.047a9.8 9.8 0 0 1-.608 2.99a7.1 7.1 0 0 1-1.655 2.532a.37.37 0 1 0 .508.538a8 8 0 0 0 1.994-2.72c.442-1.028.724-2.117.837-3.23A3.6 3.6 0 0 0 18.485.08a3.79 3.79 0 0 0-4.396 2.601c-.096.3-.147.613-.15.927q-.042.651.05 1.296q.15.715.419 1.396"/><path d="M20.16 14.174c.046-.729.012-1.46-.1-2.183a5.8 5.8 0 0 0-.489-1.415a.36.36 0 0 0-.488-.18a.37.37 0 0 0-.18.489c.23.494.375 1.023.43 1.565a11 11 0 0 1 0 1.535c-.998.12-1.994.279-2.991.389h-.22a10 10 0 0 0-.08-1.097a10.5 10.5 0 0 0-.488-1.993a15 15 0 0 0-2.282-4.117a.36.36 0 0 0-.28-.13a.4.4 0 0 0 .1-.219a.32.32 0 0 0-.309-.339a6.98 6.98 0 0 0-4.226.997a9.9 9.9 0 0 0-2.99 3.12a7.97 7.97 0 0 0-1.087 5.193a6.12 6.12 0 0 0 2.83 4.595a9.5 9.5 0 0 0 8.324.489a7.3 7.3 0 0 0 4.525-6.699m-5.772-2.521q.247.906.399 1.834c0 .328.07.657.11.996c-.997.06-1.934 0-2.921 0c-.588 0-1.186 0-1.774-.07c0-.209 0-.428.07-.637q.161-1.01.438-1.994c.488-1.794 1.665-4.695 1.993-4.216a16 16 0 0 1 1.685 4.087m-5.383-3.42a6.2 6.2 0 0 1 2.841-.996a16.3 16.3 0 0 0-2.292 4.226a12.6 12.6 0 0 0-.549 2.143v.798a42 42 0 0 1-3.389-.42a6.5 6.5 0 0 1 .808-2.79a8.9 8.9 0 0 1 2.581-2.96M5.616 15.7a7 7 0 0 1-.07-.897q1.632.405 3.34.658v.379a18 18 0 0 0 .608 4.236a7.3 7.3 0 0 1-1.565-.688A4.98 4.98 0 0 1 5.636 15.7zm4.685 4.576a20 20 0 0 1-.299-4.406v-.25c.798.08 1.595.14 2.392.14c.798 0 1.695-.07 2.522-.15c.07 1.4-.027 2.802-.289 4.177a.38.38 0 0 0 0 .26a8.3 8.3 0 0 1-4.306.229zm5.134-.499c.423-1.418.657-2.886.697-4.366l.32-.06c.916-.199 1.814-.438 2.73-.637a6.31 6.31 0 0 1-3.727 5.063zm-5.323 3.04l-.32-.08q-.164-.015-.328 0c-1.216 0-1.206.2-1.236.299c-.1.359.897.817.997.867q.181.075.379.09q.199.018.398-.01c1.306-.11 1.256-.459 1.256-.578c-.02-.3-.14-.31-1.146-.588m3.598-.24h-.259q-.13.024-.25.08c-.996.399-.906.568-.906.658c0 .329.877.488 1.086.508q.155.023.31 0a1.3 1.3 0 0 0 .298-.11c.997-.508.887-.787.858-.877c-.09-.239-.23-.269-1.137-.259m3.43-.837a2.3 2.3 0 0 0-.45.12s-1.046.558-.996.897s1.166.289 1.186.289q.169-.013.329-.07q.164-.048.309-.14c.907-.558.897-.837.797-.996s-.12-.29-1.176-.1"/></g></svg>
+                                <div>
+                                    <div class="eyebrow stat-label">Distancia planta</div>
+                                    <div class="stat-value">< 5 km</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1579,34 +1629,34 @@ body {
                 <!-- Impacto ambiental con iconos -->
                 <div class="eyebrow impact-eyebrow">Tu impacto ambiental · 25 años</div>
                 <div class="impact-grid condensed-impact">
-                    <!-- Item 1 -->
+                    <!-- Item 1: CO2 -->
                     <div class="impact-item item-co2">
                         <div class="impact-icon-wrapper impact-shadow-co2_vFinal">
-                            <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" fill="#2ED1BC" opacity=".22"></circle><path d="M15 28c-3 0-5-2-5-5s2-5 5-5c.5-4 4-7 8-7s7 3 8 7c3 0 6 2 6 5s-3 5-6 5H15z" stroke="#0A8F79" stroke-width="1.8" stroke-linejoin="round" fill="#fff"></path><path d="M15 32v5M24 32v7M30 32v5" stroke="#0A8F79" stroke-width="1.8" stroke-linecap="round"></path></svg>
+                            <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="6.5" fill="#2ED1BC" opacity=".22"/><g stroke="#0A8F79" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.1"><path d="M11.51 5.391c2 2.817.47 6.043-.27 7.301a1.42 1.42 0 0 1-1 .66c-1.45.25-5.06.529-7-2.288c-1.91-2.656-1.83-7.33-1.66-9.558A1.048 1.048 0 0 1 3 .568c2.15.619 6.63 2.167 8.51 4.823"/><path d="M4.77 4.463a52 52 0 0 1 6 8.719"/></g></svg>
                         </div>
                         <div class="display impact-value value-co2">27,5 t</div>
                         <div class="impact-label">CO₂ evitado</div>
                     </div>
-                    <!-- Item 2 -->
+                    <!-- Item 2: Árboles -->
                     <div class="impact-item item-trees">
                         <div class="impact-icon-wrapper impact-shadow-trees_vFinal">
-                            <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" fill="#7CB342" opacity=".2"></circle><path d="M24 10c-5 0-9 4-9 9 0 4 3 7 6 8v4h-4v3h14v-3h-4v-4c3-1 6-4 6-8 0-5-4-9-9-9z" fill="#fff" stroke="#2B7A2F" stroke-width="1.5" stroke-linejoin="round"></path><path d="M24 10v17" stroke="#2B7A2F" stroke-width="1.2"></path></svg>
+                            <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="6.5" fill="#7CB342" opacity=".2"/><g stroke="#2B7A2F" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.1"><path d="M11.57 7.84a2 2 0 0 1-.26 1.82a2 2 0 0 1-1.63.84H4.32a2 2 0 0 1-1.63-.84a2 2 0 0 1-.26-1.82l1.91-5.45a2.82 2.82 0 0 1 5.32 0Z"/><path d="M5.5 6.5L7 8v5.5M7 8l1.5-1.5"/></g></svg>
                         </div>
                         <div class="display impact-value value-trees">1.830</div>
                         <div class="impact-label">Árboles</div>
                     </div>
-                    <!-- Item 3 -->
+                    <!-- Item 3: Energía limpia -->
                     <div class="impact-item item-energy">
                         <div class="impact-icon-wrapper impact-shadow-energy_vFinal">
-                            <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" fill="#FFB74D" opacity=".25"></circle><circle cx="24" cy="24" r="7" fill="#fff" stroke="#F18A1D" stroke-width="1.5"></circle><g stroke="#F18A1D" stroke-width="1.8" stroke-linecap="round"><path d="M24 10v4M24 34v4M10 24h4M34 24h4M14 14l3 3M31 31l3 3M34 14l-3 3M17 31l-3 3"></path></g></svg>
+                            <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="6.5" fill="#FFB74D" opacity=".25"/><path stroke="#F18A1D" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.1" d="M11 8.5a2.5 2.5 0 0 0-1.5.5A4.5 4.5 0 1 0 5 13.5h6a2.5 2.5 0 0 0 0-5m.25-3.5a2.25 2.25 0 1 0 0-4.5a2.25 2.25 0 0 0 0 4.5"/></svg>
                         </div>
                         <div class="display impact-value value-energy">112 MWh</div>
                         <div class="impact-label">Energía limpia</div>
                     </div>
-                    <!-- Item 4 -->
+                    <!-- Item 4: Diésel evitado -->
                     <div class="impact-item item-diesel">
                         <div class="impact-icon-wrapper impact-shadow-diesel_vFinal">
-                            <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" fill="#64B5F6" opacity=".25"></circle><path d="M12 28l3-8c.5-1.5 2-2.5 3.5-2.5h11c1.5 0 3 1 3.5 2.5l3 8v5h-3v-2H15v2h-3v-5z" fill="#fff" stroke="#1257A6" stroke-width="1.5" stroke-linejoin="round"></path><circle cx="17" cy="30" r="2.5" fill="#1257A6"></circle><circle cx="31" cy="30" r="2.5" fill="#1257A6"></circle><path d="M17 20l2-2h10l2 2" stroke="#1257A6" stroke-width="1.2"></path></svg>
+                            <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="6.5" fill="#64B5F6" opacity=".25"/><g stroke="#1257A6" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.1"><path d="M2 11h-.5a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1H3l.77-2.32a1 1 0 0 1 1-.68h4.01a1 1 0 0 1 1 .68L10.5 7h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H12"/><path d="M10.499 12.5a1.501 1.501 0 1 1 0-3.002a1.501 1.501 0 0 1 0 3.002m-7 0a1.501 1.501 0 1 1 0-3.002a1.501 1.501 0 0 1 0 3.002M8.998 11H5m2-7V2"/></g></svg>
                         </div>
                         <div class="display impact-value value-diesel">115k km</div>
                         <div class="impact-label">Diésel evitado</div>
@@ -1622,8 +1672,8 @@ body {
                             <div class="display cta-title">¿Reservamos tu <em class="highlight-text-cta">participación</em>?</div>
                         </div>
                         <div class="cta-button-col">
-                            <div class="cta-button">Reservar →</div>
-                            <div class="cta-contact">hola@solarcomun.coop</div>
+                            <div class="cta-button">Reservar <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M23.997 2.486a1.94 1.94 0 0 0-.5-1.311a2.56 2.56 0 0 0-2.003-.24q-1.833.405-3.613 1c-.61.18-1.211.391-1.802.621c-.88.33-1.742.711-2.612 1.091A49 49 0 0 0 8.782 6a26.6 26.6 0 0 0-4.284 3.003l-3.433 3.073l-.791.79a1.7 1.7 0 0 0-.25.34a.4.4 0 0 0 0 .271a.68.68 0 0 0 .4.5c.387.132.792.2 1.201.2c.44 0 1.221 0 1.892.1c.34-.01.678.038 1 .14l.191 2.233c.06.64.09 1.141.09 1.612c0 .75-.1 2.052-.1 3.073a.34.34 0 1 0 .68 0c0-1.001.13-2.323.14-3.073c0-.49 0-1.001-.07-1.672c-.07-.67-.07-1.511-.15-2.002s-.09-.76-1.34-1c-.741-.091-1.762-.141-2.313-.171l-.55-.08l.58-.57l3.453-3.004a24.8 24.8 0 0 1 4.144-2.912a50 50 0 0 1 4.595-2.183c.85-.36 1.712-.71 2.572-1a32 32 0 0 1 5.646-1.522c.9.39.77.73.75 1a7.2 7.2 0 0 1-.27 1.492l-1.29 4.365c-.261.87-.541 1.681-.832 2.472c-.71 1.912-1.491 3.704-2.212 5.776q-.254.706-.6 1.371c-.37.7-.791 1.371-1.182 2.002q-.165.306-.38.58l-.1.12l-.06-.09l-1.001-1.571a25 25 0 0 0-1.582-1.952a21 21 0 0 0-1.791-1.782c-.43-.36-1.642-1.36-2.002-.64c-.1.13-.21.38-.27.45L8.09 17.441l-1.18 2.092c-.421.73-.922 1.421-1.372 2.152c-.19.32-.38.65-.54 1.001a.3.3 0 0 0 .14.4s.28.23.69-.08s.53-.39.76-.57c.231-.18.762-.55 1.132-.811c.37-.26.67-.45 1.001-.68l1.521-1.062c.801-.57 1.572-1.16 2.323-1.791l.17.19a27 27 0 0 1 1.491 1.912l.901 1.541q.139.256.31.49a.55.55 0 0 0 .45.17c.238-.038.46-.142.642-.3c.284-.275.53-.589.73-.93c.41-.631.861-1.322 1.251-2.002q.405-.719.691-1.492c.74-2.062 1.562-3.834 2.282-5.725c.32-.821.611-1.652.881-2.543l1.301-4.404a8 8 0 0 0 .33-2.513M9.102 19.283q-.519.334-1 .72c-.341.27-.661.55-1.002.851l-.75.77c.39-.59.8-1.16 1.16-1.76l1.242-2.003l1.151-1.651c.05-.06.2-.31.26-.41s.2.13.31.21s.451.41.581.52c.34.31.68.66 1.001 1c-.95.632-1.982 1.142-2.953 1.753"/><path fill="currentColor" d="M13.687 9.673c-.53.58-1.001 1.191-1.522 1.822a29 29 0 0 0-1.631 2.202c-.11.16-.21.33-.31.49c-.26.792.11.671.8.08l.09-.14c.56-.71 1.191-1.38 1.782-2.001c.95-1.091 2.002-2.092 3.003-3.083L18.12 6.95a135 135 0 0 0 3.253-3.113C22.996.995 18.582 4.998 16.2 7.17c-.87.83-1.711 1.621-2.512 2.502m-.402-3.062a68 68 0 0 0-4.074 3.003L6.05 12.186c-.2.18-.43.37-.66.56c-.48.6-.41.821.68.34c.16-.11.32-.22.45-.33l3.304-2.362l8.228-5.675c.81-.551 1.592-1.102 2.402-1.632c.19-.67-1.23-.2-2.402.49l-.53.32c-1.422.892-2.853 1.762-4.235 2.713"/></svg></div>
+                            <div class="cta-contact"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M23.71 17.503a.39.39 0 0 0-.551 0a17.6 17.6 0 0 1-3.624 3.223a13.9 13.9 0 0 1-4.404 1.882a17.8 17.8 0 0 1-4.215.43a16 16 0 0 1-4.164-.6a7.63 7.63 0 0 1-4.434-3.003a7.4 7.4 0 0 1-.851-5.266c.47-3 1.802-5.8 3.834-8.058a14 14 0 0 1 7.617-4.515a11.8 11.8 0 0 1 4.635-.06a5.7 5.7 0 0 1 3.674 2.283a5.58 5.58 0 0 1 .92 3.814a12.26 12.26 0 0 1-2.572 5.735a10 10 0 0 1-1.671 1.862c-.35.26-.711.48-1.072.35c-.6-.22-.74-.8-.77-1.45c.063-1.118.245-2.225.54-3.304c.071-.206.089-.426.05-.64a.57.57 0 0 0-1.08-.121c-.161.23-.581 1.151-.892 1.722a12 12 0 0 1-3.924 4.464a2.56 2.56 0 0 1-3.273-.32a2.16 2.16 0 0 1-.62-1.451c-.044-.6.01-1.2.16-1.782a10 10 0 0 1 1.811-3.684a7.76 7.76 0 0 1 3.194-2.523a4.35 4.35 0 0 1 2.572-.3a1.93 1.93 0 0 1 1.432 1.732a.34.34 0 0 0 .39.3a.35.35 0 0 0 .3-.39a2.58 2.58 0 0 0-1.381-2.112a4.56 4.56 0 0 0-3.644 0a8.56 8.56 0 0 0-3.523 2.792a10.9 10.9 0 0 0-2.002 4.005a6.2 6.2 0 0 0-.15 2.502c.096.619.387 1.19.83 1.632a3.484 3.484 0 0 0 4.445.53a11.7 11.7 0 0 0 3.623-3.563a5 5 0 0 0 .05 1.291a2.29 2.29 0 0 0 1.462 1.862a2.11 2.11 0 0 0 1.822-.21a9 9 0 0 0 2.392-2.393a13.6 13.6 0 0 0 2.863-6.366a6.85 6.85 0 0 0-1.14-4.705A6.65 6.65 0 0 0 18.864.515a12.3 12.3 0 0 0-6.207-.22A15.28 15.28 0 0 0 4.36 5.3a16.86 16.86 0 0 0-4.044 8.72a8.5 8.5 0 0 0 1.09 6.005a8.74 8.74 0 0 0 5.066 3.394a17.2 17.2 0 0 0 4.434.58a18.5 18.5 0 0 0 4.435-.5a14.8 14.8 0 0 0 4.695-2.032a18.4 18.4 0 0 0 3.724-3.444a.4.4 0 0 0-.05-.52"/></svg>hola@solarcomun.coop</div>
                         </div>
                     </div>
                 </div>
