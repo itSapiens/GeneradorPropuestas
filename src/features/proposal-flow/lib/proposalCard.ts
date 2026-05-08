@@ -59,6 +59,14 @@ const recommendedPowerKwp = getDisplayedRecommendedPowerKwp(
 
     const paybackYears = annualSavings > 0 ? upfrontCost / annualSavings : 0;
 
+    console.log("[proposal-card:investment:25y]", {
+      formula: "annualSavings * 25",
+      annualSavings,
+      totalSavings25Years,
+      upfrontCost,
+      expectedTotalSavings25Years: annualSavings * 25,
+    });
+
     return {
       id: "investment",
       title: t("result.modes.investment"),
@@ -105,6 +113,14 @@ const recommendedPowerKwp = getDisplayedRecommendedPowerKwp(
     "servicePaybackYears",
     "paybackYearsService",
   ]);
+
+  console.log("[proposal-card:service:25y]", {
+    formula: "annualSavings * 25",
+    annualSavings,
+    totalSavings25Years,
+    monthlyFee,
+    expectedTotalSavings25Years: annualSavings * 25,
+  });
 
   return {
     id: "service",

@@ -419,12 +419,14 @@ function buildStabilityOrbitHtml(params: {
   investmentEnergyPrice: number;
   investmentFixedAmount?: number;
   investmentTotalCost25Years: number;
+  investmentTotalSavings25Years: number;
   investmentUsesFixedDisplay?: boolean;
   language: AppLanguage;
   service?: ProposalPdfSummary;
   serviceEnergyPrice: number;
   serviceFixedAmount?: number;
   serviceTotalCost25Years: number;
+  serviceTotalSavings25Years: number;
   serviceUsesFixedDisplay?: boolean;
   texts: ReturnType<typeof getProposalPdfTexts>;
 }): string {
@@ -448,8 +450,8 @@ function buildStabilityOrbitHtml(params: {
   };
 
   return `<div class="stability-orbit-notes orbit-savings-layer">
-      ${modeSummary(params.service, "#7AB1FF", params.serviceTotalCost25Years, "orbit-savings-service")}
-      ${modeSummary(params.investment, "#2ED1BC", params.investmentTotalCost25Years, "orbit-savings-investment")}
+      ${modeSummary(params.service, "#7AB1FF", params.serviceTotalSavings25Years, "orbit-savings-service")}
+      ${modeSummary(params.investment, "#2ED1BC", params.investmentTotalSavings25Years, "orbit-savings-investment")}
     </div>`;
 }
 
@@ -699,9 +701,22 @@ function buildTemplateValues(payload: ProposalPdfPayload, language: AppLanguage)
           ? "investment"
           : null;
 
-  const serviceDiscount = discountFromPrice(currentPrice, serviceEnergyPrice);
-  const investmentDiscount = discountFromPrice(currentPrice, investmentEnergyPrice);
-  const bestDiscount = Math.max(serviceDiscount, investmentDiscount);
+  const rawServiceDiscount = service ? discountFromPrice(currentPrice, serviceEnergyPrice) : 0;
+  const serviceDiscount =
+    rawServiceDiscount === 0 && serviceAnnualSavings > 0
+      ? clampPercent(Math.round((serviceAnnualSavings / Math.max(currentAnnualCost, 1)) * 100))
+      : rawServiceDiscount;
+
+  const rawInvestmentDiscount = investment ? discountFromPrice(currentPrice, investmentEnergyPrice) : 0;
+  const investmentDiscount =
+    rawInvestmentDiscount === 0 && investmentAnnualSavings > 0
+      ? clampPercent(Math.round((investmentAnnualSavings / Math.max(currentAnnualCost, 1)) * 100))
+      : rawInvestmentDiscount;
+
+  const bestDiscount = Math.max(
+    service ? serviceDiscount : 0,
+    investment ? investmentDiscount : 0,
+  );
 
   const recommendedPowerKwp = positive(
     preferred?.recommendedPowerKwp,
@@ -727,6 +742,45 @@ function buildTemplateValues(payload: ProposalPdfPayload, language: AppLanguage)
   const paybackText = investmentPaybackYears
     ? `${formatNumber(investmentPaybackYears, language, 1, 1)} ${texts.yearsLabel}`
     : "-";
+  const serviceTotalSavings25Years = positive(
+    service?.totalSavings25Years,
+    positive(result.totalSavings25YearsService),
+  );
+  const investmentTotalSavings25Years = positive(
+    investment?.totalSavings25Years,
+    positive(result.totalSavings25YearsInvestment),
+  );
+
+  console.log("[proposal-pdf-html:25y]", {
+    result: {
+      annualSavingsInvestment: result.annualSavingsInvestment,
+      annualSavingsService: result.annualSavingsService,
+      totalSavings25YearsInvestment: result.totalSavings25YearsInvestment,
+      totalSavings25YearsService: result.totalSavings25YearsService,
+    },
+    proposals: {
+      investment: {
+        annualSavings: investment?.annualSavings,
+        totalSavings25Years: investment?.totalSavings25Years,
+        expectedTotalSavings25Years:
+          typeof investment?.annualSavings === "number"
+            ? investment.annualSavings * 25
+            : null,
+      },
+      service: {
+        annualSavings: service?.annualSavings,
+        totalSavings25Years: service?.totalSavings25Years,
+        expectedTotalSavings25Years:
+          typeof service?.annualSavings === "number"
+            ? service.annualSavings * 25
+            : null,
+      },
+    },
+    rendered: {
+      investmentTotalSavings25Years,
+      serviceTotalSavings25Years,
+    },
+  });
 
   return {
     clientName: fullName(billData, texts.clientFallback),
@@ -748,14 +802,8 @@ function buildTemplateValues(payload: ProposalPdfPayload, language: AppLanguage)
     investmentUpfrontCost: formatCurrency(upfrontCost, language),
     serviceAnnualSavings: formatCurrency(serviceAnnualSavings, language),
     investmentAnnualSavings: formatCurrency(investmentAnnualSavings, language),
-    serviceTotalSavings: formatCurrency(
-      positive(service?.totalSavings25Years, positive(result.totalSavings25YearsService)),
-      language,
-    ),
-    investmentTotalSavings: formatCurrency(
-      positive(investment?.totalSavings25Years, positive(result.totalSavings25YearsInvestment)),
-      language,
-    ),
+    serviceTotalSavings: formatCurrency(serviceTotalSavings25Years, language),
+    investmentTotalSavings: formatCurrency(investmentTotalSavings25Years, language),
     investmentPayback: paybackText,
     recommendedPower: formatNumber(recommendedPowerKwp, language, 1, 1),
     panelCount: `${formatNumber(Math.max(Math.ceil(recommendedPowerKwp / 0.45), 1), language, 0)} ${texts.unitsLabel}`,
@@ -768,10 +816,7 @@ function buildTemplateValues(payload: ProposalPdfPayload, language: AppLanguage)
       texts.investmentCardDescriptionTemplate,
       {
         payback: paybackText,
-        savings: formatCurrency(
-      positive(investment?.totalSavings25Years, positive(result.totalSavings25YearsInvestment)),
-      language,
-        ),
+        savings: formatCurrency(investmentTotalSavings25Years, language),
       },
     ),
     contact: contact || texts.pendingContact,
@@ -786,12 +831,14 @@ function buildTemplateValues(payload: ProposalPdfPayload, language: AppLanguage)
       investmentEnergyPrice,
       investmentFixedAmount: upfrontCost,
       investmentTotalCost25Years,
+      investmentTotalSavings25Years,
       investmentUsesFixedDisplay,
       language,
       service,
       serviceEnergyPrice,
       serviceFixedAmount: monthlyFee,
       serviceTotalCost25Years,
+      serviceTotalSavings25Years,
       serviceUsesFixedDisplay,
       texts,
     }),
@@ -962,7 +1009,7 @@ export function buildProposalPdfHtml(payload: ProposalPdfPayload): string {
   html = replaceRaw(
     html,
     `<div class="cta-button">Reservar →</div>`,
-    `<a class="cta-button" href="${escapeHtml(values.reserveHref)}" target="_blank" rel="noopener noreferrer" style="display:flex;text-decoration:none;">Reservar →</a>`,
+    `<a class="cta-button" href="${escapeHtml(values.reserveHref)}" target="_blank" rel="noopener noreferrer" style="display:flex;text-decoration:none;"><span>Reservar</span></a>`,
   );
 
   html = removeSectionBetweenMarkers(
@@ -1126,8 +1173,8 @@ export function buildProposalPdfHtml(payload: ProposalPdfPayload): string {
   if (!html.includes(`href="${escapeHtml(values.reserveHref)}"`)) {
     const reserveLabel = escapeHtml(texts.reserveCta.replace(/\s*→\s*$/, ""));
     html = html.replace(
-      /<div class="cta-button">[^<]*(\s*<svg[\s\S]*?<\/svg>)<\/div>/,
-      `<a class="cta-button" href="${escapeHtml(values.reserveHref)}" target="_blank" rel="noopener noreferrer" style="display:flex;text-decoration:none;">${reserveLabel}$1</a>`,
+      /<div class="cta-button">([^<]*)(\s*<svg[\s\S]*?<\/svg>)(?:\s*<span>[^<]*<\/span>)?<\/div>/,
+      `<a class="cta-button" href="${escapeHtml(values.reserveHref)}" target="_blank" rel="noopener noreferrer" style="display:flex;text-decoration:none;">$2<span>${reserveLabel}</span></a>`,
     );
   }
 

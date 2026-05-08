@@ -87,6 +87,22 @@ describe("calculateEnergyStudy", () => {
     });
   });
 
+  describe("totalSavings25Years", () => {
+    it("uses annual savings times 25 without applying inflation", () => {
+      const result = calculateEnergyStudy({
+        ...BASE_INPUT,
+        energyPriceInflation: 0.5,
+      });
+
+      expect(result.totalSavings25YearsInvestment).toBe(
+        Number((result.annualSavingsInvestment * 25).toFixed(2)),
+      );
+      expect(result.totalSavings25YearsService).toBe(
+        Number((result.annualSavingsService * 25).toFixed(2)),
+      );
+    });
+  });
+
   describe("fixed payment", () => {
     it("uses the fixed amount for service and investment", () => {
       const result = calculateEnergyStudy({

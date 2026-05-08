@@ -58,6 +58,25 @@ export const buildPdfArtifact = async (
   proposals: ProposalPdfSummary[],
   language: AppLanguage,
 ): Promise<PdfArtifact> => {
+  console.log("[proposal-pdf-request:25y]", {
+    calculationResult: {
+      annualSavingsInvestment: calculationResult.annualSavingsInvestment,
+      annualSavingsService: calculationResult.annualSavingsService,
+      totalSavings25YearsInvestment: calculationResult.totalSavings25YearsInvestment,
+      totalSavings25YearsService: calculationResult.totalSavings25YearsService,
+      expectedInvestment: calculationResult.annualSavingsInvestment * 25,
+      expectedService: calculationResult.annualSavingsService * 25,
+    },
+    proposals: proposals.map((proposal) => ({
+      mode: proposal.mode,
+      annualSavings: proposal.annualSavings,
+      totalSavings25Years: proposal.totalSavings25Years,
+      expectedTotalSavings25Years: proposal.annualSavings * 25,
+      upfrontCost: proposal.upfrontCost,
+      monthlyFee: proposal.monthlyFee,
+    })),
+  });
+
   const response = await fetch("/api/proposals/pdf", {
     method: "POST",
     headers: {

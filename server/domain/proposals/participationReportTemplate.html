@@ -331,7 +331,7 @@
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .badge-a { top: 10px; background: var(--brand-blue); }
-.solar-comun-informe-wrapper.new-vibrant-design .badge-b { top: 48px; background: var(--grad-vibrant); }
+.solar-comun-informe-wrapper.new-vibrant-design .badge-b { top: 60px; background: var(--grad-vibrant); }
 
 /* Orbes Pequeños Destino Renovados (Glow Color) */
 .solar-comun-informe-wrapper.new-vibrant-design .orb-destination-small {
@@ -343,8 +343,8 @@
 .solar-comun-informe-wrapper.new-vibrant-design .label-a { color: var(--brand-blue); }
 .solar-comun-informe-wrapper.new-vibrant-design .label-b { color: var(--brand-mint); }
 
-.solar-comun-informe-wrapper.new-vibrant-design .orb-price-sm { font-size: 26px; color: var(--text-main); font-weight: 700; }
-.solar-comun-informe-wrapper.new-vibrant-design .orb-unit-sm { font-size: 7px; color: var(--text-light); }
+.solar-comun-informe-wrapper.new-vibrant-design .orb-price-sm { font-size: 32px; color: var(--text-main); font-weight: 700; }
+.solar-comun-informe-wrapper.new-vibrant-design .orb-unit-sm { font-size: 11px; color: var(--text-light); }
 .solar-comun-informe-wrapper.new-vibrant-design .orb-tax-note-sm { font-size: 6.5px; color: var(--text-muted); }
 
 .solar-comun-informe-wrapper.new-vibrant-design .rec-orb-col .recommended-tag {
@@ -554,6 +554,10 @@
     background: #fff;
     border: 1px solid rgba(11,25,87,0.04);
     box-shadow: var(--shadow-soft);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Sombras de color específicas para los iconos SVGs FINAL */
@@ -562,7 +566,7 @@
 .solar-comun-informe-wrapper.new-vibrant-design .impact-shadow-energy_vFinal { filter: drop-shadow(0 4px 8px rgba(255,183,77,0.25)); }
 .solar-comun-informe-wrapper.new-vibrant-design .impact-shadow-diesel_vFinal { filter: drop-shadow(0 4px 8px rgba(100,181,246,0.25)); }
 
-.solar-comun-informe-wrapper.new-vibrant-design .impact-icon-wrapper { width: 48px; height: 48px; margin-bottom: 8px;}
+.solar-comun-informe-wrapper.new-vibrant-design .impact-icon-wrapper { width: 48px; height: 48px; margin: 0 auto 8px;}
 
 .solar-comun-informe-wrapper.new-vibrant-design .impact-value { font-size: 27px; font-weight: 700;}
 
@@ -580,8 +584,8 @@
     position: absolute;
     left: 18px;
     right: 18px;
-    bottom: 44px;
-    padding: 26px 32px;
+    bottom: 40px;
+    padding: 40px 46px;
     background: linear-gradient(90deg, #72DCCE 0%, #7FD2E8 45%, #87AFFF 100%);
     border-radius: 8px;
     box-shadow: none;
@@ -1004,7 +1008,7 @@ body {
     justify-content: stretch !important;
     align-items: center !important;
     column-gap: 30px !important;
-    min-height: 260px !important;
+    min-height: 272px !important;
     padding: 26px 18px 24px 24px !important;
 }
 
@@ -1043,18 +1047,18 @@ body {
     padding-left: 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 12px !important;
+    gap: 20px !important;
     align-items: stretch !important;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .destination-row {
     width: 100% !important;
-    min-height: 108px;
+    min-height: 124px;
     display: grid !important;
-    grid-template-columns: 64px 150px minmax(0, 1fr);
+    grid-template-columns: 64px 158px minmax(0, 1fr);
     align-items: center !important;
     gap: 10px !important;
-    padding: 8px 152px 8px 8px;
+    padding: 9px 152px 10px 8px;
     border-radius: 10px;
     background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(250,252,255,0.74));
     border: 1px solid rgba(122,177,255,0.18);
@@ -1070,7 +1074,7 @@ body {
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .arrow-wrapper {
-    width: 64px !important;
+    width: 86px !important;
     height: 66px !important;
     display: flex;
     align-items: center;
@@ -1078,13 +1082,13 @@ body {
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .arrow-svg {
-    width: 64px !important;
+    width: 86px !important;
     height: 56px !important;
     filter: none !important;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .discount-badge {
-    left: 4px;
+    left: 0;
     right: auto;
     top: 22px !important;
     font-size: 11px;
@@ -1109,11 +1113,13 @@ body {
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .orb-price-sm {
-    font-size: 28px;
+    font-size: 32px;
+    line-height: 0.92;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .orb-unit-sm {
-    font-size: 7px;
+    font-size: 7.6px;
+    margin-top: 2px;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .orb-tax-note-sm {
@@ -1121,9 +1127,18 @@ body {
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .destination-orb-col .orb-footer-label {
-    margin-top: 4px;
-    font-size: 7.4px;
-    line-height: 1.25;
+    margin-top: 2px;
+    font-size: 10.4px;
+    line-height: 1.06;
+    font-weight: 600;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .destination-orb-col .orb-footer-label strong {
+    font-size: 11px;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .footer-label-b {
+    margin-top: 1px !important;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .rec-orb-col .recommended-tag {
@@ -1142,18 +1157,18 @@ body {
 
 .solar-comun-informe-wrapper.new-vibrant-design .orbit-savings {
     position: absolute;
-    right: 128px;
-    width: 198px;
+    right: 108px;
+    width: 232px;
     height: 112px;
     color: var(--orbit-color);
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .orbit-savings-service {
-    top: 32px;
+    top: 22px;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .orbit-savings-investment {
-    bottom: 32px;
+    bottom: 56px;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .orbit-savings-arc {
@@ -1163,12 +1178,12 @@ body {
 .solar-comun-informe-wrapper.new-vibrant-design .orbit-saving-label {
     position: absolute;
     left: 12px;
-    width: 196px;
+    width: 224px;
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 8px;
-    font-size: 12.5px;
-    line-height: 1;
+    font-size: 14px;
+    line-height: 1.05;
     color: var(--text-light);
     white-space: nowrap;
     transform-origin: left center;
@@ -1177,14 +1192,14 @@ body {
 .solar-comun-informe-wrapper.new-vibrant-design .orbit-saving-label::before {
     content: "";
     flex: 0 0 auto;
-    width: 5px;
-    height: 5px;
+    width: 4px;
+    height: 4px;
     border-radius: 50%;
     background: var(--orbit-color);
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .orbit-saving-label span {
-    min-width: 74px;
+    min-width: 98px;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .orbit-saving-label span {
@@ -1194,7 +1209,7 @@ body {
 .solar-comun-informe-wrapper.new-vibrant-design .orbit-saving-label strong {
     margin-left: auto;
     color: var(--orbit-color);
-    font-size: 12.5px;
+    font-size: 15px;
     font-weight: 800;
 }
 
@@ -1204,7 +1219,6 @@ body {
 
 .solar-comun-informe-wrapper.new-vibrant-design .orbit-saving-annual {
     top: 51px;
-    left: 20px;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .orbit-saving-total {
@@ -1213,23 +1227,23 @@ body {
 
 .solar-comun-informe-wrapper.new-vibrant-design .orbs-comparison-grid.single-modality-grid {
     grid-template-columns: 130px minmax(0, 1fr) !important;
-    column-gap: 38px !important;
+    column-gap: 30px !important;
     min-height: 236px !important;
-    padding-right: 42px !important;
+    padding-right: 18px !important;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .single-modality-grid .destinations-col {
     display: flex !important;
     min-height: 0 !important;
     justify-content: center !important;
-    align-items: center !important;
+    align-items: stretch !important;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .single-modality-grid .destination-row {
-    max-width: 430px;
-    min-height: 190px;
-    grid-template-columns: 64px minmax(0, 1fr);
-    padding-right: 42px;
+    max-width: none;
+    min-height: 188px;
+    grid-template-columns: 72px 172px minmax(0, 1fr);
+    padding: 18px 320px 18px 8px;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .single-modality-grid .orb-destination-small {
@@ -1243,17 +1257,28 @@ body {
 
 .solar-comun-informe-wrapper.new-vibrant-design .single-modality-grid .orbit-savings {
     top: 50% !important;
-    right: 20px !important;
+    right: 56px !important;
+    width: 260px;
     bottom: auto !important;
     transform: translateY(-50%);
 }
 
+.solar-comun-informe-wrapper.new-vibrant-design .single-modality-grid .orbit-saving-label {
+    width: 248px;
+}
+
 .solar-comun-informe-wrapper.new-vibrant-design .single-modality-grid .arrow-svg {
-    display: none !important;
+    width: 68px !important;
+    height: 48px !important;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .single-modality-grid .arrow-wrapper {
-    width: 32px !important;
+    width: 72px !important;
+    height: 72px !important;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .orbs-comparison-grid.single-modality-grid {
+    min-height: 224px !important;
 }
 
 @media screen and (max-width: 794px) {
@@ -1366,13 +1391,13 @@ body {
                                 <!-- A -->
                                 <div class="destination-row">
                                     <div class="arrow-wrapper">
-                                        <svg width="86" height="60" class="arrow-svg" viewBox="0 0 96 72">
+                                        <svg width="86" height="60" class="arrow-svg" viewBox="0 0 124 72">
                                             <defs>
                                                 <marker id="arUpA2_wp_vFinal" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
                                                     <path d="M0 0 L8 5 L0 10 Z" fill="#7AB1FF"></path>
                                                 </marker>
                                             </defs>
-                                            <path d="M 8 54 Q 36 14, 82 18" stroke="#7AB1FF" stroke-width="2.8" fill="none" stroke-dasharray="5 5" stroke-linecap="round" marker-end="url(#arUpA2_wp_vFinal)"></path>
+                                            <path d="M 58 54 Q 84 14, 112 18" stroke="#7AB1FF" stroke-width="2.8" fill="none" stroke-dasharray="5 5" stroke-linecap="round" marker-end="url(#arUpA2_wp_vFinal)"></path>
                                         </svg>
                                         <div class="discount-badge badge-a">−41%</div>
                                     </div>
@@ -1405,13 +1430,13 @@ body {
                                 <!-- B -->
                                 <div class="destination-row">
                                     <div class="arrow-wrapper">
-                                        <svg width="86" height="60" class="arrow-svg" viewBox="0 0 96 72">
+                                        <svg width="86" height="60" class="arrow-svg" viewBox="0 0 124 72">
                                             <defs>
                                                 <marker id="arDnB2_wp_vFinal" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
                                                     <path d="M0 0 L8 5 L0 10 Z" fill="#2ED1BC"></path>
                                                 </marker>
                                             </defs>
-                                            <path d="M 8 18 Q 36 58, 82 54" stroke="#2ED1BC" stroke-width="2.8" fill="none" stroke-dasharray="5 5" stroke-linecap="round" marker-end="url(#arDnB2_wp_vFinal)"></path>
+                                            <path d="M 58 18 Q 84 58, 112 54" stroke="#2ED1BC" stroke-width="2.8" fill="none" stroke-dasharray="5 5" stroke-linecap="round" marker-end="url(#arDnB2_wp_vFinal)"></path>
                                         </svg>
                                         <div class="discount-badge badge-b">−73%</div>
                                     </div>
@@ -1690,7 +1715,7 @@ body {
                             <div class="display cta-title">¿Reservamos tu <em class="highlight-text-cta">participación</em>?</div>
                         </div>
                         <div class="cta-button-col">
-                            <div class="cta-button">Reservar <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M23.997 2.486a1.94 1.94 0 0 0-.5-1.311a2.56 2.56 0 0 0-2.003-.24q-1.833.405-3.613 1c-.61.18-1.211.391-1.802.621c-.88.33-1.742.711-2.612 1.091A49 49 0 0 0 8.782 6a26.6 26.6 0 0 0-4.284 3.003l-3.433 3.073l-.791.79a1.7 1.7 0 0 0-.25.34a.4.4 0 0 0 0 .271a.68.68 0 0 0 .4.5c.387.132.792.2 1.201.2c.44 0 1.221 0 1.892.1c.34-.01.678.038 1 .14l.191 2.233c.06.64.09 1.141.09 1.612c0 .75-.1 2.052-.1 3.073a.34.34 0 1 0 .68 0c0-1.001.13-2.323.14-3.073c0-.49 0-1.001-.07-1.672c-.07-.67-.07-1.511-.15-2.002s-.09-.76-1.34-1c-.741-.091-1.762-.141-2.313-.171l-.55-.08l.58-.57l3.453-3.004a24.8 24.8 0 0 1 4.144-2.912a50 50 0 0 1 4.595-2.183c.85-.36 1.712-.71 2.572-1a32 32 0 0 1 5.646-1.522c.9.39.77.73.75 1a7.2 7.2 0 0 1-.27 1.492l-1.29 4.365c-.261.87-.541 1.681-.832 2.472c-.71 1.912-1.491 3.704-2.212 5.776q-.254.706-.6 1.371c-.37.7-.791 1.371-1.182 2.002q-.165.306-.38.58l-.1.12l-.06-.09l-1.001-1.571a25 25 0 0 0-1.582-1.952a21 21 0 0 0-1.791-1.782c-.43-.36-1.642-1.36-2.002-.64c-.1.13-.21.38-.27.45L8.09 17.441l-1.18 2.092c-.421.73-.922 1.421-1.372 2.152c-.19.32-.38.65-.54 1.001a.3.3 0 0 0 .14.4s.28.23.69-.08s.53-.39.76-.57c.231-.18.762-.55 1.132-.811c.37-.26.67-.45 1.001-.68l1.521-1.062c.801-.57 1.572-1.16 2.323-1.791l.17.19a27 27 0 0 1 1.491 1.912l.901 1.541q.139.256.31.49a.55.55 0 0 0 .45.17c.238-.038.46-.142.642-.3c.284-.275.53-.589.73-.93c.41-.631.861-1.322 1.251-2.002q.405-.719.691-1.492c.74-2.062 1.562-3.834 2.282-5.725c.32-.821.611-1.652.881-2.543l1.301-4.404a8 8 0 0 0 .33-2.513M9.102 19.283q-.519.334-1 .72c-.341.27-.661.55-1.002.851l-.75.77c.39-.59.8-1.16 1.16-1.76l1.242-2.003l1.151-1.651c.05-.06.2-.31.26-.41s.2.13.31.21s.451.41.581.52c.34.31.68.66 1.001 1c-.95.632-1.982 1.142-2.953 1.753"/><path fill="currentColor" d="M13.687 9.673c-.53.58-1.001 1.191-1.522 1.822a29 29 0 0 0-1.631 2.202c-.11.16-.21.33-.31.49c-.26.792.11.671.8.08l.09-.14c.56-.71 1.191-1.38 1.782-2.001c.95-1.091 2.002-2.092 3.003-3.083L18.12 6.95a135 135 0 0 0 3.253-3.113C22.996.995 18.582 4.998 16.2 7.17c-.87.83-1.711 1.621-2.512 2.502m-.402-3.062a68 68 0 0 0-4.074 3.003L6.05 12.186c-.2.18-.43.37-.66.56c-.48.6-.41.821.68.34c.16-.11.32-.22.45-.33l3.304-2.362l8.228-5.675c.81-.551 1.592-1.102 2.402-1.632c.19-.67-1.23-.2-2.402.49l-.53.32c-1.422.892-2.853 1.762-4.235 2.713"/></svg></div>
+                            <div class="cta-button"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M23.997 2.486a1.94 1.94 0 0 0-.5-1.311a2.56 2.56 0 0 0-2.003-.24q-1.833.405-3.613 1c-.61.18-1.211.391-1.802.621c-.88.33-1.742.711-2.612 1.091A49 49 0 0 0 8.782 6a26.6 26.6 0 0 0-4.284 3.003l-3.433 3.073l-.791.79a1.7 1.7 0 0 0-.25.34a.4.4 0 0 0 0 .271a.68.68 0 0 0 .4.5c.387.132.792.2 1.201.2c.44 0 1.221 0 1.892.1c.34-.01.678.038 1 .14l.191 2.233c.06.64.09 1.141.09 1.612c0 .75-.1 2.052-.1 3.073a.34.34 0 1 0 .68 0c0-1.001.13-2.323.14-3.073c0-.49 0-1.001-.07-1.672c-.07-.67-.07-1.511-.15-2.002s-.09-.76-1.34-1c-.741-.091-1.762-.141-2.313-.171l-.55-.08l.58-.57l3.453-3.004a24.8 24.8 0 0 1 4.144-2.912a50 50 0 0 1 4.595-2.183c.85-.36 1.712-.71 2.572-1a32 32 0 0 1 5.646-1.522c.9.39.77.73.75 1a7.2 7.2 0 0 1-.27 1.492l-1.29 4.365c-.261.87-.541 1.681-.832 2.472c-.71 1.912-1.491 3.704-2.212 5.776q-.254.706-.6 1.371c-.37.7-.791 1.371-1.182 2.002q-.165.306-.38.58l-.1.12l-.06-.09l-1.001-1.571a25 25 0 0 0-1.582-1.952a21 21 0 0 0-1.791-1.782c-.43-.36-1.642-1.36-2.002-.64c-.1.13-.21.38-.27.45L8.09 17.441l-1.18 2.092c-.421.73-.922 1.421-1.372 2.152c-.19.32-.38.65-.54 1.001a.3.3 0 0 0 .14.4s.28.23.69-.08s.53-.39.76-.57c.231-.18.762-.55 1.132-.811c.37-.26.67-.45 1.001-.68l1.521-1.062c.801-.57 1.572-1.16 2.323-1.791l.17.19a27 27 0 0 1 1.491 1.912l.901 1.541q.139.256.31.49a.55.55 0 0 0 .45.17c.238-.038.46-.142.642-.3c.284-.275.53-.589.73-.93c.41-.631.861-1.322 1.251-2.002q.405-.719.691-1.492c.74-2.062 1.562-3.834 2.282-5.725c.32-.821.611-1.652.881-2.543l1.301-4.404a8 8 0 0 0 .33-2.513M9.102 19.283q-.519.334-1 .72c-.341.27-.661.55-1.002.851l-.75.77c.39-.59.8-1.16 1.16-1.76l1.242-2.003l1.151-1.651c.05-.06.2-.31.26-.41s.2.13.31.21s.451.41.581.52c.34.31.68.66 1.001 1c-.95.632-1.982 1.142-2.953 1.753"/><path fill="currentColor" d="M13.687 9.673c-.53.58-1.001 1.191-1.522 1.822a29 29 0 0 0-1.631 2.202c-.11.16-.21.33-.31.49c-.26.792.11.671.8.08l.09-.14c.56-.71 1.191-1.38 1.782-2.001c.95-1.091 2.002-2.092 3.003-3.083L18.12 6.95a135 135 0 0 0 3.253-3.113C22.996.995 18.582 4.998 16.2 7.17c-.87.83-1.711 1.621-2.512 2.502m-.402-3.062a68 68 0 0 0-4.074 3.003L6.05 12.186c-.2.18-.43.37-.66.56c-.48.6-.41.821.68.34c.16-.11.32-.22.45-.33l3.304-2.362l8.228-5.675c.81-.551 1.592-1.102 2.402-1.632c.19-.67-1.23-.2-2.402.49l-.53.32c-1.422.892-2.853 1.762-4.235 2.713"/></svg><span>Reservar</span></div>
                             <div class="cta-contact"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M23.71 17.503a.39.39 0 0 0-.551 0a17.6 17.6 0 0 1-3.624 3.223a13.9 13.9 0 0 1-4.404 1.882a17.8 17.8 0 0 1-4.215.43a16 16 0 0 1-4.164-.6a7.63 7.63 0 0 1-4.434-3.003a7.4 7.4 0 0 1-.851-5.266c.47-3 1.802-5.8 3.834-8.058a14 14 0 0 1 7.617-4.515a11.8 11.8 0 0 1 4.635-.06a5.7 5.7 0 0 1 3.674 2.283a5.58 5.58 0 0 1 .92 3.814a12.26 12.26 0 0 1-2.572 5.735a10 10 0 0 1-1.671 1.862c-.35.26-.711.48-1.072.35c-.6-.22-.74-.8-.77-1.45c.063-1.118.245-2.225.54-3.304c.071-.206.089-.426.05-.64a.57.57 0 0 0-1.08-.121c-.161.23-.581 1.151-.892 1.722a12 12 0 0 1-3.924 4.464a2.56 2.56 0 0 1-3.273-.32a2.16 2.16 0 0 1-.62-1.451c-.044-.6.01-1.2.16-1.782a10 10 0 0 1 1.811-3.684a7.76 7.76 0 0 1 3.194-2.523a4.35 4.35 0 0 1 2.572-.3a1.93 1.93 0 0 1 1.432 1.732a.34.34 0 0 0 .39.3a.35.35 0 0 0 .3-.39a2.58 2.58 0 0 0-1.381-2.112a4.56 4.56 0 0 0-3.644 0a8.56 8.56 0 0 0-3.523 2.792a10.9 10.9 0 0 0-2.002 4.005a6.2 6.2 0 0 0-.15 2.502c.096.619.387 1.19.83 1.632a3.484 3.484 0 0 0 4.445.53a11.7 11.7 0 0 0 3.623-3.563a5 5 0 0 0 .05 1.291a2.29 2.29 0 0 0 1.462 1.862a2.11 2.11 0 0 0 1.822-.21a9 9 0 0 0 2.392-2.393a13.6 13.6 0 0 0 2.863-6.366a6.85 6.85 0 0 0-1.14-4.705A6.65 6.65 0 0 0 18.864.515a12.3 12.3 0 0 0-6.207-.22A15.28 15.28 0 0 0 4.36 5.3a16.86 16.86 0 0 0-4.044 8.72a8.5 8.5 0 0 0 1.09 6.005a8.74 8.74 0 0 0 5.066 3.394a17.2 17.2 0 0 0 4.434.58a18.5 18.5 0 0 0 4.435-.5a14.8 14.8 0 0 0 4.695-2.032a18.4 18.4 0 0 0 3.724-3.444a.4.4 0 0 0-.05-.52"/></svg>hola@solarcomun.coop</div>
                         </div>
                     </div>

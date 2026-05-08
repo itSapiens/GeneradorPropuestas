@@ -78,6 +78,12 @@ describe("buildProposalPdfHtml", () => {
     expect(html).toContain("Ahorro anual");
     expect(html).toContain("Ahorro mensual");
     expect(html).toContain("Ahorro a 25 años");
+    expect(html).toContain(
+      `<div class="orbit-saving-label orbit-saving-total"><span>Ahorro a 25 años</span><strong>21.658,00 €</strong></div>`,
+    );
+    expect(html).not.toContain(
+      `<div class="orbit-saving-label orbit-saving-total"><span>Ahorro a 25 años</span><strong>4.593,00 €</strong></div>`,
+    );
     expect(html).toContain("IVA no incluido");
     expect(html).not.toContain("IVA incluido");
     expect(html).toContain(">Servicio</span>");

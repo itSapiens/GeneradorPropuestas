@@ -24,7 +24,8 @@ export interface CalculationInput {
   maintenanceAnnualPerKwp?: number;
   vatRate?: number;
 
-  // IPC energético anual (ej. 0.03 = 3%/año). Solo se aplica a la proyección a 25 años.
+  // IPC energético anual reservado para gráficas/proyecciones visuales; no se aplica
+  // al ahorro acumulado mostrado a 25 años.
   energyPriceInflation?: number;
 
   invoiceVariableEnergyAmountEur?: number;
@@ -134,9 +135,6 @@ const ELECTRIC_TAX_RATE = 0.05113;
  *  Valor regulado PVPC España 2024. La instalación puede sobreescribirlo via BD. */
 const DEFAULT_SURPLUS_COMPENSATION_PRICE_KWH = 0.05;
 
-/** IPC energético anual por defecto para proyección a 25 años (3%/año histórico España) */
-const DEFAULT_ENERGY_PRICE_INFLATION = 0.03;
-
 /** Años de proyección para el cálculo de ahorro acumulado */
 const PROJECTION_YEARS = 25;
 
@@ -204,21 +202,6 @@ function clampRatio(value: number): number {
 function roundUpToHalf(value: number): number {
   if (!Number.isFinite(value) || value <= 0) return 0;
   return Math.ceil(value * 2) / 2;
-}
-
-/**
- * Proyecta un ahorro anual a N años aplicando crecimiento compuesto (IPC energético).
- * Suma de una serie geométrica: A·((1+r)^N − 1) / r
- * Si r = 0, equivale a A × N.
- */
-function projectWithInflation(
-  annualValue: number,
-  years: number,
-  rate: number,
-): number {
-  if (!Number.isFinite(annualValue) || annualValue <= 0 || years <= 0) return 0;
-  if (rate <= 0) return annualValue * years;
-  return (annualValue * (Math.pow(1 + rate, years) - 1)) / rate;
 }
 
 function averageValid(values?: number[]): number | undefined {
@@ -544,30 +527,27 @@ export const calculateEnergyStudy = (
   const dailySavingsInvestment = round(annualSavingsInvestment / 365);
   const dailySavingsService = round(annualSavingsService / 365);
 
-  // ── 5. PROYECCIÓN A 25 AÑOS ───────────────────────────────────────────
-  // Proyección con IPC energético (crecimiento compuesto)
-  const energyPriceInflation = normalizePositive(
-    input.energyPriceInflation,
-    DEFAULT_ENERGY_PRICE_INFLATION,
-  );
-
+  // ── 5. AHORRO A 25 AÑOS ───────────────────────────────────────────────
+  // El acumulado comercial es lineal: ahorro anual × 25. El IPC solo se usa
+  // en la gráfica de evolución del precio, no para inflar el ahorro.
   const annualSavings25YearsInvestment = round(
-    projectWithInflation(
-      annualSavingsInvestment,
-      PROJECTION_YEARS,
-      energyPriceInflation,
-    ),
+    annualSavingsInvestment * PROJECTION_YEARS,
   );
   const annualSavings25YearsService = round(
-    projectWithInflation(
-      annualSavingsService,
-      PROJECTION_YEARS,
-      energyPriceInflation,
-    ),
+    annualSavingsService * PROJECTION_YEARS,
   );
 
   const totalSavings25YearsInvestment = annualSavings25YearsInvestment;
   const totalSavings25YearsService = annualSavings25YearsService;
+
+  console.log("[proposal-calc:25y]", {
+    formula: "annualSavings * 25",
+    annualSavingsInvestment,
+    annualSavingsService,
+    totalSavings25YearsInvestment,
+    totalSavings25YearsService,
+    ignoredEnergyPriceInflation: input.energyPriceInflation,
+  });
 
   // ----- PAYBACK -----
   // Solo tiene sentido en modalidad inversión (hay CapEx que amortizar).
