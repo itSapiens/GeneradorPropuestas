@@ -69,11 +69,12 @@ describe("buildProposalPdfHtml", () => {
     });
 
     expect(html).toContain(`class="orbs-comparison-grid"`);
-    expect(html).toContain(`class="stability-orbit-notes"`);
+    expect(html).toContain(`class="stability-orbit-notes orbit-savings-layer"`);
     expect(html).toContain(`class="proposal-stability-graph"`);
     expect(html).not.toContain("Precio actual factura:");
-    expect(html).toContain("orbit-mode-note orbit-note-service");
-    expect(html).toContain("orbit-mode-note orbit-note-investment");
+    expect(html).toContain("orbit-savings orbit-savings-service");
+    expect(html).toContain("orbit-savings orbit-savings-investment");
+    expect(html).not.toContain("orbit-mode-note");
     expect(html).toContain("Ahorro anual");
     expect(html).toContain("Ahorro mensual");
     expect(html).toContain("Ahorro a 25 años");
@@ -241,7 +242,7 @@ describe("buildProposalPdfHtml", () => {
     expect(html).not.toContain("0,000");
     expect(html).toContain("15,00 €");
     expect(html).toContain("pagamento único");
-    expect(html).toContain("Investimento</div>");
+    expect(html).toContain("orbit-savings orbit-savings-investment");
     expect(html).toContain("Aforro a 25 anos");
   });
 });

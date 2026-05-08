@@ -282,133 +282,6 @@
     z-index: 5;
 }
 
-.solar-comun-informe-wrapper.new-vibrant-design .stability-orbit-note {
-    position: absolute;
-    width: 144px;
-    padding: 8px 9px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.84));
-    border: 1px solid rgba(11,25,87,0.07);
-    border-radius: 8px;
-    box-shadow: 0 10px 24px rgba(11,25,87,0.09);
-    color: var(--text-main);
-    font-size: 7.2px;
-    line-height: 1.35;
-}
-
-.solar-comun-informe-wrapper.new-vibrant-design .stability-orbit-note::before {
-    content: "";
-    position: absolute;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--brand-mint);
-    box-shadow: 0 0 12px rgba(46,209,188,0.45);
-}
-
-.solar-comun-informe-wrapper.new-vibrant-design .stability-orbit-note .orbit-kicker {
-    font-size: 6.2px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text-light);
-    font-weight: 700;
-    margin-bottom: 3px;
-}
-
-.solar-comun-informe-wrapper.new-vibrant-design .stability-orbit-note strong {
-    font-weight: 800;
-}
-
-.solar-comun-informe-wrapper.new-vibrant-design .orbit-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 6px;
-    border-top: 1px solid rgba(11,25,87,0.05);
-    padding-top: 3px;
-    margin-top: 3px;
-}
-
-.solar-comun-informe-wrapper.new-vibrant-design .orbit-row:first-of-type {
-    border-top: 0;
-    padding-top: 0;
-}
-
-.solar-comun-informe-wrapper.new-vibrant-design .orbit-row span {
-    color: var(--text-light);
-}
-
-.solar-comun-informe-wrapper.new-vibrant-design .orbit-price-line {
-    display: grid;
-    gap: 3px;
-    margin-top: 5px;
-}
-
-.solar-comun-informe-wrapper.new-vibrant-design .orbit-price-pill {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    padding: 3px 5px;
-    border-radius: 5px;
-    background: rgba(11,25,87,0.035);
-    font-size: 7.2px;
-    font-weight: 700;
-}
-
-.solar-comun-informe-wrapper.new-vibrant-design .orbit-note-main {
-    left: 8px;
-    top: 28px;
-    border-left: 3px solid var(--text-muted);
-}
-
-.solar-comun-informe-wrapper.new-vibrant-design .orbit-note-main::before {
-    right: -26px;
-    top: 62px;
-    background: var(--text-muted);
-}
-
-.solar-comun-informe-wrapper.new-vibrant-design .orbit-note-12 {
-    right: 8px;
-    top: 16px;
-    border-right: 3px solid var(--brand-blue);
-}
-
-.solar-comun-informe-wrapper.new-vibrant-design .orbit-note-12::before {
-    left: -28px;
-    top: 48px;
-    background: var(--brand-blue);
-}
-
-.solar-comun-informe-wrapper.new-vibrant-design .orbit-note-25 {
-    right: 8px;
-    bottom: 16px;
-    border-right: 3px solid var(--brand-mint);
-}
-
-.solar-comun-informe-wrapper.new-vibrant-design .orbit-note-25::before {
-    left: -28px;
-    bottom: 48px;
-}
-
-.solar-comun-informe-wrapper.new-vibrant-design .orbit-mode-note {
-    right: 8px;
-    width: 150px;
-    pointer-events: none;
-}
-
-.solar-comun-informe-wrapper.new-vibrant-design .orbit-mode-note::before {
-    display: none;
-}
-
-.solar-comun-informe-wrapper.new-vibrant-design .orbit-note-service {
-    top: 38px;
-    border-left: 3px solid var(--brand-blue);
-}
-
-.solar-comun-informe-wrapper.new-vibrant-design .orbit-note-investment {
-    bottom: 36px;
-    border-left: 3px solid var(--brand-mint);
-}
-
 .solar-comun-informe-wrapper.new-vibrant-design .orb-col {}
 
 /* NUEVA FORMA ORGÁNICA SVGs */
@@ -1011,7 +884,6 @@ body {
     }
 
     .solar-comun-informe-wrapper.new-vibrant-design .client-data-grid,
-    .solar-comun-informe-wrapper.new-vibrant-design .stability-orbit-note,
     .solar-comun-informe-wrapper.new-vibrant-design .impact-item,
     .solar-comun-informe-wrapper.new-vibrant-design .modality-card {
         background: #ffffff !important;
@@ -1042,14 +914,9 @@ body {
         box-shadow: none !important;
     }
 
-    .solar-comun-informe-wrapper.new-vibrant-design .stability-orbit-note::before,
     .solar-comun-informe-wrapper.new-vibrant-design .brand-dot,
     .solar-comun-informe-wrapper.new-vibrant-design .proposal-stability-graph span {
         box-shadow: none !important;
-    }
-
-    .solar-comun-informe-wrapper.new-vibrant-design .orbit-price-pill {
-        background: #F4F7FF !important;
     }
 
     .solar-comun-informe-wrapper.new-vibrant-design .cta-block.condensed-cta {
@@ -1210,21 +1077,82 @@ body {
     padding: 2px 5px;
 }
 
-.solar-comun-informe-wrapper.new-vibrant-design .orbit-mode-note {
-    width: 138px !important;
-    right: 18px !important;
-    padding: 7px 8px !important;
-    font-size: 6.7px !important;
-    background: #FFFFFF !important;
-    box-shadow: none !important;
+.solar-comun-informe-wrapper.new-vibrant-design .orbit-savings-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 6;
 }
 
-.solar-comun-informe-wrapper.new-vibrant-design .orbit-note-service {
-    top: 34px !important;
+.solar-comun-informe-wrapper.new-vibrant-design .orbit-savings {
+    position: absolute;
+    right: 128px;
+    width: 198px;
+    height: 112px;
+    color: var(--orbit-color);
 }
 
-.solar-comun-informe-wrapper.new-vibrant-design .orbit-note-investment {
-    bottom: 34px !important;
+.solar-comun-informe-wrapper.new-vibrant-design .orbit-savings-service {
+    top: 32px;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .orbit-savings-investment {
+    bottom: 32px;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .orbit-savings-arc {
+    display: none !important;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .orbit-saving-label {
+    position: absolute;
+    left: 12px;
+    width: 196px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 12.5px;
+    line-height: 1;
+    color: var(--text-light);
+    white-space: nowrap;
+    transform-origin: left center;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .orbit-saving-label::before {
+    content: "";
+    flex: 0 0 auto;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--orbit-color);
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .orbit-saving-label span {
+    min-width: 74px;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .orbit-saving-label span {
+    color: var(--text-light);
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .orbit-saving-label strong {
+    margin-left: auto;
+    color: var(--orbit-color);
+    font-size: 12.5px;
+    font-weight: 800;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .orbit-saving-monthly {
+    top: 16px;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .orbit-saving-annual {
+    top: 51px;
+    left: 20px;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .orbit-saving-total {
+    top: 86px;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .orbs-comparison-grid.single-modality-grid {
@@ -1242,9 +1170,10 @@ body {
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .single-modality-grid .destination-row {
-    max-width: 330px;
+    max-width: 430px;
     min-height: 190px;
     grid-template-columns: 64px minmax(0, 1fr);
+    padding-right: 42px;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .single-modality-grid .orb-destination-small {
@@ -1256,10 +1185,19 @@ body {
     font-size: 33px;
 }
 
-.solar-comun-informe-wrapper.new-vibrant-design .single-modality-grid .stability-orbit-note {
+.solar-comun-informe-wrapper.new-vibrant-design .single-modality-grid .orbit-savings {
     top: 50% !important;
+    right: 20px !important;
     bottom: auto !important;
     transform: translateY(-50%);
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .single-modality-grid .arrow-svg {
+    display: none !important;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .single-modality-grid .arrow-wrapper {
+    width: 32px !important;
 }
 
 @media screen and (max-width: 794px) {
@@ -1378,7 +1316,7 @@ body {
                                                     <path d="M0 0 L8 5 L0 10 Z" fill="#7AB1FF"></path>
                                                 </marker>
                                             </defs>
-                                            <path d="M 8 54 Q 36 14, 82 18" stroke="#7AB1FF" stroke-width="2" fill="none" stroke-dasharray="6 7" stroke-linecap="round" marker-end="url(#arUpA2_wp_vFinal)"></path>
+                                            <path d="M 8 54 Q 36 14, 82 18" stroke="#7AB1FF" stroke-width="2.8" fill="none" stroke-dasharray="5 5" stroke-linecap="round" marker-end="url(#arUpA2_wp_vFinal)"></path>
                                         </svg>
                                         <div class="discount-badge badge-a">−41%</div>
                                     </div>
@@ -1417,7 +1355,7 @@ body {
                                                     <path d="M0 0 L8 5 L0 10 Z" fill="#2ED1BC"></path>
                                                 </marker>
                                             </defs>
-                                            <path d="M 8 18 Q 36 58, 82 54" stroke="#2ED1BC" stroke-width="2" fill="none" stroke-dasharray="6 7" stroke-linecap="round" marker-end="url(#arDnB2_wp_vFinal)"></path>
+                                            <path d="M 8 18 Q 36 58, 82 54" stroke="#2ED1BC" stroke-width="2.8" fill="none" stroke-dasharray="5 5" stroke-linecap="round" marker-end="url(#arDnB2_wp_vFinal)"></path>
                                         </svg>
                                         <div class="discount-badge badge-b">−73%</div>
                                     </div>

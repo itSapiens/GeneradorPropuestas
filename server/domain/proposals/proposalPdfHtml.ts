@@ -431,7 +431,6 @@ function buildStabilityOrbitHtml(params: {
   const labels = getSavingsNoteLabels(params.language);
   const modeSummary = (
     proposal: ProposalPdfSummary | undefined,
-    label: string,
     color: string,
     total25Years: number,
     className: string,
@@ -441,17 +440,16 @@ function buildStabilityOrbitHtml(params: {
     const annualSavings = positive(proposal.annualSavings);
     const monthlySavings = annualSavings / 12;
 
-    return `<div class="stability-orbit-note orbit-mode-note ${className}" style="border-color:${color};">
-        <div class="orbit-kicker" style="color:${color};">${escapeHtml(label)}</div>
-        <div class="orbit-row"><span>${labels.annual}</span><strong style="color:${color};">${formatCurrency(annualSavings, params.language)}</strong></div>
-        <div class="orbit-row"><span>${labels.monthly}</span><strong style="color:${color};">${formatCurrency(monthlySavings, params.language)}</strong></div>
-        <div class="orbit-row"><span>${labels.total25Years}</span><strong style="color:${color};">${formatCurrency(total25Years, params.language)}</strong></div>
+    return `<div class="orbit-savings ${className}" style="--orbit-color:${color};">
+        <div class="orbit-saving-label orbit-saving-monthly"><span>${labels.monthly}</span><strong>${formatCurrency(monthlySavings, params.language)}</strong></div>
+        <div class="orbit-saving-label orbit-saving-annual"><span>${labels.annual}</span><strong>${formatCurrency(annualSavings, params.language)}</strong></div>
+        <div class="orbit-saving-label orbit-saving-total"><span>${labels.total25Years}</span><strong>${formatCurrency(total25Years, params.language)}</strong></div>
       </div>`;
   };
 
-  return `<div class="stability-orbit-notes">
-      ${modeSummary(params.service, params.texts.serviceLegend, "#7AB1FF", params.serviceTotalCost25Years, "orbit-note-service")}
-      ${modeSummary(params.investment, params.texts.investmentLegend, "#2ED1BC", params.investmentTotalCost25Years, "orbit-note-investment")}
+  return `<div class="stability-orbit-notes orbit-savings-layer">
+      ${modeSummary(params.service, "#7AB1FF", params.serviceTotalCost25Years, "orbit-savings-service")}
+      ${modeSummary(params.investment, "#2ED1BC", params.investmentTotalCost25Years, "orbit-savings-investment")}
     </div>`;
 }
 
