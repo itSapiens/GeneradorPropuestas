@@ -385,12 +385,12 @@ export function getProposalPdfTexts(language: AppLanguage) {
     serviceLegend: tServer(
       language,
       "emails.proposalPdf.chart.serviceLegend",
-      "Servicio",
+      "Con cuota mensual",
     ),
     investmentLegend: tServer(
       language,
       "emails.proposalPdf.chart.investmentLegend",
-      "Inversión",
+      "Con pago único",
     ),
     stablePrice: tServer(
       language,

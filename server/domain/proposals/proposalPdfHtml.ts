@@ -562,7 +562,7 @@ function buildStabilityGraphHtml(params: {
         const boxWidth = 52;
         const boxHeight = 17;
         const preferredY = item.key === "current"
-          ? y + 10
+          ? y - 26
           : item.key === "service"
             ? y - 26
             : y + 10;
@@ -962,7 +962,7 @@ export function buildProposalPdfHtml(payload: ProposalPdfPayload): string {
   html = replaceRaw(
     html,
     `<div class="cta-button">Reservar →</div>`,
-    `<a class="cta-button" href="${escapeHtml(values.reserveHref)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;">Reservar →</a>`,
+    `<a class="cta-button" href="${escapeHtml(values.reserveHref)}" target="_blank" rel="noopener noreferrer" style="display:flex;text-decoration:none;">Reservar →</a>`,
   );
 
   html = removeSectionBetweenMarkers(
@@ -1122,6 +1122,14 @@ export function buildProposalPdfHtml(payload: ProposalPdfPayload): string {
     (localizedHtml, [search, value]) => replaceText(localizedHtml, search, value),
     html,
   );
+
+  if (!html.includes(`href="${escapeHtml(values.reserveHref)}"`)) {
+    const reserveLabel = escapeHtml(texts.reserveCta.replace(/\s*→\s*$/, ""));
+    html = html.replace(
+      /<div class="cta-button">[^<]*(\s*<svg[\s\S]*?<\/svg>)<\/div>/,
+      `<a class="cta-button" href="${escapeHtml(values.reserveHref)}" target="_blank" rel="noopener noreferrer" style="display:flex;text-decoration:none;">${reserveLabel}$1</a>`,
+    );
+  }
 
   html = html.replace(
     /(<div class="orb-footer-label footer-label-a">\s*<strong>[\s\S]*?<\/strong><br>)[^<]*(<\/div>)/,

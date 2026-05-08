@@ -79,6 +79,10 @@ describe("buildProposalPdfHtml", () => {
     expect(html).toContain("Informe · Empresa Titular");
     expect(html).toContain("titular@example.com");
     expect(html).toContain(`href="https://app.example.com/continuar"`);
+    expect(html).toContain(
+      `<a class="cta-button" href="https://app.example.com/continuar"`,
+    );
+    expect(html).not.toContain(`<div class="cta-button">Reservar`);
     expect(html).not.toContain("Informe · Solar Común");
     expect(html).not.toContain("Inversión Compra");
     expect(html).toContain("A 12 AÑOS (ACUMULADO)");

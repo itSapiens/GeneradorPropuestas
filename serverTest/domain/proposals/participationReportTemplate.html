@@ -634,11 +634,12 @@
 /* Sección Impacto P2 Mil veces más visual */
 .solar-comun-informe-wrapper.new-vibrant-design .impact-grid.condensed-impact {
     gap: 12px;
-    margin-bottom: 18px;
+    margin-bottom: 20px;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .impact-item {
-    padding: 24px 12px;
+    min-height: 124px;
+    padding: 18px 16px;
     border-radius: 8px;
     background: #fff;
     border: 1px solid rgba(11,25,87,0.04);
@@ -651,26 +652,26 @@
 .solar-comun-informe-wrapper.new-vibrant-design .impact-shadow-energy_vFinal { filter: drop-shadow(0 4px 8px rgba(255,183,77,0.25)); }
 .solar-comun-informe-wrapper.new-vibrant-design .impact-shadow-diesel_vFinal { filter: drop-shadow(0 4px 8px rgba(100,181,246,0.25)); }
 
-.solar-comun-informe-wrapper.new-vibrant-design .impact-icon-wrapper { width: 68px; height: 68px; margin-bottom: 10px;}
+.solar-comun-informe-wrapper.new-vibrant-design .impact-icon-wrapper { width: 48px; height: 48px; margin-bottom: 8px;}
 
-.solar-comun-informe-wrapper.new-vibrant-design .impact-value { font-size: 28px; font-weight: 700;}
+.solar-comun-informe-wrapper.new-vibrant-design .impact-value { font-size: 27px; font-weight: 700;}
 
 .solar-comun-informe-wrapper.new-vibrant-design .value-co2 { color: var(--brand-mint); }
 .solar-comun-informe-wrapper.new-vibrant-design .value-trees { color: #2E7D32; }
 .solar-comun-informe-wrapper.new-vibrant-design .value-energy { color: #F57C00; }
 .solar-comun-informe-wrapper.new-vibrant-design .value-diesel { color: #1565C0; }
 
-.solar-comun-informe-wrapper.new-vibrant-design .impact-label { font-size: 11px; color: var(--text-light); margin-top: 5px; font-weight: 600;}
+.solar-comun-informe-wrapper.new-vibrant-design .impact-label { font-size: 11px; color: var(--text-light); margin-top: 6px; font-weight: 600;}
 
 .solar-comun-informe-wrapper.new-vibrant-design .impact-comparison-note { font-size: 9px; color: var(--text-muted); margin-bottom: 10px;}
 
 /* CTA P2 Renovado y Centrado */
 .solar-comun-informe-wrapper.new-vibrant-design .cta-block.condensed-cta {
     position: absolute;
-    left: 20px;
-    right: 20px;
-    bottom: 35px; /* Ajuste sutil simétrico */
-    padding: 22px 26px;
+    left: 18px;
+    right: 18px;
+    bottom: 44px;
+    padding: 26px 32px;
     background: linear-gradient(90deg, #72DCCE 0%, #7FD2E8 45%, #87AFFF 100%);
     border-radius: 8px;
     box-shadow: none;
@@ -680,17 +681,45 @@
 
 .solar-comun-informe-wrapper.new-vibrant-design .cta-title { font-size: 26px; color: #fff; line-height: 1.1;}
 
-.solar-comun-informe-wrapper.new-vibrant-design .cta-button {
-    background: linear-gradient(90deg, #52CFC0 0%, #6F9DF7 100%);
-    color: #fff;
-    font-weight: 700;
-    font-size: 12px;
-    padding: 13px 20px;
-    border-radius: 4px;
-    box-shadow: none;
+.solar-comun-informe-wrapper.new-vibrant-design .cta-grid {
+    gap: 28px;
 }
 
-.solar-comun-informe-wrapper.new-vibrant-design .cta-contact { font-size: 10px; color: rgba(255,255,255,0.82); margin-top: 6px; }
+.solar-comun-informe-wrapper.new-vibrant-design .cta-text-col {
+    flex: 1 1 auto;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .cta-button-col {
+    flex: 0 0 250px;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .cta-button {
+    background: #fff;
+    color: #2171C9;
+    font-weight: 700;
+    font-size: 15px;
+    width: 100%;
+    padding: 16px 28px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.72);
+    box-shadow: 0 8px 20px rgba(11,25,87,0.14);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .cta-contact {
+    font-size: 11px;
+    color: rgba(255,255,255,0.95);
+    font-weight: 600;
+    margin-top: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    white-space: nowrap;
+}
 
 /* ============================================================
    RESPONSIVE (ZOOM) - Mantenido igual
@@ -897,7 +926,7 @@ body {
 }
 .solar-comun-informe-wrapper.new-vibrant-design .impact-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .solar-comun-informe-wrapper.new-vibrant-design .impact-item {
     text-align: center;
