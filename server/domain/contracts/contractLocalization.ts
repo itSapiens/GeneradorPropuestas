@@ -355,7 +355,7 @@ export function getProposalPdfTexts(language: AppLanguage) {
     recommendedTag: tServer(
       language,
       "emails.proposalPdf.flow.recommendedTag",
-      "★ RECOM.",
+      "★ RECOMENDADO",
     ),
     reportPrefix: tServer(
       language,
