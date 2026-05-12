@@ -588,7 +588,7 @@ function buildStabilityGraphHtml(params: {
     )
     .join("");
 
-  return `<div class="proposal-stability-graph" style="margin:0 0 28px;">
+  return `<div class="proposal-stability-graph" style="margin:58px 0 30px;">
                   <div class="eyebrow graph-section-eyebrow">${escapeHtml(params.texts.stabilityTitle)}</div>
                   <div class="graph-block condensed-graph p2-graph-block clean-stability-chart" style="padding:18px 24px 20px;background:#fff;border:1px solid #E2E8F5;border-radius:10px;box-shadow:none;overflow:hidden;">
                     <div style="max-width:720px;margin:0 auto;">
@@ -1009,7 +1009,7 @@ export function buildProposalPdfHtml(payload: ProposalPdfPayload): string {
   html = replaceRaw(
     html,
     `<div class="cta-button">Reservar →</div>`,
-    `<a class="cta-button" href="${escapeHtml(values.reserveHref)}" target="_blank" rel="noopener noreferrer" style="display:flex;text-decoration:none;"><span>Reservar</span></a>`,
+    `<a class="cta-button" href="${escapeHtml(values.reserveHref)}" target="_blank" rel="noopener noreferrer" style="display:flex;text-decoration:none;"><span>${escapeHtml(texts.reserveCta.replace(/\s*→\s*$/, ""))}</span></a>`,
   );
 
   html = removeSectionBetweenMarkers(
@@ -1174,7 +1174,7 @@ export function buildProposalPdfHtml(payload: ProposalPdfPayload): string {
     const reserveLabel = escapeHtml(texts.reserveCta.replace(/\s*→\s*$/, ""));
     html = html.replace(
       /<div class="cta-button">([^<]*)(\s*<svg[\s\S]*?<\/svg>)(?:\s*<span>[^<]*<\/span>)?<\/div>/,
-      `<a class="cta-button" href="${escapeHtml(values.reserveHref)}" target="_blank" rel="noopener noreferrer" style="display:flex;text-decoration:none;">$2<span>${reserveLabel}</span></a>`,
+      `<a class="cta-button" href="${escapeHtml(values.reserveHref)}" target="_blank" rel="noopener noreferrer" style="display:flex;text-decoration:none;"><span>${reserveLabel}</span></a>`,
     );
   }
 
