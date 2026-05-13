@@ -233,12 +233,9 @@ function resolveWeightedEnergyPrice(
     Number.isFinite(invoiceVariableEnergyAmountEur) &&
     invoiceVariableEnergyAmountEur > 0;
 
-  // 1) Mejor opción: precio real medio de la factura
-  if (validVariableAmount && validInvoiceConsumption) {
-    return invoiceVariableEnergyAmountEur / invoiceConsumptionKwh;
-  }
-
-  // 2) Segunda mejor opción: ponderar con consumos reales por periodo
+  // 1) Mejor opción: precios unitarios reales por periodo ponderados por consumo.
+  // El importe variable extraído puede venir como subtotal, descuento o parcial
+  // de la factura; los €/kWh por periodo son la fuente más fiel para el ahorro.
   if (periodPrices && periodConsumptions) {
     let totalCost = 0;
     let totalKwh = 0;
@@ -265,7 +262,7 @@ function resolveWeightedEnergyPrice(
     }
   }
 
-  // 3) Fallback antiguo
+  // 2) Segunda mejor opción: precios unitarios por periodo con reparto estándar.
   if (periodPrices) {
     const weights = PERIOD_PERCENTAGES[billType];
     let weightedSum = 0;
@@ -301,6 +298,11 @@ function resolveWeightedEnergyPrice(
         availablePrices.length
       );
     }
+  }
+
+  // 3) Fallback: precio medio a partir del importe variable de energía.
+  if (validVariableAmount && validInvoiceConsumption) {
+    return invoiceVariableEnergyAmountEur / invoiceConsumptionKwh;
   }
 
   return undefined;

@@ -46,6 +46,38 @@ describe("calculateEnergyStudy", () => {
     });
   });
 
+  describe("weightedEnergyPriceKwh", () => {
+    it("prioritizes period unit prices over a partial variable energy amount", () => {
+      const result = calculateEnergyStudy({
+        ...BASE_INPUT,
+        invoiceConsumptionKwh: 400,
+        invoiceVariableEnergyAmountEur: 16,
+        periodPrices: {
+          P1: 0.18,
+          P2: 0.17,
+          P3: 0.16,
+        },
+        periodConsumptions: {
+          P1: 100,
+          P2: 100,
+          P3: 200,
+        },
+      });
+
+      expect(result.weightedEnergyPriceKwh).toBe(0.1675);
+    });
+
+    it("uses the variable energy average when no period prices are available", () => {
+      const result = calculateEnergyStudy({
+        ...BASE_INPUT,
+        invoiceConsumptionKwh: 400,
+        invoiceVariableEnergyAmountEur: 64,
+      });
+
+      expect(result.weightedEnergyPriceKwh).toBe(0.16);
+    });
+  });
+
   describe("annualSavingsInvestment — ahorro neto", () => {
     it("equals grossSolarValue when maintenance is 0", () => {
       const result = calculateEnergyStudy({ ...BASE_INPUT, maintenanceAnnualPerKwp: 0 });
