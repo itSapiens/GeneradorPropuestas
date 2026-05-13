@@ -17,6 +17,16 @@ const BASE_INPUT: CalculationInput = {
   vatRate: 0.21,
 };
 
+function projectWithInflation(
+  annualValue: number,
+  years: number,
+  rate: number,
+): number {
+  if (annualValue <= 0 || years <= 0) return 0;
+  if (rate <= 0) return annualValue * years;
+  return (annualValue * (Math.pow(1 + rate, years) - 1)) / rate;
+}
+
 describe("calculateEnergyStudy", () => {
   describe("annualSelfConsumedEnergyKwh", () => {
     it("equals recommendedPower * effectiveHours * selfConsumptionRatio", () => {
@@ -47,7 +57,7 @@ describe("calculateEnergyStudy", () => {
   });
 
   describe("weightedEnergyPriceKwh", () => {
-    it("prioritizes period unit prices over a partial variable energy amount", () => {
+    it("keeps the reference savings price when period unit prices are below it", () => {
       const result = calculateEnergyStudy({
         ...BASE_INPUT,
         invoiceConsumptionKwh: 400,
@@ -64,17 +74,47 @@ describe("calculateEnergyStudy", () => {
         },
       });
 
-      expect(result.weightedEnergyPriceKwh).toBe(0.1675);
+      expect(result.weightedEnergyPriceKwh).toBe(0.18);
     });
 
-    it("uses the variable energy average when no period prices are available", () => {
+    it("keeps the reference savings price when the variable energy average is below it", () => {
       const result = calculateEnergyStudy({
         ...BASE_INPUT,
         invoiceConsumptionKwh: 400,
         invoiceVariableEnergyAmountEur: 64,
       });
 
-      expect(result.weightedEnergyPriceKwh).toBe(0.16);
+      expect(result.weightedEnergyPriceKwh).toBe(0.18);
+    });
+
+    it("does not let PVPC toll-only period prices reduce the reference savings price", () => {
+      const result = calculateEnergyStudy({
+        ...BASE_INPUT,
+        invoiceConsumptionKwh: 168.84,
+        invoiceVariableEnergyAmountEur: 24.15,
+        periodPrices: {
+          P1: 0.092539,
+          P2: 0.028201,
+          P3: 0.002994,
+        },
+        periodConsumptions: {
+          P1: 59.68,
+          P2: 37.49,
+          P3: 71.67,
+        },
+      });
+
+      expect(result.weightedEnergyPriceKwh).toBe(0.18);
+    });
+
+    it("uses invoice prices above the reference savings price", () => {
+      const result = calculateEnergyStudy({
+        ...BASE_INPUT,
+        invoiceConsumptionKwh: 400,
+        invoiceVariableEnergyAmountEur: 88,
+      });
+
+      expect(result.weightedEnergyPriceKwh).toBe(0.22);
     });
   });
 
@@ -120,17 +160,17 @@ describe("calculateEnergyStudy", () => {
   });
 
   describe("totalSavings25Years", () => {
-    it("uses annual savings times 25 without applying inflation", () => {
+    it("projects annual savings to 25 years with energy price inflation", () => {
       const result = calculateEnergyStudy({
         ...BASE_INPUT,
-        energyPriceInflation: 0.5,
+        energyPriceInflation: 0.03,
       });
 
       expect(result.totalSavings25YearsInvestment).toBe(
-        Number((result.annualSavingsInvestment * 25).toFixed(2)),
+        Number(projectWithInflation(result.annualSavingsInvestment, 25, 0.03).toFixed(2)),
       );
       expect(result.totalSavings25YearsService).toBe(
-        Number((result.annualSavingsService * 25).toFixed(2)),
+        Number(projectWithInflation(result.annualSavingsService, 25, 0.03).toFixed(2)),
       );
     });
   });
