@@ -629,7 +629,12 @@ function normalizeDni(value: unknown): string | null {
 
 function normalizeCups(value: unknown): string | null {
   const str = safeString(value);
-  return str ? str.replace(/\s+/g, "").toUpperCase() : null;
+  if (!str) return null;
+
+  const normalized = str.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const match = normalized.match(/[A-Z]{2}[0-9]{16}[A-Z]{2}(?:[0-9][FPCR])?/i);
+
+  return match?.[0] ?? null;
 }
 
 function normalizeIbanPreservingMask(value: unknown): string | null {

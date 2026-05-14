@@ -65,6 +65,18 @@ export interface ApiInstallation {
     email?: string | null;
     telefono?: string | null;
     representante_legal?: string | null;
+    logo_bucket?: string | null;
+    logo_path?: string | null;
+    logo_mime_type?: string | null;
+    pdf_color_primario?: string | null;
+    pdf_color_secundario?: string | null;
+    pdf_color_acento?: string | null;
+    pdf_color_texto?: string | null;
+    pdf_color_fondo_pagina?: string | null;
+    pdf_color_fondo_card?: string | null;
+    pdf_frase_inicio?: string | null;
+    pdf_frase_destacada?: string | null;
+    pdf_frase_final?: string | null;
   } | null;
 
   required_kwp?: number;
@@ -127,6 +139,18 @@ export type ContractPreviewData = {
       email?: string | null;
       telefono?: string | null;
       representante_legal?: string | null;
+      logo_bucket?: string | null;
+      logo_path?: string | null;
+      logo_mime_type?: string | null;
+      pdf_color_primario?: string | null;
+      pdf_color_secundario?: string | null;
+      pdf_color_acento?: string | null;
+      pdf_color_texto?: string | null;
+      pdf_color_fondo_pagina?: string | null;
+      pdf_color_fondo_card?: string | null;
+      pdf_frase_inicio?: string | null;
+      pdf_frase_destacada?: string | null;
+      pdf_frase_final?: string | null;
     } | null;
     iban_aportaciones?: string | null;
     potencia_instalada_kwp?: number | null;

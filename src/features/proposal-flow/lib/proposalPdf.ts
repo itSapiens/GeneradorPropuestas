@@ -193,6 +193,8 @@ export function buildProposalPdfSummary(
   proposal: ProposalCardData,
   installation?: ApiInstallation | null,
 ): ProposalPdfSummary {
+  const company = installation?.empresa ?? null;
+
   return {
     mode: proposal.id,
     title: proposal.title,
@@ -208,9 +210,21 @@ export function buildProposalPdfSummary(
     description: proposal.description,
     installationAddress: installation?.direccion ?? null,
     installationName: installation?.nombre_instalacion ?? null,
-    companyName: installation?.empresa?.nombre ?? null,
-    companyEmail: installation?.empresa?.email ?? null,
-    companyPhone: installation?.empresa?.telefono ?? null,
+    companyName: company?.nombre ?? null,
+    companyEmail: company?.email ?? null,
+    companyPhone: company?.telefono ?? null,
+    companyLogoBucket: company?.logo_bucket ?? null,
+    companyLogoPath: company?.logo_path ?? null,
+    companyLogoMimeType: company?.logo_mime_type ?? null,
+    companyPdfColorPrimario: company?.pdf_color_primario ?? null,
+    companyPdfColorSecundario: company?.pdf_color_secundario ?? null,
+    companyPdfColorAcento: company?.pdf_color_acento ?? null,
+    companyPdfColorTexto: company?.pdf_color_texto ?? null,
+    companyPdfColorFondoPagina: company?.pdf_color_fondo_pagina ?? null,
+    companyPdfColorFondoCard: company?.pdf_color_fondo_card ?? null,
+    companyPdfFraseInicio: company?.pdf_frase_inicio ?? null,
+    companyPdfFraseDestacada: company?.pdf_frase_destacada ?? null,
+    companyPdfFraseFinal: company?.pdf_frase_final ?? null,
     energyPriceKwh:
       proposal.id === "investment"
         ? isFixedInstallationPayment(installation)

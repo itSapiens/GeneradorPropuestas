@@ -11,6 +11,7 @@ import {
 type ProposalPdfPayload = {
   billData: BillData;
   calculationResult: CalculationResult;
+  companyLogoDataUri?: string | null;
   continueContractUrl?: string | null;
   language?: AppLanguage;
   proposals: ProposalPdfSummary[];
@@ -50,10 +51,23 @@ type TemplateValues = {
   contact: string;
   companyName: string;
   companyEmail: string;
+  companyLogoHtml: string;
   reserveHref: string;
+  brandStyle: string;
+  coverTitleHtml: string;
+  extraConsumptionHtml: string;
   stabilityChartHtml: string;
   stabilityGraphHtml: string;
   recommendedMode: ProposalPdfSummary["mode"] | null;
+};
+
+type BrandColors = {
+  accent: string;
+  cardBackground: string;
+  pageBackground: string;
+  primary: string;
+  secondary: string;
+  text: string;
 };
 
 const TEMPLATE_HTML = readFileSync(
@@ -90,6 +104,83 @@ function replaceText(html: string, search: string, value: string): string {
 
 function replaceRaw(html: string, search: string, value: string): string {
   return html.split(search).join(value);
+}
+
+function normalizeHexColor(value: unknown, fallback: string): string {
+  const color = typeof value === "string" ? value.trim() : "";
+  return /^#[0-9A-F]{6}$/i.test(color) ? color : fallback;
+}
+
+function normalizePhraseToken(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, " ")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function buildCoverTitleHtml(params: {
+  language: AppLanguage;
+  proposal?: ProposalPdfSummary;
+  texts: ReturnType<typeof getProposalPdfTexts>;
+}): string {
+  const intro = params.proposal?.companyPdfFraseInicio?.trim();
+  const highlight = params.proposal?.companyPdfFraseDestacada?.trim();
+  const final = params.proposal?.companyPdfFraseFinal?.trim();
+
+  if (!intro && !highlight && !final) return params.texts.coverTitleHtml;
+
+  const incoming = normalizePhraseToken([intro, highlight, final].filter(Boolean).join(" "));
+  const knownDefaultPhrases = [
+    "La energía, en tus manos sin tocar tu tejado.",
+    "L'energia, a les teues mans sense tocar la teua teulada.",
+    "A enerxía, nas túas mans sen tocar o teu tellado.",
+  ].map(normalizePhraseToken);
+
+  if (knownDefaultPhrases.includes(incoming)) {
+    return params.texts.coverTitleHtml;
+  }
+
+  return [
+    intro ? escapeHtml(intro) : "",
+    highlight ? `<em>${escapeHtml(highlight)}</em>` : "",
+    final ? escapeHtml(final) : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function buildBrandColors(proposal?: ProposalPdfSummary): BrandColors {
+  const text = normalizeHexColor(proposal?.companyPdfColorTexto, "#0B1957");
+
+  return {
+    accent: normalizeHexColor(proposal?.companyPdfColorAcento, "#2ED1BC"),
+    cardBackground: normalizeHexColor(proposal?.companyPdfColorFondoCard, "#FFFFFF"),
+    pageBackground: normalizeHexColor(proposal?.companyPdfColorFondoPagina, "#F8F8F5"),
+    primary: normalizeHexColor(proposal?.companyPdfColorPrimario, text),
+    secondary: normalizeHexColor(proposal?.companyPdfColorSecundario, "#7AB1FF"),
+    text,
+  };
+}
+
+function buildBrandStyle(colors: BrandColors): string {
+  return [
+    `--text-main:${colors.text}`,
+    `--brand-primary:${colors.primary}`,
+    `--brand-blue:${colors.secondary}`,
+    `--brand-mint:${colors.accent}`,
+    `--bg-page:${colors.pageBackground}`,
+    `--bg-card:${colors.cardBackground}`,
+    `--grad-vibrant:linear-gradient(135deg, ${colors.accent} 0%, ${colors.secondary} 100%)`,
+  ].join(";");
+}
+
+function buildCompanyLogoHtml(payload: ProposalPdfPayload, companyName: string): string {
+  if (!payload.companyLogoDataUri?.trim()) return `<span class="dot"></span>`;
+
+  return `<img class="company-logo" src="${escapeHtml(payload.companyLogoDataUri)}" alt="${escapeHtml(companyName)}" />`;
 }
 
 function removeFirstElementByClass(html: string, className: string): string {
@@ -250,6 +341,275 @@ function getProjectionFootnote(language: AppLanguage): string {
   if (language === "gl") return "* Proxección estimada cun IPC do 2% anual.";
   if (language === "ca" || language === "val") return "* Projecció estimada amb un IPC del 2% anual.";
   return "* Proyección estimada un IPC del 2% anual.";
+}
+
+function getExtraConsumptionLabels(language: AppLanguage): {
+  title: string;
+  hvac: string;
+  ev: string;
+  perYear: string;
+} {
+  if (language === "gl") {
+    return {
+      title: "Consumo extra",
+      hvac: "Climatización",
+      ev: "Vehículo eléctrico",
+      perYear: "/ano",
+    };
+  }
+
+  if (language === "ca" || language === "val") {
+    return {
+      title: "Consum extra",
+      hvac: "Climatització",
+      ev: "Vehicle elèctric",
+      perYear: "/any",
+    };
+  }
+
+  return {
+    title: "Consumo extra",
+    hvac: "Climatización",
+    ev: "Vehículo eléctrico",
+    perYear: "/año",
+  };
+}
+
+function toRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function parseNumberLike(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return value;
+  }
+
+  if (typeof value !== "string") return 0;
+
+  const cleaned = value.replace(/[^0-9,.-]/g, "").trim();
+  if (!cleaned) return 0;
+
+  const withoutThousands = cleaned.replace(/\.(?=\d{3}(?:\D|$))/g, "");
+  const normalized = withoutThousands.includes(",")
+    ? withoutThousands.replace(",", ".")
+    : withoutThousands;
+
+  const numeric = Number(normalized);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
+}
+
+function firstPositiveNumber(
+  sources: Array<Record<string, unknown> | null | undefined>,
+  keys: string[],
+): number {
+  for (const source of sources) {
+    if (!source) continue;
+
+    for (const key of keys) {
+      const numeric = parseNumberLike(source[key]);
+      if (numeric > 0) return numeric;
+    }
+  }
+
+  return 0;
+}
+
+function buildExtraConsumptionIconSvg(kind: "ev" | "hvac"): string {
+  if (kind === "ev") {
+    return `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path d="M7 14h10l-1.2-3.5A2.4 2.4 0 0 0 13.5 9h-3A2.4 2.4 0 0 0 8.2 10.5L7 14Z" />
+                                <path d="M6 14h12v4H6z" />
+                                <path d="M9 18v1.5M15 18v1.5M10 14l.8-2h2.4l.8 2" />
+                                <path d="M16.5 6.2 14.7 9h2.2l-1.4 2.8" />
+                                <circle cx="9" cy="16" r=".8" />
+                                <circle cx="15" cy="16" r=".8" />
+                              </svg>`;
+  }
+
+  return `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path d="M12 4v2.2M12 17.8V20M4 12h2.2M17.8 12H20M6.3 6.3l1.6 1.6M16.1 16.1l1.6 1.6M6.3 17.7l1.6-1.6M16.1 7.9l1.6-1.6" />
+                                <circle cx="12" cy="12" r="3.2" />
+                                <path d="M12 8.8v6.4M8.8 12h6.4" />
+                              </svg>`;
+}
+
+function hasBooleanFlag(
+  sources: Array<Record<string, unknown> | null | undefined>,
+  keys: string[],
+): boolean {
+  return sources.some((source) =>
+    keys.some((key) => source?.[key] === true),
+  );
+}
+
+function collectExtraConsumptionSources(
+  payload: ProposalPdfPayload,
+): Array<Record<string, unknown>> {
+  const roots = [
+    toRecord(payload.calculationResult),
+    toRecord(payload.billData),
+    ...payload.proposals.map((proposal) => toRecord(proposal)),
+  ].filter(Boolean) as Array<Record<string, unknown>>;
+
+  const nestedKeys = [
+    "extraConsumption",
+    "extraConsumptions",
+    "extraConsumptionData",
+    "additionalConsumption",
+    "additionalConsumptions",
+    "extras",
+    "selectedExtras",
+  ];
+
+  return roots.flatMap((root) => [
+    root,
+    ...nestedKeys.map((key) => toRecord(root[key])).filter(Boolean),
+  ] as Array<Record<string, unknown>>);
+}
+
+function collectNestedSources(
+  sources: Array<Record<string, unknown>>,
+  keys: string[],
+): Array<Record<string, unknown>> {
+  return sources.flatMap((source) =>
+    keys.map((key) => toRecord(source[key])).filter(Boolean),
+  ) as Array<Record<string, unknown>>;
+}
+
+function buildExtraConsumptionHtml(
+  payload: ProposalPdfPayload,
+  language: AppLanguage,
+): string {
+  const labels = getExtraConsumptionLabels(language);
+  const sources = collectExtraConsumptionSources(payload);
+
+  const hvacNestedSources = collectNestedSources(sources, [
+    "hvac",
+    "clima",
+    "climatizacion",
+    "airConditioning",
+    "heatingCooling",
+  ]);
+
+  const evNestedSources = collectNestedSources(sources, [
+    "ev",
+    "electricVehicle",
+    "vehicle",
+    "cocheElectrico",
+  ]);
+
+  const hvacM2 = firstPositiveNumber(sources, [
+    "hvacSquareMeters",
+    "extraConsumptionHvacM2",
+    "hvacM2",
+    "climatizacionM2",
+    "climateAreaM2",
+    "airConditioningM2",
+  ]) || firstPositiveNumber(hvacNestedSources, [
+    "m2",
+    "sqm",
+    "surfaceM2",
+    "areaM2",
+    "squareMeters",
+  ]);
+
+  const hvacKw = firstPositiveNumber(sources, [
+    "kw",
+    "hvacKw",
+    "climatizacionKw",
+    "climatePowerKw",
+    "airConditioningKw",
+  ]) || firstPositiveNumber(hvacNestedSources, [
+    "powerKw",
+  ]);
+
+  const hvacKwh = firstPositiveNumber(sources, [
+    "hvacAnnualKwh",
+    "hvacAnnualConsumptionKwh",
+    "extraConsumptionHvacKwh",
+    "climatizacionAnnualKwh",
+  ]) || firstPositiveNumber(hvacNestedSources, [
+    "extraKwh",
+    "extraConsumptionKwh",
+    "annualKwh",
+    "annualConsumptionKwh",
+    "kwh",
+  ]);
+
+  const evKmYear = firstPositiveNumber(sources, [
+    "extraConsumptionEvKmYear",
+    "evKmYear",
+    "evAnnualKm",
+    "electricVehicleKmYear",
+  ]) || firstPositiveNumber(evNestedSources, [
+    "kmYear",
+    "kmsYear",
+    "annualKm",
+    "annualKms",
+    "kmPerYear",
+  ]);
+
+  const evKwh = firstPositiveNumber(sources, [
+    "evAnnualKwh",
+    "evAnnualConsumptionKwh",
+    "extraConsumptionEvKwh",
+    "electricVehicleAnnualKwh",
+  ]) || firstPositiveNumber(evNestedSources, [
+    "extraKwh",
+    "extraConsumptionKwh",
+    "annualKwh",
+    "annualConsumptionKwh",
+    "kwh",
+  ]);
+
+  const hasHvac =
+    hvacM2 > 0 ||
+    hvacKw > 0 ||
+    hvacKwh > 0 ||
+    hasBooleanFlag(sources, ["hvac", "clima", "climatizacion", "airConditioning"]);
+  const hasEv =
+    evKmYear > 0 ||
+    evKwh > 0 ||
+    hasBooleanFlag(sources, ["ev", "electricVehicle", "vehicle", "cocheElectrico"]);
+  const pills: string[] = [];
+
+  if (hasHvac) {
+    const detail = hvacM2 > 0 || hvacKw > 0
+      ? [
+          hvacM2 > 0 ? `${formatNumber(hvacM2, language, 0)} m²` : null,
+          hvacKw > 0 ? `${formatNumber(hvacKw, language, 1, 1)} kW` : null,
+        ].filter(Boolean).join(" + ")
+      : hvacKwh > 0
+        ? `${formatKwh(hvacKwh, language)}${labels.perYear}`
+        : "";
+
+    pills.push(`<div class="extra-consumption-pill extra-consumption-hvac">
+                              <span class="extra-consumption-icon">${buildExtraConsumptionIconSvg("hvac")}</span>
+                              <span><strong>${escapeHtml(labels.hvac)}</strong><small>${escapeHtml(detail)}</small></span>
+                          </div>`);
+  }
+
+  if (hasEv) {
+    const detail = evKmYear > 0
+      ? `${formatNumber(evKmYear, language, 0)} km${labels.perYear}`
+      : evKwh > 0
+        ? `${formatKwh(evKwh, language)}${labels.perYear}`
+        : "";
+
+    pills.push(`<div class="extra-consumption-pill extra-consumption-ev">
+                              <span class="extra-consumption-icon">${buildExtraConsumptionIconSvg("ev")}</span>
+                              <span><strong>${escapeHtml(labels.ev)}</strong><small>${escapeHtml(detail)}</small></span>
+                          </div>`);
+  }
+
+  if (!pills.length) return "";
+
+  return `<div class="extra-consumption-pills">
+                          <span class="extra-consumption-title">${escapeHtml(labels.title)}</span>
+                          ${pills.join("\n                          ")}
+                      </div>`;
 }
 
 function formatKwh(value: number, language: AppLanguage): string {
@@ -465,7 +825,9 @@ function buildStabilityOrbitHtml(params: {
   serviceTotalCost25Years: number;
   serviceTotalSavings25Years: number;
   serviceUsesFixedDisplay?: boolean;
+  serviceColor: string;
   texts: ReturnType<typeof getProposalPdfTexts>;
+  investmentColor: string;
 }): string {
   const labels = getSavingsNoteLabels(params.language);
   const modeSummary = (
@@ -487,12 +849,13 @@ function buildStabilityOrbitHtml(params: {
   };
 
   return `<div class="stability-orbit-notes orbit-savings-layer">
-      ${modeSummary(params.service, "#7AB1FF", params.serviceTotalSavings25Years, "orbit-savings-service")}
-      ${modeSummary(params.investment, "#2ED1BC", params.investmentTotalSavings25Years, "orbit-savings-investment")}
+      ${modeSummary(params.service, params.serviceColor, params.serviceTotalSavings25Years, "orbit-savings-service")}
+      ${modeSummary(params.investment, params.investmentColor, params.investmentTotalSavings25Years, "orbit-savings-investment")}
     </div>`;
 }
 
 function buildStabilityGraphHtml(params: {
+  currentColor: string;
   currentPrice: number;
   currentComparableAnnualCost: number;
   investment?: ProposalPdfSummary;
@@ -506,7 +869,9 @@ function buildStabilityGraphHtml(params: {
   serviceFixedAmount?: number;
   serviceTotalCost25Years: number;
   serviceUsesFixedDisplay?: boolean;
+  serviceColor: string;
   texts: ReturnType<typeof getProposalPdfTexts>;
+  investmentColor: string;
 }): string {
   const years = Array.from({ length: PROJECTION_YEARS + 1 }, (_, i) => i);
   const currentLine = years.map((y) => params.currentPrice * Math.pow(1 + PROJECTION_IPC_RATE, y));
@@ -514,31 +879,31 @@ function buildStabilityGraphHtml(params: {
 
   const series = [
     {
-      color: "#5E6472",
+      color: params.currentColor,
       gradientId: "currentPriceGradient",
       key: "current",
       label: params.texts.currentBillLegend,
       points: currentLine,
-      stopColor: "#5E6472",
+      stopColor: params.currentColor,
     },
     params.service && !params.serviceUsesFixedDisplay
       ? {
-          color: "#4F9BFF",
+          color: params.serviceColor,
           gradientId: "servicePriceGradient",
           key: "service",
           label: params.texts.serviceLegend,
           points: years.map(() => params.serviceEnergyPrice),
-          stopColor: "#4F9BFF",
+          stopColor: params.serviceColor,
         }
       : null,
     params.investment && !params.investmentUsesFixedDisplay
       ? {
-          color: "#23C7B5",
+          color: params.investmentColor,
           gradientId: "investmentPriceGradient",
           key: "investment",
           label: params.texts.investmentLegend,
           points: years.map(() => params.investmentEnergyPrice),
-          stopColor: "#23C7B5",
+          stopColor: params.investmentColor,
         }
       : null,
   ].filter((item): item is NonNullable<typeof item> => Boolean(item));
@@ -627,7 +992,7 @@ function buildStabilityGraphHtml(params: {
 
   return `<div class="proposal-stability-graph" style="margin:58px 0 30px;">
                   <div class="eyebrow graph-section-eyebrow">${escapeHtml(params.texts.stabilityTitle)}</div>
-                  <div class="graph-block condensed-graph p2-graph-block clean-stability-chart" style="padding:18px 24px 20px;background:#fff;border:1px solid #E2E8F5;border-radius:10px;box-shadow:none;overflow:hidden;">
+                  <div class="graph-block condensed-graph p2-graph-block clean-stability-chart" style="padding:18px 24px 20px;background:var(--bg-card);border:1px solid #E2E8F5;border-radius:10px;box-shadow:none;overflow:hidden;">
                     <div style="max-width:720px;margin:0 auto;">
                       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px;">
                         <div style="font-size:10px;line-height:1.35;color:#5D668F;font-weight:600;max-width:330px;">${escapeHtml(getProjectionFootnote(params.language))}</div>
@@ -776,6 +1141,10 @@ function buildTemplateValues(payload: ProposalPdfPayload, language: AppLanguage)
   const companyName = preferred?.companyName?.trim() || "Solar Común";
   const companyEmail = preferred?.companyEmail?.trim() || "hola@solarcomun.coop";
   const reserveHref = payload.continueContractUrl?.trim() || `mailto:${companyEmail}`;
+  const companyLogoHtml = buildCompanyLogoHtml(payload, companyName);
+  const brandColors = buildBrandColors(preferred);
+  const brandStyle = buildBrandStyle(brandColors);
+  const coverTitleHtml = buildCoverTitleHtml({ language, proposal: preferred, texts });
   const paybackText = investmentPaybackYears
     ? `${formatNumber(investmentPaybackYears, language, 1, 1)} ${texts.yearsLabel}`
     : "-";
@@ -861,7 +1230,11 @@ function buildTemplateValues(payload: ProposalPdfPayload, language: AppLanguage)
     contact: contact || texts.pendingContact,
     companyName,
     companyEmail,
+    companyLogoHtml,
     reserveHref,
+    brandStyle,
+    coverTitleHtml,
+    extraConsumptionHtml: buildExtraConsumptionHtml(payload, language),
     stabilityChartHtml: buildStabilityOrbitHtml({
       currentAnnualCost,
       currentComparableAnnualCost,
@@ -875,13 +1248,16 @@ function buildTemplateValues(payload: ProposalPdfPayload, language: AppLanguage)
       language,
       service,
       serviceEnergyPrice,
+      serviceColor: brandColors.secondary,
       serviceFixedAmount: monthlyFee,
       serviceTotalCost25Years,
       serviceTotalSavings25Years,
       serviceUsesFixedDisplay,
       texts,
+      investmentColor: brandColors.accent,
     }),
     stabilityGraphHtml: buildStabilityGraphHtml({
+      currentColor: brandColors.primary,
       currentComparableAnnualCost,
       currentPrice,
       investment,
@@ -889,12 +1265,14 @@ function buildTemplateValues(payload: ProposalPdfPayload, language: AppLanguage)
       investmentFixedAmount: upfrontCost,
       investmentTotalCost25Years,
       investmentUsesFixedDisplay,
+      investmentColor: brandColors.accent,
       language,
       service,
       serviceEnergyPrice,
       serviceFixedAmount: monthlyFee,
       serviceTotalCost25Years,
       serviceUsesFixedDisplay,
+      serviceColor: brandColors.secondary,
       texts,
     }),
     recommendedMode,
@@ -979,24 +1357,47 @@ export function buildProposalPdfHtml(payload: ProposalPdfPayload): string {
 
   html = replaceRaw(
     html,
+    `<div class="solar-comun-informe-wrapper condensed-view new-vibrant-design design-final">`,
+    `<div class="solar-comun-informe-wrapper condensed-view new-vibrant-design design-final" style="${values.brandStyle}">`,
+  );
+  html = replaceRaw(
+    html,
     `<title>Propuesta Solar Común</title>`,
     `<title>Propuesta ${escapeHtml(values.companyName)}</title>`,
   );
   html = replaceRaw(
     html,
-    `<span>Solar <em style="font-family: Cabin, sans-serif; font-style: italic; font-weight: 400;">Común</em></span>`,
-    `<span>${escapeHtml(values.companyName)}</span>`,
+    `<span class="dot"></span>
+                            <span>Solar <em style="font-family: Cabin, sans-serif; font-style: italic; font-weight: 400;">Común</em></span>`,
+    `${values.companyLogoHtml}
+                            <span class="company-name">${escapeHtml(values.companyName)}</span>`,
+  );
+  html = replaceRaw(
+    html,
+    `<span class="dot"></span>
+                        <span>Solar <em style="font-family: Cabin, sans-serif; font-style: italic; font-weight: 400;">Común</em></span>`,
+    `${values.companyLogoHtml}
+                        <span class="company-name">${escapeHtml(values.companyName)}</span>`,
+  );
+  html = html.replace(
+    /<span class="dot"><\/span>\s*<span>Solar <em style="font-family: Cabin, sans-serif; font-style: italic; font-weight: 400;">Común<\/em><\/span>/g,
+    `${values.companyLogoHtml}<span class="company-name">${escapeHtml(values.companyName)}</span>`,
   );
   html = replaceText(html, "Propuesta · Participación", texts.coverEyebrow);
   html = replaceRaw(
     html,
     `<h1 class="display main-title">La energía, <em>en tus manos</em> sin tocar tu tejado.</h1>`,
-    `<h1 class="display main-title">${texts.coverTitleHtml}</h1>`,
+    `<h1 class="display main-title">${values.coverTitleHtml}</h1>`,
   );
   html = replaceText(
     html,
     "Participa en la planta solar comunitaria de tu zona. Sin obras, sin cambio de compañía, y con un ahorro real en tu factura.",
     texts.coverDescription,
+  );
+  html = replaceRaw(
+    html,
+    "<!-- EXTRA_CONSUMPTION_PILLS -->",
+    values.extraConsumptionHtml,
   );
   html = replaceText(html, "Hoy · Sin participación", texts.todayWithoutParticipation);
   html = replaceText(html, "Tu factura actual", texts.currentBillLabel);

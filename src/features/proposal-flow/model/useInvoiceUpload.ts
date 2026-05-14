@@ -17,6 +17,7 @@ import {
 import { applyExtractedBillToValidationForm } from "@/src/features/proposal-flow/lib/validationFormValues";
 
 interface UseInvoiceUploadParams {
+  onStartNewInvoice?: () => void;
   privacyAccepted: boolean;
   setUploadedInvoiceFile: Dispatch<SetStateAction<File | null>>;
   setRawExtraction: Dispatch<SetStateAction<ExtractedBillData | null>>;
@@ -29,6 +30,7 @@ interface UseInvoiceUploadParams {
 }
 
 export function useInvoiceUpload({
+  onStartNewInvoice,
   privacyAccepted,
   setUploadedInvoiceFile,
   setRawExtraction,
@@ -53,6 +55,7 @@ export function useInvoiceUpload({
         return;
       }
 
+      onStartNewInvoice?.();
       setUploadedInvoiceFile(file);
 
       sileo.promise(
@@ -111,6 +114,7 @@ export function useInvoiceUpload({
     },
     [
       privacyAccepted,
+      onStartNewInvoice,
       setCurrentStep,
       setExtractedData,
       setRawExtraction,

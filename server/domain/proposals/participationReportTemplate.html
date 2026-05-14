@@ -93,6 +93,7 @@
     align-items: center;
     gap: 6px;
     font-weight: 700;
+    color: var(--text-main) !important;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .brandmark .dot {
@@ -101,6 +102,23 @@
     border-radius: 50%;
     background: var(--grad-vibrant);
     box-shadow: 0 0 10px rgba(46,209,188,0.4);
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .brandmark .company-logo {
+    width: 30px;
+    max-height: 24px;
+    object-fit: contain;
+    display: block;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .brandmark .company-name {
+    display: inline-block;
+    line-height: 1.1;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .header-container-p2 .brandmark .company-logo {
+    width: 26px;
+    max-height: 20px;
 }
 
 /* Page Foot */
@@ -203,20 +221,22 @@
     width: 100%; /* Ocupar todo el ancho para permitir alineación */
 }
 .solar-comun-informe-wrapper.new-vibrant-design .main-title {
-    font-size: 36px;
-    max-width: 25ch;
-    line-height: 1.05;
+    font-size: 34px;
+    max-width: 100%;
+    width: 100%;
+    line-height: 1.08;
     color: var(--text-main);
     margin: 0; /* Reiniciar márgenes automáticos para alineación izquierda */
+    overflow-wrap: normal;
+    text-wrap: balance;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .main-title em {
     font-style: italic;
     font-weight: 400;
-    background: var(--grad-vibrant);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    background: none;
+    color: var(--brand-mint);
+    -webkit-text-fill-color: var(--brand-mint);
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .hero-description {
@@ -227,6 +247,73 @@
     white-space: nowrap;
     text-align: left;
     text-align-last: left;
+}
+.solar-comun-informe-wrapper.new-vibrant-design .extra-consumption-pills {
+    margin: 10px 0 0 32px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .extra-consumption-title {
+    font-size: 7.4px;
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .extra-consumption-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 9px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.86);
+    border: 1px solid rgba(46,209,188,0.24);
+    color: var(--text-main);
+    box-shadow: 0 8px 18px rgba(11,25,87,0.05);
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .extra-consumption-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--grad-vibrant);
+    color: #fff;
+    flex: 0 0 auto;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .extra-consumption-icon svg {
+    width: 13px;
+    height: 13px;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .extra-consumption-pill strong {
+    display: block;
+    font-size: 8.5px;
+    line-height: 1.05;
+    color: var(--text-main);
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .extra-consumption-pill small {
+    display: block;
+    margin-top: 1px;
+    font-size: 8px;
+    line-height: 1.05;
+    color: var(--text-light);
+    font-weight: 700;
 }
 
 /* Sección Comparativa (GRÁFICO CENTRADO VERTICALMENTE) */
@@ -259,7 +346,7 @@
     align-items: center;
     padding: 30px 168px 30px 148px;
     min-height: 248px;
-    background: #fff;
+    background: var(--bg-card);
     -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
     border-radius: 12px;
@@ -570,7 +657,7 @@
 /* Gráfico P2 Renovado y Centrado (con Glow) */
 .solar-comun-informe-wrapper.new-vibrant-design .p2-graph-block {
     padding: 26px 28px;
-    background: #fff;
+    background: var(--bg-card);
     border: 1px solid #E4EAF7;
     box-shadow: none;
     border-radius: 10px;
@@ -613,7 +700,7 @@
     min-height: 124px;
     padding: 18px 16px;
     border-radius: 8px;
-    background: #fff;
+    background: var(--bg-card);
     border: 1px solid rgba(11,25,87,0.04);
     box-shadow: var(--shadow-soft);
     display: flex;
@@ -1049,19 +1136,19 @@ body {
     .solar-comun-informe-wrapper.new-vibrant-design .client-data-grid,
     .solar-comun-informe-wrapper.new-vibrant-design .impact-item,
     .solar-comun-informe-wrapper.new-vibrant-design .modality-card {
-        background: #ffffff !important;
+        background: var(--bg-card) !important;
         box-shadow: none !important;
         border-color: #E8ECF8 !important;
     }
 
     .solar-comun-informe-wrapper.new-vibrant-design .graph-block {
-        background: #ffffff !important;
+        background: var(--bg-card) !important;
         border: 1px solid #E4EAF7 !important;
         box-shadow: none !important;
     }
 
     .solar-comun-informe-wrapper.new-vibrant-design .orbs-comparison-grid {
-        background: #ffffff !important;
+        background: var(--bg-card) !important;
         border: 1px solid #E4EAF7 !important;
         box-shadow: none !important;
     }
@@ -1476,6 +1563,7 @@ body {
                     <div class="hero-container">
                         <h1 class="display main-title">La energía, <em>en tus manos</em> sin tocar tu tejado.</h1>
                         <p class="hero-description">Participa en la planta solar comunitaria de tu zona. Sin obras, sin cambio de compañía, y con un ahorro real en tu factura.</p>
+                        <!-- EXTRA_CONSUMPTION_PILLS -->
                     </div>
 
                     <!-- COMPARATIVA (GRÁFICO CENTRADO VERTICALMENTE) -->

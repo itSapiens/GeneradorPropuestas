@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -73,6 +73,7 @@ export default function MainAppContent() {
     register,
     control,
     handleSubmit,
+    reset,
     setValue,
     formState: { errors },
   } = useForm<ValidationBillDataFormInput, unknown, ValidationBillData>({
@@ -119,7 +120,24 @@ export default function MainAppContent() {
     t,
   });
 
+  const resetCurrentStudyState = useCallback(() => {
+    reset({ billType: "2TD" });
+    setRawExtraction(null);
+    setExtractedData(null);
+    setProposalResults(null);
+    setSelectedProposalView("investment");
+    setClientCoordinates(null);
+    setSavedStudy(null);
+    clearInstallations();
+    resetInstallationSelection();
+  }, [
+    clearInstallations,
+    reset,
+    resetInstallationSelection,
+  ]);
+
   const { handleFileSelect } = useInvoiceUpload({
+    onStartNewInvoice: resetCurrentStudyState,
     privacyAccepted,
     setUploadedInvoiceFile,
     setRawExtraction,
@@ -152,6 +170,8 @@ export default function MainAppContent() {
   };
 
   const handleManualInvoiceSubmit = (data: ManualInvoiceData) => {
+    resetCurrentStudyState();
+
     const extraction = buildManualExtractionFromData(data);
     const mappedData = mapExtractedToBillData(extraction);
 

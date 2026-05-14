@@ -298,6 +298,147 @@ describe("buildProposalPdfHtml", () => {
     expect(html).not.toContain("Elixe a túa opción");
   });
 
+  it("applies company branding, logo and the localized configurable cover phrase", () => {
+    const html = buildProposalPdfHtml({
+      billData,
+      calculationResult,
+      companyLogoDataUri: "data:image/png;base64,ZmFrZS1sb2dv",
+      language: "ca",
+      proposals: [
+        {
+          annualConsumptionKwh: 4150,
+          annualMaintenance: 0,
+          annualSavings: 330,
+          badge: "A",
+          companyEmail: "marca@example.com",
+          companyLogoPath: "empresa-1/logo.png",
+          companyName: "Marca Solar",
+          companyPdfColorAcento: "#12AA99",
+          companyPdfColorFondoCard: "#FAFCFF",
+          companyPdfColorFondoPagina: "#F1F7F4",
+          companyPdfColorPrimario: "#111111",
+          companyPdfColorSecundario: "#3366FF",
+          companyPdfColorTexto: "#222222",
+          companyPdfFraseDestacada: "en tus manos",
+          companyPdfFraseFinal: "sin tocar tu tejado.",
+          companyPdfFraseInicio: "La energía,",
+          description: "Servicio",
+          mode: "service",
+          monthlyFee: 22,
+          paybackYears: 0,
+          recommendedPowerKwp: 3.5,
+          title: "Cuota mensual",
+          totalSavings25Years: 12050,
+          upfrontCost: 0,
+        },
+      ],
+    });
+
+    expect(html).toContain(`style="--text-main:#222222;--brand-primary:#111111;--brand-blue:#3366FF;--brand-mint:#12AA99;--bg-page:#F1F7F4;--bg-card:#FAFCFF;`);
+    expect(html).toContain(`<img class="company-logo" src="data:image/png;base64,ZmFrZS1sb2dv" alt="Marca Solar" />`);
+    expect(html).toContain(`<span class="company-name">Marca Solar</span>`);
+    expect(html).toContain("L'energia, <em>a les teues mans</em> sense tocar la teua teulada.");
+    expect(html).not.toContain("La energía, <em>en tus manos</em> sin tocar tu tejado.");
+  });
+
+  it("shows selected extra consumption in the proposal cover", () => {
+    const html = buildProposalPdfHtml({
+      billData: {
+        ...billData,
+        extraConsumptionEvKmYear: 12000,
+        extraConsumptionHvacM2: 90,
+      },
+      calculationResult,
+      language: "es",
+      proposals: [
+        {
+          annualConsumptionKwh: 4150,
+          annualMaintenance: 0,
+          annualSavings: 330,
+          badge: "A",
+          description: "Servicio",
+          mode: "service",
+          monthlyFee: 22,
+          paybackYears: 0,
+          recommendedPowerKwp: 3.5,
+          title: "Cuota mensual",
+          totalSavings25Years: 12050,
+          upfrontCost: 0,
+        },
+      ],
+    });
+
+    expect(html).toContain("Consumo extra");
+    expect(html).not.toContain("Consumo extra incluido");
+    expect(html).toContain("Climatización");
+    expect(html).toContain("90 m²");
+    expect(html).toContain("Vehículo eléctrico");
+    expect(html).toContain("12.000 km/año");
+  });
+
+  it("does not create unselected extra consumption pills from generic annual consumption fields", () => {
+    const html = buildProposalPdfHtml({
+      billData,
+      calculationResult: {
+        ...calculationResult,
+        annualConsumptionKwh: 9999,
+      },
+      language: "es",
+      proposals: [
+        {
+          annualConsumptionKwh: 4150,
+          annualMaintenance: 0,
+          annualSavings: 330,
+          badge: "A",
+          description: "Servicio",
+          mode: "service",
+          monthlyFee: 22,
+          paybackYears: 0,
+          recommendedPowerKwp: 3.5,
+          title: "Cuota mensual",
+          totalSavings25Years: 12050,
+          upfrontCost: 0,
+        },
+      ],
+    });
+
+    expect(html).not.toContain(`<div class="extra-consumption-pill`);
+    expect(html).not.toContain("Climatización");
+    expect(html).not.toContain("Vehículo eléctrico");
+  });
+
+  it("shows only the selected extra consumption option", () => {
+    const html = buildProposalPdfHtml({
+      billData: {
+        ...billData,
+        extraConsumptionEvKmYear: 15000,
+      },
+      calculationResult,
+      language: "es",
+      proposals: [
+        {
+          annualConsumptionKwh: 4150,
+          annualMaintenance: 0,
+          annualSavings: 330,
+          badge: "A",
+          description: "Servicio",
+          mode: "service",
+          monthlyFee: 22,
+          paybackYears: 0,
+          recommendedPowerKwp: 3.5,
+          title: "Cuota mensual",
+          totalSavings25Years: 12050,
+          upfrontCost: 0,
+        },
+      ],
+    });
+
+    expect(html).toContain("Consumo extra");
+    expect(html).toContain("Vehículo eléctrico");
+    expect(html).toContain("15.000 km/año");
+    expect(html).not.toContain("Climatización");
+  });
+
   it("avoids showing a 0,000 €/kWh circle when the modality uses fixed pricing", () => {
     const html = buildProposalPdfHtml({
       billData,

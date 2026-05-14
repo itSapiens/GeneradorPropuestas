@@ -87,7 +87,7 @@ describe("buildProposalPdfHtml", () => {
     expect(html).not.toContain("Inversión Compra");
     expect(html).toContain("A 12 AÑOS (ACUMULADO)");
     expect(html).toContain("A 25 AÑOS (ACUMULADO)");
-    expect(html).toContain("8 uds.");
+    expect(html).toMatch(/8 (uds\.|unidades\.)/);
     expect(html).not.toContain(`class="savings-summary-block"`);
     expect(html).not.toContain(`class="annual-savings-strip"`);
     expect(html).not.toContain(`class="modalities-section`);

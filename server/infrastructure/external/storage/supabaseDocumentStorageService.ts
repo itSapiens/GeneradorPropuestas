@@ -1,5 +1,6 @@
 import { supabase } from "../../clients/supabaseClient";
 import { SUPABASE_DOCUMENTS_BUCKET } from "../../config/env";
+import { randomUUID } from "node:crypto";
 
 function normalizeStorageToken(value: string): string {
   return value
@@ -68,12 +69,14 @@ export async function uploadClientDocumentToSupabase(params: {
   await ensureDocumentsBucket();
 
   const folderPath = buildClientStorageFolderPath(params);
-  const path = `${folderPath}/${params.fileName}`;
+  const timestamp = new Date().toISOString().replace(/[-:.]/g, "");
+  const uniqueName = `${timestamp}-${randomUUID().slice(0, 8)}-${params.fileName}`;
+  const path = `${folderPath}/documents/${uniqueName}`;
   const { error } = await supabase.storage
     .from(SUPABASE_DOCUMENTS_BUCKET)
     .upload(path, params.buffer, {
       contentType: params.mimeType || "application/pdf",
-      upsert: true,
+      upsert: false,
     });
 
   if (error) {

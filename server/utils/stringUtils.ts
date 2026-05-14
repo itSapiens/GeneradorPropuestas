@@ -41,7 +41,9 @@ export function normalizeCups(value: unknown): string | null {
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "");
 
-  return normalized || null;
+  const match = normalized.match(/[A-Z]{2}[0-9]{16}[A-Z]{2}(?:[0-9][FPCR])?/i);
+
+  return match?.[0] ?? null;
 }
 
 export function isValidCupsFormat(value: unknown): value is string {

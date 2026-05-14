@@ -1148,6 +1148,7 @@ export async function validateProposalAccessUseCase(
   );
   const language = normalizeAppLanguage(study.language);
   const availableProposalModes = getAllowedProposalModes(installation.modalidad);
+  const studySourceFile = study.source_file ?? {};
 
   return {
     access: {
@@ -1162,13 +1163,27 @@ export async function validateProposalAccessUseCase(
       cups: client.cups ?? null,
       direccion_completa: client.direccion_completa ?? null,
       dni: client.dni,
-      documentos_supabase_bucket: client.documentos_supabase_bucket ?? null,
+      documentos_supabase_bucket:
+        studySourceFile.documentos_supabase_bucket ??
+        studySourceFile.supabase_bucket ??
+        client.documentos_supabase_bucket ??
+        null,
       email: client.email ?? null,
-      factura_supabase_path: client.factura_supabase_path ?? null,
+      factura_supabase_path:
+        studySourceFile.factura_supabase_path ??
+        client.factura_supabase_path ??
+        null,
       id: client.id,
       nombre: client.nombre,
-      propuesta_supabase_path: client.propuesta_supabase_path ?? null,
-      supabase_folder_path: client.supabase_folder_path ?? null,
+      propuesta_supabase_path:
+        studySourceFile.propuesta_supabase_path ??
+        studySourceFile.proposal_supabase_path ??
+        client.propuesta_supabase_path ??
+        null,
+      supabase_folder_path:
+        studySourceFile.supabase_folder_path ??
+        client.supabase_folder_path ??
+        null,
       telefono: client.telefono ?? null,
     },
     existingContract: existingContract

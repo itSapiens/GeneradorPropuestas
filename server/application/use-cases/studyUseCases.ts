@@ -1,5 +1,9 @@
 import type { ServerDependencies } from "../ports/serverDependencies";
 import { buildProposalPdfHtml } from "../../domain/proposals/proposalPdfHtml";
+import {
+  resolveCompanyLogoDataUri,
+  translateCompanyPdfPhrasesForLanguage,
+} from "./proposalPdfUseCases";
 
 import { normalizeAppLanguage } from "../../domain/contracts/contractLocalization";
 import {
@@ -380,6 +384,20 @@ async function buildFinalProposalPdfBuffer(params: {
   const companyName = company.nombre ?? null;
   const companyEmail = company.email ?? null;
   const companyPhone = company.telefono ?? null;
+  const companyBranding = {
+    companyLogoBucket: company.logo_bucket ?? null,
+    companyLogoPath: company.logo_path ?? null,
+    companyLogoMimeType: company.logo_mime_type ?? null,
+    companyPdfColorPrimario: company.pdf_color_primario ?? null,
+    companyPdfColorSecundario: company.pdf_color_secundario ?? null,
+    companyPdfColorAcento: company.pdf_color_acento ?? null,
+    companyPdfColorTexto: company.pdf_color_texto ?? null,
+    companyPdfColorFondoPagina: company.pdf_color_fondo_pagina ?? null,
+    companyPdfColorFondoCard: company.pdf_color_fondo_card ?? null,
+    companyPdfFraseInicio: company.pdf_frase_inicio ?? null,
+    companyPdfFraseDestacada: company.pdf_frase_destacada ?? null,
+    companyPdfFraseFinal: company.pdf_frase_final ?? null,
+  };
   const totalSavings25YearsInvestment = firstNumber(calculation, [
     "totalSavings25YearsInvestment",
     "annualSavings25YearsInvestment",
@@ -401,6 +419,7 @@ async function buildFinalProposalPdfBuffer(params: {
           companyEmail,
           companyName,
           companyPhone,
+          ...companyBranding,
           energyPriceKwh: isFixedInstallationPayment(installation)
             ? null
             : firstNumber(installation, ["coste_kwh_servicio"], 0),
@@ -424,6 +443,7 @@ async function buildFinalProposalPdfBuffer(params: {
         companyEmail,
         companyName,
         companyPhone,
+        ...companyBranding,
         description: "Realizas la inversión y maximizas el ahorro a largo plazo.",
         energyPriceKwh: isFixedInstallationPayment(installation)
           ? null
@@ -471,14 +491,35 @@ async function buildFinalProposalPdfBuffer(params: {
       firstNumber(invoiceData, ["monthlyConsumption", "consumo_medio_mensual_kwh"], 1),
     name: customer.nombre ?? customer.name ?? "Cliente",
     phone: customer.telefono ?? customer.phone ?? "000000000",
+    extraConsumptionHvacM2:
+      invoiceData.extraConsumptionHvacM2 ??
+      invoiceData.extraConsumption?.hvacSquareMeters ??
+      invoiceData.extraConsumption?.hvacM2 ??
+      undefined,
+    extraConsumptionEvKmYear:
+      invoiceData.extraConsumptionEvKmYear ??
+      invoiceData.extraConsumption?.evAnnualKm ??
+      invoiceData.extraConsumption?.evKmYear ??
+      undefined,
   };
+
+  const language = normalizeAppLanguage(params.language);
+  const localizedProposalSummaries =
+    await translateCompanyPdfPhrasesForLanguage(
+      proposalSummaries as any,
+      language,
+    );
 
   const html = buildProposalPdfHtml({
     billData: billData as any,
     calculationResult: calculation,
+    companyLogoDataUri: await resolveCompanyLogoDataUri(
+      params.deps,
+      localizedProposalSummaries as any,
+    ),
     continueContractUrl: params.continueContractUrl,
-    language: params.language as any,
-    proposals: proposalSummaries as any,
+    language,
+    proposals: localizedProposalSummaries as any,
   });
 
   return params.deps.services.pdf.convertHtmlToPdf({ html });
@@ -727,6 +768,11 @@ export async function confirmStudyUseCase(
 
   console.log("[confirm-study] selectedInstallation empresa_id:", empresaId);
 
+  const existingClient = await deps.repositories.clients.findByDni({
+    dni,
+    empresaId,
+  });
+
   const consumo_mensual_real_kwh =
     toNullableNumber(body.consumo_mensual_real_kwh) ??
     toNullableNumber(customer?.consumo_mensual_real_kwh) ??
@@ -748,7 +794,7 @@ export async function confirmStudyUseCase(
     ...(customer ?? {}),
     apellidos,
     codigo_postal,
-    cups: normalizedCups ?? rawCups ?? null,
+    cups: persistedCups,
     direccion_completa: direccionCompleta ?? null,
     dni,
     email,
@@ -820,9 +866,11 @@ export async function confirmStudyUseCase(
     datos_adicionales: customer?.datos_adicionales ?? {},
     direccion_completa: direccionCompleta ?? "",
     dni,
-    documentos_supabase_bucket: storageBucket,
+    documentos_supabase_bucket:
+      existingClient?.documentos_supabase_bucket ?? storageBucket,
     email: email ?? "",
-    factura_supabase_path: uploadedInvoice?.path ?? null,
+    factura_supabase_path:
+      existingClient?.factura_supabase_path ?? uploadedInvoice?.path ?? null,
     iban: iban || null,
     nombre: nombre ?? "",
     pais: pais ?? "España",
@@ -833,9 +881,11 @@ export async function confirmStudyUseCase(
     precio_p4_eur_kwh: getPeriodPrice(body, invoiceData, "p4"),
     precio_p5_eur_kwh: getPeriodPrice(body, invoiceData, "p5"),
     precio_p6_eur_kwh: getPeriodPrice(body, invoiceData, "p6"),
-    propuesta_supabase_path: uploadedProposal?.path ?? null,
+    propuesta_supabase_path:
+      existingClient?.propuesta_supabase_path ?? uploadedProposal?.path ?? null,
     provincia: provincia ?? "",
-    supabase_folder_path: storageFolderPath,
+    supabase_folder_path:
+      existingClient?.supabase_folder_path ?? storageFolderPath,
     telefono: telefono ?? "",
     tipo_factura: tipo_factura || null,
   };
@@ -943,6 +993,7 @@ export async function confirmStudyUseCase(
     },
     status: body.status ?? "uploaded",
   });
+  let updatedStudy = studyData;
 
   let continueContractUrl: string | null = null;
   let continueContractTokenExpiresAt: string | null = null;
@@ -994,6 +1045,22 @@ export async function confirmStudyUseCase(
         uploadedInvoice?.folderPath ?? uploadedProposal?.folderPath ?? storageFolderPath;
       storageBucket =
         uploadedInvoice?.bucket ?? uploadedProposal?.bucket ?? storageBucket;
+
+      updatedStudy = await deps.repositories.studies.update(studyData.id, {
+        source_file: {
+          ...(stripLegacyDriveFields(updatedStudy.source_file ?? studyData.source_file) ?? {}),
+          documentos_supabase_bucket: storageBucket,
+          factura_supabase_path:
+            uploadedInvoice?.path ??
+            updatedStudy.source_file?.factura_supabase_path ??
+            null,
+          mime_type: invoiceFile?.mimetype ?? updatedStudy.source_file?.mime_type ?? null,
+          original_name:
+            invoiceFile?.originalname ?? updatedStudy.source_file?.original_name ?? null,
+          propuesta_supabase_path: uploadedProposal?.path ?? null,
+          supabase_folder_path: storageFolderPath,
+        },
+      });
     } catch (error: any) {
       storageWarnings.push(
         `No se pudo regenerar la propuesta con enlace de contratación: ${
@@ -1030,8 +1097,6 @@ export async function confirmStudyUseCase(
       emailError = error?.message || "Error desconocido al enviar el correo";
     }
   }
-
-  let updatedStudy = studyData;
 
   if (emailStatus === "sent") {
     updatedStudy = await deps.repositories.studies.update(studyData.id, {
