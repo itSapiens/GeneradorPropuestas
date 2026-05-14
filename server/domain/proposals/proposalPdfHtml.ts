@@ -31,7 +31,9 @@ type TemplateValues = {
   serviceEnergyPrice: string;
   investmentEnergyPrice: string;
   serviceMonthlyFee: string;
+  serviceAnnualCost: string;
   investmentUpfrontCost: string;
+  investmentAnnualCost: string;
   serviceAnnualSavings: string;
   investmentAnnualSavings: string;
   serviceTotalSavings: string;
@@ -157,8 +159,10 @@ function replaceOrbContent(
   variant: "a" | "b",
   value: string,
   unit: string,
+  yearlyCost: string,
 ): string {
   const priceClass = variant === "b" ? " price-b" : "";
+  const badgeClass = variant === "b" ? " cost-badge-b" : " cost-badge-a";
 
   return html.replace(
     new RegExp(
@@ -167,6 +171,7 @@ function replaceOrbContent(
     `$1
                                                 <div class="display orb-price-sm${priceClass}">${escapeHtml(value)}</div>
                                                 <div class="mono orb-unit-sm">${escapeHtml(unit)}</div>
+                                                <div class="orb-yearly-cost orb-yearly-cost-sm${badgeClass}">${escapeHtml(yearlyCost)}</div>
                                             $2`,
   );
 }
@@ -277,15 +282,47 @@ function locationFromAddress(address: string | undefined, fallback: string): str
   return parts[0] || fallback;
 }
 
+function formatTariffType(billType: BillData["billType"]): string {
+  if (billType === "3TD") return "3.0TD";
+  return "2.0TD";
+}
+
+function contractedPowerLabels(language: AppLanguage): { peak: string; valley: string } {
+  if (language === "ca" || language === "val") {
+    return { peak: "Potencia punta", valley: "Potencia vall" };
+  }
+
+  if (language === "gl") {
+    return { peak: "Potencia punta", valley: "Potencia val" };
+  }
+
+  return { peak: "Potencia punta", valley: "Potencia valle" };
+}
+
+function parsePowerValuesFromText(text: string): number[] {
+  return [...text.matchAll(/(\d+(?:[.,]\d+)?)\s*kW/gi)]
+    .map((match) => Number(match[1].replace(",", ".")))
+    .filter((value) => Number.isFinite(value) && value > 0);
+}
+
 function contractedPower(billData: BillData, language: AppLanguage): string {
+  const labels = contractedPowerLabels(language);
+  const textPowers = billData.contractedPowerText?.trim()
+    ? parsePowerValuesFromText(billData.contractedPowerText)
+    : [];
+  const fallbackPower = positive(billData.contractedPowerKw, positive(textPowers[0]));
+  const peakPower = positive(billData.contractedPowerP1, fallbackPower);
+  const valleyPower = positive(billData.contractedPowerP2, positive(textPowers[1], peakPower));
+
+  if (peakPower || valleyPower) {
+    const peak = peakPower ? formatNumber(peakPower, language, 1, 1) : "-";
+    const valley = valleyPower ? formatNumber(valleyPower, language, 1, 1) : "-";
+    return `${labels.peak}: ${peak} kW · ${labels.valley}: ${valley} kW`;
+  }
+
   if (billData.contractedPowerText?.trim()) return billData.contractedPowerText.trim();
 
-  const power =
-    positive(billData.contractedPowerKw) ||
-    positive(billData.contractedPowerP1) ||
-    positive(billData.contractedPowerP2);
-
-  return power ? `${formatNumber(power, language, 1, 1)} kW` : "-";
+  return "-";
 }
 
 function findProposal(
@@ -786,7 +823,7 @@ function buildTemplateValues(payload: ProposalPdfPayload, language: AppLanguage)
     clientName: fullName(billData, texts.clientFallback),
     clientMeta: `${locationFromAddress(billData.address, texts.pendingLocation)} · ${formatMonthYear(language)}`,
     annualConsumption: `${formatKwh(annualConsumptionKwh, language)}${texts.annualSuffix}`,
-    tariff: `${billData.billType.replace("TD", ".0TD")} · ${contractedPower(billData, language)}`,
+    tariff: `${formatTariffType(billData.billType)} · ${contractedPower(billData, language)}`,
     currentAnnualCost: `${formatCurrency(currentAnnualCost, language)}${texts.annualSuffix}`,
     plantName: preferred?.installationName || preferred?.installationAddress || texts.assignedPlant,
     currentEnergyPrice: formatEnergyPrice(currentPrice, language),
@@ -799,7 +836,9 @@ function buildTemplateValues(payload: ProposalPdfPayload, language: AppLanguage)
     serviceEnergyPrice: formatEnergyPrice(serviceEnergyPrice, language),
     investmentEnergyPrice: formatEnergyPrice(investmentEnergyPrice, language),
     serviceMonthlyFee: formatCurrency(monthlyFee, language),
+    serviceAnnualCost: `${formatCurrency(annualServiceFee, language)}${texts.annualSuffix}`,
     investmentUpfrontCost: formatCurrency(upfrontCost, language),
+    investmentAnnualCost: `${formatCurrency(investmentTotalCost25Years / PROJECTION_YEARS, language)}${texts.annualSuffix}`,
     serviceAnnualSavings: formatCurrency(serviceAnnualSavings, language),
     investmentAnnualSavings: formatCurrency(investmentAnnualSavings, language),
     serviceTotalSavings: formatCurrency(serviceTotalSavings25Years, language),
@@ -1207,6 +1246,7 @@ export function buildProposalPdfHtml(payload: ProposalPdfPayload): string {
       "a",
       values.serviceMonthlyFee,
       texts.serviceCardTitle.toLowerCase(),
+      values.serviceAnnualCost,
     );
   }
 
@@ -1216,8 +1256,12 @@ export function buildProposalPdfHtml(payload: ProposalPdfPayload): string {
       "b",
       values.investmentUpfrontCost,
       texts.investmentCardTitle.toLowerCase(),
+      values.investmentAnnualCost,
     );
   }
+
+  html = replaceRaw(html, "__SERVICE_ANNUAL_COST__", escapeHtml(values.serviceAnnualCost));
+  html = replaceRaw(html, "__INVESTMENT_ANNUAL_COST__", escapeHtml(values.investmentAnnualCost));
 
   html = removeFirstElementByClass(html, "modalities-section");
 

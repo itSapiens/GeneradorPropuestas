@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { sileo } from "sileo";
+import { sileo } from "@/src/shared/ui/toast";
 
 import { formatCurrency, formatNumber } from "@/src/shared/lib/utils";
 import type { ExtractedBillData } from "@/src/entities/proposal/domain/proposal.types";

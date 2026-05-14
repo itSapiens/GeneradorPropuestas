@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import axios from "axios";
-import { sileo } from "sileo";
+import { sileo } from "@/src/shared/ui/toast";
 import { TFunction } from "i18next";
 import type {
   AppLanguage,

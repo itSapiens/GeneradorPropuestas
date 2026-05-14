@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
-import { sileo } from "sileo";
+import { sileo } from "@/src/shared/ui/toast";
 import { useTranslation } from "react-i18next";
 import {
   ArrowRight,

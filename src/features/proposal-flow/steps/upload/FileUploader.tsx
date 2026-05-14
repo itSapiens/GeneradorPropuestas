@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { Upload, FileText, X, ShieldCheck, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { sileo } from "sileo";
+import { sileo } from "@/src/shared/ui/toast";
 import { cn } from "@/src/shared/lib/utils";
 import { useTranslation } from "react-i18next";
 

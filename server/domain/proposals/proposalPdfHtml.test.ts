@@ -78,6 +78,9 @@ describe("buildProposalPdfHtml", () => {
     expect(html).toContain("Ahorro anual");
     expect(html).toContain("Ahorro mensual");
     expect(html).toContain("Ahorro a 25 años");
+    expect(html).toContain("Potencia punta: 4,4 kW · Potencia valle: 4,4 kW");
+    expect(html).toContain("más barato en horas solares");
+    expect(html).toContain("Coste del kWh en horas solares durante la vida útil de la instalación");
     expect(html).toContain(
       `<div class="orbit-saving-label orbit-saving-total"><span>Ahorro a 25 años</span><strong>21.658,00 €</strong></div>`,
     );
@@ -93,9 +96,10 @@ describe("buildProposalPdfHtml", () => {
     expect(html).toContain("0,057");
     expect(html).not.toContain("486 €/año");
     expect(html).not.toContain("222 €/año");
-    expect(html).not.toContain("cost-badge-a");
-    expect(html).not.toContain("cost-badge-b");
-    expect(html).not.toContain("183,72 €/año");
+    expect(html).toContain("cost-badge-a");
+    expect(html).toContain("cost-badge-b");
+    expect(html).toContain("264,00 €/año");
+    expect(html).toContain("183,72 €/año");
     expect(html).toContain("Informe · Empresa Titular");
     expect(html).toContain("titular@example.com");
     expect(html).toContain(`href="https://app.example.com/continuar"`);
@@ -107,7 +111,7 @@ describe("buildProposalPdfHtml", () => {
     expect(html).not.toContain("Inversión Compra");
     expect(html).not.toContain("A 12 AÑOS (ACUMULADO)");
     expect(html).not.toContain("A 25 AÑOS (ACUMULADO)");
-    expect(html).toContain("8 uds.");
+    expect(html).toMatch(/8 (uds\.|unidades\.)/);
     expect(html).not.toContain(`class="savings-summary-block"`);
     expect(html).not.toContain(`class="annual-savings-strip"`);
     expect(html).not.toContain(`class="modalities-section`);
@@ -188,6 +192,75 @@ describe("buildProposalPdfHtml", () => {
     expect(html).not.toContain("22€/mes");
   });
 
+  it("normalizes contracted power text to one decimal in the tariff summary", () => {
+    const html = buildProposalPdfHtml({
+      billData: {
+        ...billData,
+        contractedPowerKw: undefined,
+        contractedPowerP1: undefined,
+        contractedPowerP2: undefined,
+        contractedPowerText: "punta-llano 5,500 kW; valle 3,000 kW",
+      },
+      calculationResult,
+      language: "es",
+      proposals: [
+        {
+          annualConsumptionKwh: 4150,
+          annualMaintenance: 0,
+          annualSavings: 330,
+          badge: "A",
+          companyEmail: "titular@example.com",
+          companyName: "Empresa Titular",
+          description: "Servicio",
+          mode: "service",
+          monthlyFee: 22,
+          paybackYears: 0,
+          recommendedPowerKwp: 3.5,
+          title: "Cuota mensual",
+          totalSavings25Years: 12050,
+          upfrontCost: 0,
+        },
+      ],
+    });
+
+    expect(html).toContain("2.0TD · Potencia punta: 5,5 kW · Potencia valle: 3,0 kW");
+    expect(html).not.toContain("5,500 kW");
+    expect(html).not.toContain("3,000 kW");
+  });
+
+  it("uses the 3.0TD label when the bill type is 3TD", () => {
+    const html = buildProposalPdfHtml({
+      billData: {
+        ...billData,
+        billType: "3TD",
+        contractedPowerP1: 12.34,
+        contractedPowerP2: 8.76,
+      },
+      calculationResult,
+      language: "es",
+      proposals: [
+        {
+          annualConsumptionKwh: 4150,
+          annualMaintenance: 0,
+          annualSavings: 330,
+          badge: "A",
+          companyEmail: "titular@example.com",
+          companyName: "Empresa Titular",
+          description: "Servicio",
+          mode: "service",
+          monthlyFee: 22,
+          paybackYears: 0,
+          recommendedPowerKwp: 3.5,
+          title: "Cuota mensual",
+          totalSavings25Years: 12050,
+          upfrontCost: 0,
+        },
+      ],
+    });
+
+    expect(html).toContain("3.0TD · Potencia punta: 12,3 kW · Potencia valle: 8,8 kW");
+  });
+
   it("localizes key proposal labels based on the selected language", () => {
     const html = buildProposalPdfHtml({
       billData,
@@ -220,6 +293,8 @@ describe("buildProposalPdfHtml", () => {
     expect(html).toContain("A enerxía, <em>nas túas mans</em> sen tocar o teu tellado.");
     expect(html).toContain("O teu impacto ambiental · 25 anos");
     expect(html).toContain("Reservamos a túa participación?");
+    expect(html).toContain("máis barato en horas solares");
+    expect(html).toContain("Custo do kWh en horas solares durante a vida útil da instalación");
     expect(html).not.toContain("Elixe a túa opción");
   });
 

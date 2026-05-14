@@ -138,7 +138,7 @@
     "extraction": {
       "fallbackTitle": "Extracció completada amb suport del fallback",
       "fallbackDescription": "Revisa les dades detectades abans de continuar.",
-      "warningTitle": "Avís {{index}}",
+      "warningTitle": "Dades extretes amb avisos",
       "manualReviewTitle": "Camps que requerixen revisió",
       "manualReviewDescription": "Comprova manualment aquests camps: {{fields}}",
       "missingFieldsTitle": "Camps incomplets",
@@ -582,7 +582,7 @@
       "reportPrefix": "Informe"
     },
     "chart": {
-      "stabilityTitle": "Estabilitat opció Sapiens · 25 anys",
+      "stabilityTitle": "Cost del kWh en hores solars durant la vida útil de la instal·lació",
       "stabilityNote": "La factura actual puja un 3% anual. Les opcions Sapiens mantenen un preu estable i indiquen el cost total a 25 anys.",
       "stabilityVsActual": "/ ACTUAL",
       "stabilityAt12Years": "A 12 ANYS (ACUMULAT)",
@@ -619,10 +619,10 @@
       "plusTaxes": "€ + impostos",
       "noEntry": "sense entrada",
       "yearsLabel": "anys",
-      "unitsLabel": "u.",
+      "unitsLabel": "unitats.",
       "distanceValue": "< 5 km",
       "oneTimeUnit": "una vegada",
-      "upToCheaperTemplate": "fins a un {{value}} més barat",
+      "upToCheaperTemplate": "fins a un {{value}} més barat en hores solars",
       "investmentCardDescriptionTemplate": "Màxima rendibilitat. Retorn en {{payback}}. Estalvi acumulat 25 anys: {{savings}}."
     },
     "hero": {

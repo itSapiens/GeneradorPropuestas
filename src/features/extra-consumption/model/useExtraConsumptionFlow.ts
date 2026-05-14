@@ -6,7 +6,7 @@ import {
   type SetStateAction,
 } from "react";
 import type { TFunction } from "i18next";
-import { sileo } from "sileo";
+import { sileo } from "@/src/shared/ui/toast";
 
 import {
   EMPTY_EXTRA_CONSUMPTION,

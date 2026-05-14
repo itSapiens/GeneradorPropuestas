@@ -1,7 +1,7 @@
 import { useCallback, useState, type Dispatch, type SetStateAction } from "react";
 import axios from "axios";
 import type { TFunction } from "i18next";
-import { sileo } from "sileo";
+import { sileo } from "@/src/shared/ui/toast";
 
 import {
   INSTALLATION_SEARCH_RADIUS_METERS,

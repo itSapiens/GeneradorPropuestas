@@ -365,7 +365,7 @@ export function getProposalPdfTexts(language: AppLanguage) {
     stabilityTitle: tServer(
       language,
       "emails.proposalPdf.chart.stabilityTitle",
-      "Estabilidad opción Sapiens · 25 años",
+      "Coste del kWh en horas solares durante la vida útil de la instalación",
     ),
     stabilityNote: tServer(
       language,
@@ -515,7 +515,7 @@ export function getProposalPdfTexts(language: AppLanguage) {
     upToCheaperTemplate: tServer(
       language,
       "emails.proposalPdf.dynamic.upToCheaperTemplate",
-      "hasta un {{value}} más barato",
+      "hasta un {{value}} más barato en horas solares",
     ),
     investmentCardDescriptionTemplate: tServer(
       language,

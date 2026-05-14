@@ -179,6 +179,11 @@
 
 .solar-comun-informe-wrapper.new-vibrant-design .data-label { color: var(--text-muted); font-size: 7.5px; }
 .solar-comun-informe-wrapper.new-vibrant-design .data-value { font-size: 11px; font-weight: 600; color: var(--text-main); }
+.solar-comun-informe-wrapper.new-vibrant-design .tariff-value {
+    font-size: 8.2px;
+    line-height: 1.22;
+    font-weight: 700;
+}
 
 /* CONTENEDOR CENTRAL DE FLUJO SIMÉTRICO */
 .solar-comun-informe-wrapper.new-vibrant-design .central-flow-container {
@@ -311,6 +316,21 @@
     font-weight: 600;
 }
 .solar-comun-informe-wrapper.new-vibrant-design .current-cost-badge { background: #7A81A8; color: #fff; }
+.solar-comun-informe-wrapper.new-vibrant-design .orb-yearly-cost-sm {
+    margin-top: 5px;
+    padding: 2px 7px;
+    font-size: 7.4px;
+    line-height: 1;
+}
+.solar-comun-informe-wrapper.new-vibrant-design .cost-badge-a {
+    background: #E6F0FF;
+    color: var(--brand-blue);
+    border: 1px solid rgba(122,177,255,0.34);
+}
+.solar-comun-informe-wrapper.new-vibrant-design .cost-badge-b {
+    background: var(--grad-vibrant);
+    color: #fff;
+}
 
 .solar-comun-informe-wrapper.new-vibrant-design .orb-footer-label { font-size: 8px; color: var(--text-muted); }
 
@@ -669,6 +689,7 @@
 
 .solar-comun-informe-wrapper.new-vibrant-design .cta-button-col {
     flex: 0 0 220px;
+    transform: translateY(8px);
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .cta-button {
@@ -691,7 +712,7 @@
     font-size: 11px;
     color: rgba(255,255,255,0.95);
     font-weight: 600;
-    margin-top: 9px;
+    margin-top: 15px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -886,6 +907,25 @@ body {
 .solar-comun-informe-wrapper.new-vibrant-design .graph-section-eyebrow,
 .solar-comun-informe-wrapper.new-vibrant-design .impact-eyebrow {
     margin-bottom: 6px;
+}
+.solar-comun-informe-wrapper.new-vibrant-design .proposal-stability-graph .graph-section-eyebrow {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    line-height: 1.2;
+    letter-spacing: 0.12em;
+    margin-bottom: 10px;
+    color: var(--text-main);
+}
+.solar-comun-informe-wrapper.new-vibrant-design .proposal-stability-graph .graph-section-eyebrow::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--grad-vibrant);
+    box-shadow: 0 0 10px rgba(46,209,188,0.35);
 }
 .solar-comun-informe-wrapper.new-vibrant-design .graph-grid {
     display: grid;
@@ -1417,7 +1457,7 @@ body {
                     </div>
                     <div class="data-point-col">
                         <div class="eyebrow data-label">Tarifa</div>
-                        <div class="data-value">2.0TD · 4,4 kW</div>
+                        <div class="data-value tariff-value">2.0TD · 4,4 kW</div>
                     </div>
                     <div class="data-point-col">
                         <div class="eyebrow data-label">Coste actual</div>
@@ -1508,6 +1548,7 @@ body {
                                                 <div class="display orb-price-sm">0,117</div>
                                                 <div class="mono orb-unit-sm">€ / kWh</div>
                                                 <div class="orb-tax-note-sm">IVA no incluido</div>
+                                                <div class="orb-yearly-cost orb-yearly-cost-sm cost-badge-a">__SERVICE_ANNUAL_COST__</div>
                                             </div>
                                         </div>
                                         <div class="orb-footer-label footer-label-a">
@@ -1551,6 +1592,7 @@ body {
                                             <div class="orb-content">
                                                 <div class="display orb-price-sm price-b">0,053</div>
                                                 <div class="mono orb-unit-sm">€ / kWh</div>
+                                                <div class="orb-yearly-cost orb-yearly-cost-sm cost-badge-b">__INVESTMENT_ANNUAL_COST__</div>
                                             </div>
                                         </div>
                                         <div class="orb-footer-label footer-label-b">

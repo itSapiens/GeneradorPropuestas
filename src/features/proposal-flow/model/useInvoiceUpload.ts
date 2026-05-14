@@ -1,7 +1,7 @@
 import { useCallback, type Dispatch, type SetStateAction } from "react";
 import type { TFunction } from "i18next";
 import type { UseFormSetValue } from "react-hook-form";
-import { sileo } from "sileo";
+import { sileo } from "@/src/shared/ui/toast";
 
 import { extractBillFromApi } from "@/src/entities/proposal/infrastructure/proposalApi.adapter";
 import type { ExtractedBillData } from "@/src/entities/proposal/domain/proposal.types";

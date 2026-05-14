@@ -1,6 +1,6 @@
 import { useEffect, useRef, type Dispatch, type SetStateAction } from "react";
 import type { TFunction } from "i18next";
-import { sileo } from "sileo";
+import { sileo } from "@/src/shared/ui/toast";
 
 import { BillData } from "@/src/shared/lib/validators";
 import {

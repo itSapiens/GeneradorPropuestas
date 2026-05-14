@@ -3,7 +3,7 @@ import { ValidationBillData } from "@/src/entities/proposal/domain/proposal.type
 import { buildLastName, getPositiveFiniteNumber, isBillType, normalizeAndRoundUp } from "@/src/features/proposal-flow/lib/proposalNumbers";
 import { ExtraConsumptionSelections } from "@/src/features/extra-consumption/ui/ExtraConsumptionModal";
 import { BillData } from "@/src/shared/lib/validators";
-import { sileo } from "sileo";
+import { sileo } from "@/src/shared/ui/toast";
 import { formatNumber } from "@/src/shared/lib/utils";
 import { TFunction } from "i18next";
 
@@ -257,7 +257,11 @@ export function toBaseBillData(
 
 
 function shouldHideFromValidation(field: string): boolean {
-  const normalized = field.toLowerCase();
+  const normalized = field
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
 
   return [
     "iban",
@@ -282,7 +286,7 @@ function shouldHideFromValidation(field: string): boolean {
 export function showExtractionToasts(extraction: ExtractedBillData, t: TFunction) {
   // Mostramos como máximo UN toast informativo de resumen, para no
   // saturar al usuario con una cascada. Si no hay nada relevante que
-  // comunicar, no mostramos nada (el sileo.promise ya lanza el "éxito").
+  // comunicar, no mostramos nada (el toast de progreso ya lanza el "éxito").
 
   const visibleWarnings = (extraction.extraction.warnings ?? []).filter(
     (warning) => !shouldHideFromValidation(warning),

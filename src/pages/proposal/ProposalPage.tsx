@@ -13,7 +13,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Icon } from "@iconify/react";
-import { sileo } from "sileo";
+import { sileo } from "@/src/shared/ui/toast";
 import { ENABLE_PAYMENT_METHOD_SELECTOR } from "@/src/features/contract-flow/lib/paymentFlow.constants";
 
 type ProposalMode = "investment" | "service";
