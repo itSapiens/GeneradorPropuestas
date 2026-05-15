@@ -330,10 +330,15 @@ function createServerDependenciesForTests() {
         },
       },
       studies: {
+        async countByClientId(clientId) {
+          return [...state.studies.values()].filter(
+            (study) => study.client_id === clientId,
+          ).length;
+        },
         async create(payload) {
           const created = {
             created_at: new Date().toISOString(),
-            id: `study-${++studyCounter}`,
+            id: payload.id ?? `study-${++studyCounter}`,
             ...payload,
           };
           state.studies.set(created.id, created);
@@ -368,7 +373,18 @@ function createServerDependenciesForTests() {
           const folderPath = `clients/${payload.nombre.toLowerCase()}-${payload.apellidos.toLowerCase()}-${payload.dni.toLowerCase()}`
             .replace(/[^a-z0-9/]+/g, "-")
             .replace(/-+/g, "-");
-          const path = `${folderPath}/${payload.fileName}`;
+          const documentSetPath = payload.documentSetId
+            ? payload.documentSetId
+            : `documents/test-${++fileCounter}`;
+          const readableName =
+            payload.fileName === "factura.pdf"
+              ? "Factura.pdf"
+              : payload.fileName === "propuesta.pdf"
+                ? "Propuesta.pdf"
+                : payload.fileName === "contrato-firmado.pdf"
+                  ? "ContratoFirmado.pdf"
+                  : payload.fileName;
+          const path = `${folderPath}/${documentSetPath}/${readableName}`;
           state.files.set(path, {
             buffer: payload.buffer,
             fileName: payload.fileName,
@@ -586,8 +602,8 @@ async function postJson(baseUrl: string, path: string, payload?: unknown) {
   });
 }
 
-function buildPdfFile(name: string) {
-  return new File([new Blob(["%PDF-1.4 test file"])], name, {
+function buildPdfFile(name: string, content = "%PDF-1.4 test file") {
+  return new File([new Blob([content])], name, {
     type: "application/pdf",
   });
 }
@@ -738,6 +754,7 @@ describe("server sensitive frontend flows", () => {
     expect(confirm.study.id).toBe(studyId);
     expect(confirm.email.status).toBe("sent");
     expect(confirm.client.empresa_id).toBe("empresa-madrid");
+    expect(confirm.study.client_id).toBe(confirm.client.id);
     expect(confirm.study.selected_installation_id).toBe("installation-near");
     expect(confirm.email.continueContractUrl).toContain(
       "/continuar-contratacion?token=",
@@ -759,6 +776,119 @@ describe("server sensitive frontend flows", () => {
 
     expect(confirm.client.cups).toBe("ES0031400000000001AA");
     expect(confirm.study.customer.cups).toBe("ES0031400000000001AA");
+  });
+
+  it("stores repeated uploads from the same client as independent dated study documents", async () => {
+    testServer = await startTestServer();
+
+    const buildConfirmForm = (cups: string, invoiceContent: string) => {
+      const form = new FormData();
+      form.append("customer", JSON.stringify({
+        apellidos: "López",
+        dni: "12345678Z",
+        email: "cliente@sapiens.test",
+        nombre: "Ana",
+        telefono: "600123123",
+      }));
+      form.append("location", JSON.stringify({
+        address: "Gran Via 1, Madrid",
+      }));
+      form.append("calculation", JSON.stringify({
+        recommendedPowerKwp: 3.2,
+      }));
+      form.append("invoice_data", JSON.stringify({
+        cups,
+        tipo_factura: "2TD",
+      }));
+      form.append("selected_installation_id", "installation-near");
+      form.append("invoice", buildPdfFile("factura.pdf", invoiceContent));
+      form.append("proposal", buildPdfFile("propuesta.pdf"));
+      return form;
+    };
+
+    const firstResponse = await fetch(`${testServer.baseUrl}/api/confirm-study`, {
+      body: buildConfirmForm("ES0031400000000001AA", "%PDF first invoice"),
+      method: "POST",
+    });
+    const first = await readJsonResponse(firstResponse);
+
+    const secondResponse = await fetch(`${testServer.baseUrl}/api/confirm-study`, {
+      body: buildConfirmForm("ES0031400000000002BB", "%PDF second invoice"),
+      method: "POST",
+    });
+    const second = await readJsonResponse(secondResponse);
+
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(201);
+    expect(testServer.state.clients.size).toBe(1);
+    expect(testServer.state.studies.size).toBe(2);
+
+    const firstSource = first.body.study.source_file;
+    const secondSource = second.body.study.source_file;
+
+    expect(firstSource.document_set_id).toBeTruthy();
+    expect(secondSource.document_set_id).toBeTruthy();
+    expect(firstSource.document_set_id).toMatch(/^Estudio01_/);
+    expect(secondSource.document_set_id).toMatch(/^Estudio02_/);
+    expect(firstSource.document_set_id).toContain(
+      first.body.study.id.slice(0, 8),
+    );
+    expect(secondSource.document_set_id).toContain(
+      second.body.study.id.slice(0, 8),
+    );
+    expect(firstSource.factura_supabase_path).toContain(
+      firstSource.document_set_id,
+    );
+    expect(secondSource.factura_supabase_path).toContain(
+      secondSource.document_set_id,
+    );
+    expect(firstSource.document_set_id).not.toBe(secondSource.document_set_id);
+    expect(firstSource.uploaded_at).toBeTruthy();
+    expect(secondSource.uploaded_at).toBeTruthy();
+    expect(firstSource.factura_supabase_path).not.toBe(
+      secondSource.factura_supabase_path,
+    );
+    expect(firstSource.factura_supabase_path).toMatch(/\/Factura\.pdf$/);
+    expect(firstSource.propuesta_supabase_path).toMatch(/\/Propuesta\.pdf$/);
+    expect(
+      [...testServer.state.files.keys()].filter(
+        (path) =>
+          path.includes(firstSource.document_set_id) &&
+          path.endsWith("/Propuesta.pdf"),
+      ),
+    ).toHaveLength(1);
+    expect(firstSource.documents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: firstSource.factura_supabase_path,
+          type: "invoice",
+        }),
+        expect.objectContaining({
+          path: firstSource.propuesta_supabase_path,
+          type: "proposal",
+        }),
+      ]),
+    );
+    expect(secondSource.documents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: secondSource.factura_supabase_path,
+          type: "invoice",
+        }),
+        expect.objectContaining({
+          path: secondSource.propuesta_supabase_path,
+          type: "proposal",
+        }),
+      ]),
+    );
+    expect(first.body.study.customer.cups).toBe("ES0031400000000001AA");
+    expect(second.body.study.customer.cups).toBe("ES0031400000000002BB");
+    expect(first.body.study.client_id).toBe(first.body.client.id);
+    expect(second.body.study.client_id).toBe(second.body.client.id);
+    expect(second.body.client.factura_supabase_path).toBe(
+      secondSource.factura_supabase_path,
+    );
+    expect(second.body.client.cups).toBe("ES0031400000000002BB");
   });
 
   it("allows the same DNI in different companies when the installation changes", async () => {

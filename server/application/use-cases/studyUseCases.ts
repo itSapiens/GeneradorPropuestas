@@ -1,4 +1,5 @@
 import type { ServerDependencies } from "../ports/serverDependencies";
+import { randomUUID } from "node:crypto";
 import { buildProposalPdfHtml } from "../../domain/proposals/proposalPdfHtml";
 import {
   resolveCompanyLogoDataUri,
@@ -56,6 +57,102 @@ function stripLegacyDriveFields<T extends Record<string, any> | null | undefined
   delete sanitized.propuesta_drive_url;
 
   return sanitized;
+}
+
+type UploadedStudyDocument = {
+  bucket: string;
+  fileName: string;
+  folderPath: string;
+  mimeType: string;
+  path: string;
+};
+
+function buildStudyDocumentEntry(params: {
+  document: UploadedStudyDocument | null;
+  originalName?: string | null;
+  type: "invoice" | "proposal" | "signed_contract";
+  uploadedAt: string;
+}) {
+  if (!params.document) {
+    return null;
+  }
+
+  return {
+    bucket: params.document.bucket,
+    file_name: params.document.fileName,
+    folder_path: params.document.folderPath,
+    mime_type: params.document.mimeType,
+    original_name: params.originalName ?? null,
+    path: params.document.path,
+    type: params.type,
+    uploaded_at: params.uploadedAt,
+  };
+}
+
+function buildStudyDocumentSetId(params: {
+  sequence: number;
+  studyId: string;
+  uploadedAt: string;
+}) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    hour: "2-digit",
+    hour12: false,
+    minute: "2-digit",
+    month: "2-digit",
+    timeZone: "Europe/Madrid",
+    year: "numeric",
+  }).formatToParts(new Date(params.uploadedAt));
+  const getPart = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "00";
+  const timestamp = `${getPart("year")}-${getPart("month")}-${getPart(
+    "day",
+  )}_${getPart("hour")}-${getPart("minute")}`;
+  const sequence = String(Math.max(1, params.sequence)).padStart(2, "0");
+
+  return `Estudio${sequence}_${timestamp}_${params.studyId.slice(0, 8)}`;
+}
+
+function buildStudySourceFileSnapshot(params: {
+  documentSetId: string;
+  invoiceFile: Express.Multer.File | null;
+  proposalFile: Express.Multer.File | null;
+  sourceFile?: Record<string, any> | null;
+  storageBucket: string | null;
+  storageFolderPath: string | null;
+  uploadedAt: string;
+  uploadedInvoice: UploadedStudyDocument | null;
+  uploadedProposal: UploadedStudyDocument | null;
+}) {
+  const documents = [
+    buildStudyDocumentEntry({
+      document: params.uploadedInvoice,
+      originalName: params.invoiceFile?.originalname ?? null,
+      type: "invoice",
+      uploadedAt: params.uploadedAt,
+    }),
+    buildStudyDocumentEntry({
+      document: params.uploadedProposal,
+      originalName: params.proposalFile?.originalname ?? null,
+      type: "proposal",
+      uploadedAt: params.uploadedAt,
+    }),
+  ].filter(Boolean);
+
+  return {
+    ...(stripLegacyDriveFields(params.sourceFile) ?? {}),
+    document_set_id: params.documentSetId,
+    documentos_supabase_bucket: params.storageBucket,
+    documents,
+    factura_supabase_path: params.uploadedInvoice?.path ?? null,
+    invoice: documents.find((document: any) => document.type === "invoice") ?? null,
+    mime_type: params.invoiceFile?.mimetype ?? null,
+    original_name: params.invoiceFile?.originalname ?? null,
+    proposal: documents.find((document: any) => document.type === "proposal") ?? null,
+    propuesta_supabase_path: params.uploadedProposal?.path ?? null,
+    supabase_folder_path: params.storageFolderPath,
+    uploaded_at: params.uploadedAt,
+  };
 }
 
 export async function sendStudyProposalEmailUseCase(
@@ -768,11 +865,6 @@ export async function confirmStudyUseCase(
 
   console.log("[confirm-study] selectedInstallation empresa_id:", empresaId);
 
-  const existingClient = await deps.repositories.clients.findByDni({
-    dni,
-    empresaId,
-  });
-
   const consumo_mensual_real_kwh =
     toNullableNumber(body.consumo_mensual_real_kwh) ??
     toNullableNumber(customer?.consumo_mensual_real_kwh) ??
@@ -808,54 +900,11 @@ export async function confirmStudyUseCase(
 
   let storageFolderPath: string | null = null;
   let storageBucket: string | null = null;
-  let uploadedInvoice: {
-    bucket: string;
-    fileName: string;
-    folderPath: string;
-    mimeType: string;
-    path: string;
-  } | null = null;
-  let uploadedProposal: {
-    bucket: string;
-    fileName: string;
-    folderPath: string;
-    mimeType: string;
-    path: string;
-  } | null = null;
+  let uploadedInvoice: UploadedStudyDocument | null = null;
+  let uploadedProposal: UploadedStudyDocument | null = null;
   const storageWarnings: string[] = [];
-
-  try {
-    if (invoiceFile) {
-      uploadedInvoice = await deps.services.documents.uploadClientDocument({
-        apellidos,
-        buffer: invoiceFile.buffer,
-        dni,
-        fileName: "factura.pdf",
-        mimeType: invoiceFile.mimetype,
-        nombre,
-      });
-    }
-
-    if (proposalFile) {
-      uploadedProposal = await deps.services.documents.uploadClientDocument({
-        apellidos,
-        buffer: proposalFile.buffer,
-        dni,
-        fileName: "propuesta.pdf",
-        mimeType: proposalFile.mimetype || "application/pdf",
-        nombre,
-      });
-    }
-
-    storageFolderPath =
-      uploadedInvoice?.folderPath ?? uploadedProposal?.folderPath ?? null;
-    storageBucket = uploadedInvoice?.bucket ?? uploadedProposal?.bucket ?? null;
-  } catch (error: any) {
-    storageWarnings.push(
-      `Supabase Storage no disponible: ${error?.message || "error desconocido"}. El estudio se ha guardado sin archivos.`,
-    );
-  }
-
+  const studyId = randomUUID();
+  const documentsUploadedAt = new Date().toISOString();
   const clientPayload: Record<string, any> = {
     apellidos: apellidos ?? "",
     bic,
@@ -866,11 +915,7 @@ export async function confirmStudyUseCase(
     datos_adicionales: customer?.datos_adicionales ?? {},
     direccion_completa: direccionCompleta ?? "",
     dni,
-    documentos_supabase_bucket:
-      existingClient?.documentos_supabase_bucket ?? storageBucket,
     email: email ?? "",
-    factura_supabase_path:
-      existingClient?.factura_supabase_path ?? uploadedInvoice?.path ?? null,
     iban: iban || null,
     nombre: nombre ?? "",
     pais: pais ?? "España",
@@ -881,11 +926,7 @@ export async function confirmStudyUseCase(
     precio_p4_eur_kwh: getPeriodPrice(body, invoiceData, "p4"),
     precio_p5_eur_kwh: getPeriodPrice(body, invoiceData, "p5"),
     precio_p6_eur_kwh: getPeriodPrice(body, invoiceData, "p6"),
-    propuesta_supabase_path:
-      existingClient?.propuesta_supabase_path ?? uploadedProposal?.path ?? null,
     provincia: provincia ?? "",
-    supabase_folder_path:
-      existingClient?.supabase_folder_path ?? storageFolderPath,
     telefono: telefono ?? "",
     tipo_factura: tipo_factura || null,
   };
@@ -896,7 +937,45 @@ export async function confirmStudyUseCase(
 
   console.log("[confirm-study] client dni:", clientPayload.dni);
 
-  const clientData = await deps.repositories.clients.upsert(clientPayload);
+  let clientData = await deps.repositories.clients.upsert(clientPayload);
+  const studySequence =
+    (await deps.repositories.studies.countByClientId(clientData.id)) + 1;
+  const documentSetId = buildStudyDocumentSetId({
+    sequence: studySequence,
+    studyId,
+    uploadedAt: documentsUploadedAt,
+  });
+
+  try {
+    if (invoiceFile) {
+      uploadedInvoice = await deps.services.documents.uploadClientDocument({
+        apellidos,
+        buffer: invoiceFile.buffer,
+        documentSetId,
+        dni,
+        fileName: "factura.pdf",
+        mimeType: invoiceFile.mimetype,
+        nombre,
+      });
+    }
+
+    storageFolderPath =
+      uploadedInvoice?.folderPath ?? uploadedProposal?.folderPath ?? null;
+    storageBucket = uploadedInvoice?.bucket ?? uploadedProposal?.bucket ?? null;
+
+    if (uploadedInvoice) {
+      clientData = await deps.repositories.clients.upsert({
+        ...clientPayload,
+        documentos_supabase_bucket: storageBucket,
+        factura_supabase_path: uploadedInvoice.path,
+        supabase_folder_path: storageFolderPath,
+      });
+    }
+  } catch (error: any) {
+    storageWarnings.push(
+      `Supabase Storage no disponible: ${error?.message || "error desconocido"}. El estudio se ha guardado sin archivos.`,
+    );
+  }
 
   const requestedAssignedKwpRaw =
     toNullableNumber(
@@ -973,24 +1052,28 @@ export async function confirmStudyUseCase(
   const studyData = await deps.repositories.studies.create({
     assigned_kwp: finalAssignedKwp,
     calculation: calculation ?? null,
+    client_id: clientData.id,
     consent_accepted: toBoolean(body.consent_accepted),
     customer: normalizedCustomer,
     email_status: "pending",
     empresa_id: empresaId,
+    id: studyId,
     invoice_data: invoiceData ?? null,
     language: appLanguage,
     location: locationPayload,
     selected_installation_id: selectedInstallationId,
     selected_installation_snapshot: finalSelectedInstallationSnapshot,
-    source_file: {
-      ...(stripLegacyDriveFields(sourceFile) ?? {}),
-      documentos_supabase_bucket: storageBucket,
-      factura_supabase_path: uploadedInvoice?.path ?? null,
-      mime_type: invoiceFile?.mimetype ?? null,
-      original_name: invoiceFile?.originalname ?? null,
-      propuesta_supabase_path: uploadedProposal?.path ?? null,
-      supabase_folder_path: storageFolderPath,
-    },
+    source_file: buildStudySourceFileSnapshot({
+      documentSetId,
+      invoiceFile,
+      proposalFile,
+      sourceFile,
+      storageBucket,
+      storageFolderPath,
+      uploadedAt: documentsUploadedAt,
+      uploadedInvoice,
+      uploadedProposal,
+    }),
     status: body.status ?? "uploaded",
   });
   let updatedStudy = studyData;
@@ -1036,6 +1119,7 @@ export async function confirmStudyUseCase(
       uploadedProposal = await deps.services.documents.uploadClientDocument({
         apellidos,
         buffer: finalProposalPdfBuffer,
+        documentSetId,
         dni,
         fileName: "propuesta.pdf",
         mimeType: "application/pdf",
@@ -1047,19 +1131,31 @@ export async function confirmStudyUseCase(
         uploadedInvoice?.bucket ?? uploadedProposal?.bucket ?? storageBucket;
 
       updatedStudy = await deps.repositories.studies.update(studyData.id, {
-        source_file: {
-          ...(stripLegacyDriveFields(updatedStudy.source_file ?? studyData.source_file) ?? {}),
-          documentos_supabase_bucket: storageBucket,
-          factura_supabase_path:
-            uploadedInvoice?.path ??
-            updatedStudy.source_file?.factura_supabase_path ??
+        source_file: buildStudySourceFileSnapshot({
+          documentSetId,
+          invoiceFile,
+          proposalFile: {
+            buffer: finalProposalPdfBuffer,
+            mimetype: "application/pdf",
+            originalname: finalProposalPdfFilename,
+          } as Express.Multer.File,
+          sourceFile: updatedStudy.source_file ?? studyData.source_file,
+          storageBucket,
+          storageFolderPath,
+          uploadedAt: documentsUploadedAt,
+          uploadedInvoice:
+            uploadedInvoice ??
+            (updatedStudy.source_file?.invoice as UploadedStudyDocument | null) ??
             null,
-          mime_type: invoiceFile?.mimetype ?? updatedStudy.source_file?.mime_type ?? null,
-          original_name:
-            invoiceFile?.originalname ?? updatedStudy.source_file?.original_name ?? null,
-          propuesta_supabase_path: uploadedProposal?.path ?? null,
-          supabase_folder_path: storageFolderPath,
-        },
+          uploadedProposal,
+        }),
+      });
+      clientData = await deps.repositories.clients.upsert({
+        ...clientPayload,
+        documentos_supabase_bucket: storageBucket,
+        factura_supabase_path: uploadedInvoice?.path ?? null,
+        propuesta_supabase_path: uploadedProposal.path,
+        supabase_folder_path: storageFolderPath,
       });
     } catch (error: any) {
       storageWarnings.push(

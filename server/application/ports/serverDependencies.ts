@@ -29,6 +29,7 @@ export interface ServerDependencies {
   };
   repositories: {
     studies: {
+      countByClientId(clientId: string): Promise<number>;
       create(payload: GenericRecord): Promise<GenericRecord>;
       findById(id: string): Promise<GenericRecord | null>;
       update(id: string, payload: GenericRecord): Promise<GenericRecord>;
@@ -93,6 +94,7 @@ export interface ServerDependencies {
       uploadClientDocument(payload: {
         apellidos: string;
         buffer: Buffer;
+        documentSetId?: string | null;
         dni: string;
         fileName: "factura.pdf" | "propuesta.pdf" | "contrato-firmado.pdf";
         mimeType: string;

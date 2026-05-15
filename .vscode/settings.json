@@ -1,0 +1,8 @@
+{
+    "editor.fontSize": 16,
+    "editor.cursorBlinking": "expand",
+    "diffEditor.experimental.showMoves": false,
+    "workbench.colorTheme": "Best Themes - Xcode Fusion",
+    "workbench.iconTheme": "vs-seti",
+    "workbench.preferredHighContrastColorTheme": "Monokai Night"
+}

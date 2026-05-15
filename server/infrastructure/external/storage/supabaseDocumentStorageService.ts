@@ -1,6 +1,5 @@
 import { supabase } from "../../clients/supabaseClient";
 import { SUPABASE_DOCUMENTS_BUCKET } from "../../config/env";
-import { randomUUID } from "node:crypto";
 
 function normalizeStorageToken(value: string): string {
   return value
@@ -10,6 +9,28 @@ function normalizeStorageToken(value: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .replace(/-+/g, "-");
+}
+
+function normalizeStorageSegment(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-+/g, "-");
+}
+
+function getReadableDocumentName(fileName: string) {
+  switch (fileName) {
+    case "factura.pdf":
+      return "Factura.pdf";
+    case "propuesta.pdf":
+      return "Propuesta.pdf";
+    case "contrato-firmado.pdf":
+      return "ContratoFirmado.pdf";
+    default:
+      return normalizeStorageSegment(fileName) || "Documento.pdf";
+  }
 }
 
 export function buildClientStorageFolderPath(params: {
@@ -61,6 +82,7 @@ async function ensureDocumentsBucket() {
 export async function uploadClientDocumentToSupabase(params: {
   apellidos: string;
   buffer: Buffer;
+  documentSetId?: string | null;
   dni: string;
   fileName: "factura.pdf" | "propuesta.pdf" | "contrato-firmado.pdf";
   mimeType: string;
@@ -69,9 +91,14 @@ export async function uploadClientDocumentToSupabase(params: {
   await ensureDocumentsBucket();
 
   const folderPath = buildClientStorageFolderPath(params);
-  const timestamp = new Date().toISOString().replace(/[-:.]/g, "");
-  const uniqueName = `${timestamp}-${randomUUID().slice(0, 8)}-${params.fileName}`;
-  const path = `${folderPath}/documents/${uniqueName}`;
+  const uniqueName = getReadableDocumentName(params.fileName);
+  const documentSetToken = params.documentSetId
+    ? normalizeStorageSegment(params.documentSetId)
+    : null;
+  const documentsFolder = documentSetToken
+    ? `${folderPath}/${documentSetToken}`
+    : `${folderPath}/documents`;
+  const path = `${documentsFolder}/${uniqueName}`;
   const { error } = await supabase.storage
     .from(SUPABASE_DOCUMENTS_BUCKET)
     .upload(path, params.buffer, {

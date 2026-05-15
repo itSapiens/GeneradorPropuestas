@@ -606,6 +606,18 @@ export const serverRepositories = {
     },
   },
   studies: {
+    async countByClientId(clientId: string) {
+      const { count, error } = await supabase
+        .from("studies")
+        .select("id", { count: "exact", head: true })
+        .eq("client_id", clientId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return count ?? 0;
+    },
     async create(payload: Record<string, any>) {
       const sanitizedPayload = await sanitizeStudiesPayload(payload);
 
