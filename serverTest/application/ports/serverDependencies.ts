@@ -35,6 +35,7 @@ export interface ServerDependencies {
     };
     clients: {
       findByDni(params: {
+        cups?: string | null;
         dni: string;
         empresaId?: string | null;
       }): Promise<GenericRecord | null>;

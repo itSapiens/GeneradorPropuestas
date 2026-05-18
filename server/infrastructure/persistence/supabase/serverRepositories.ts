@@ -35,6 +35,76 @@ async function clientsSupportsBic() {
   return clientSupportsColumn("bic");
 }
 
+function isMissingOnConflictConstraintError(error: any) {
+  return String(error?.message ?? "").includes(
+    "there is no unique or exclusion constraint matching the ON CONFLICT specification",
+  );
+}
+
+async function findExistingClientForUpsert(params: {
+  cups?: string | null;
+  dni: string;
+  empresaId?: string | null;
+  supportsEmpresaId: boolean;
+}) {
+  let query = supabase.from("clients").select("*").eq("dni", params.dni);
+
+  if (params.supportsEmpresaId && params.empresaId) {
+    query = query.eq("empresa_id", params.empresaId);
+  }
+
+  if (params.cups) {
+    query = query.eq("cups", params.cups);
+  }
+
+  const { data, error } = await query.limit(1).maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data ?? null;
+}
+
+async function saveClientWithoutUpsert(params: {
+  payload: Record<string, any>;
+  supportsEmpresaId: boolean;
+}) {
+  const existing = await findExistingClientForUpsert({
+    cups: params.payload.cups,
+    dni: params.payload.dni,
+    empresaId: params.payload.empresa_id,
+    supportsEmpresaId: params.supportsEmpresaId,
+  });
+
+  if (existing?.id) {
+    const { data, error } = await supabase
+      .from("clients")
+      .update(params.payload)
+      .eq("id", existing.id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  const { data, error } = await supabase
+    .from("clients")
+    .insert(params.payload)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
 async function accessTokenSupportsColumn(columnName: string) {
   const cached = accessTokenColumnSupportPromises.get(columnName);
 
@@ -237,22 +307,19 @@ export const serverRepositories = {
     },
   },
   clients: {
-    async findByDni(params: { empresaId?: string | null; dni: string }) {
+    async findByDni(params: {
+      cups?: string | null;
+      empresaId?: string | null;
+      dni: string;
+    }) {
       const supportsEmpresaId = await clientsSupportsEmpresaId();
 
-      let query = supabase.from("clients").select("*").eq("dni", params.dni);
-
-      if (supportsEmpresaId && params.empresaId) {
-        query = query.eq("empresa_id", params.empresaId);
-      }
-
-      const { data, error } = await query.maybeSingle();
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      return data ?? null;
+      return findExistingClientForUpsert({
+        cups: params.cups,
+        dni: params.dni,
+        empresaId: params.empresaId,
+        supportsEmpresaId,
+      });
     },
 
     async findById(id: string) {
@@ -293,12 +360,19 @@ export const serverRepositories = {
       const { data, error } = await supabase
         .from("clients")
         .upsert(sanitizedPayload, {
-          onConflict: supportsEmpresaId ? "empresa_id,dni" : "dni",
+          onConflict: supportsEmpresaId ? "empresa_id,dni,cups" : "dni,cups",
         })
         .select()
         .single();
 
       if (error) {
+        if (isMissingOnConflictConstraintError(error)) {
+          return saveClientWithoutUpsert({
+            payload: sanitizedPayload,
+            supportsEmpresaId,
+          });
+        }
+
         throw new Error(error.message);
       }
 

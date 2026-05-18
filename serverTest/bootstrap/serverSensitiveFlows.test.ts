@@ -167,7 +167,8 @@ function createServerDependenciesForTests() {
             [...state.clients.values()].find(
               (client) =>
                 client.dni === params.dni &&
-                client.empresa_id === params.empresaId,
+                client.empresa_id === params.empresaId &&
+                (!params.cups || client.cups === params.cups),
             ) ?? null
           );
         },
@@ -187,7 +188,8 @@ function createServerDependenciesForTests() {
             [...state.clients.values()].find(
               (client) =>
                 client.dni === payload.dni &&
-                client.empresa_id === payload.empresa_id,
+                client.empresa_id === payload.empresa_id &&
+                (!payload.cups || client.cups === payload.cups),
             ) ??
             null;
 
@@ -764,7 +766,7 @@ describe("server sensitive frontend flows", () => {
   it("allows the same DNI in different companies when the installation changes", async () => {
     testServer = await startTestServer();
 
-    const buildConfirmForm = (installationId: string) => {
+    const buildConfirmForm = (installationId: string, cups: string) => {
       const form = new FormData();
       form.append("customer", JSON.stringify({
         apellidos: "López",
@@ -778,19 +780,23 @@ describe("server sensitive frontend flows", () => {
       form.append("calculation", JSON.stringify({
         recommendedPowerKwp: 3.2,
       }));
+      form.append("invoice_data", JSON.stringify({
+        cups,
+        tipo_factura: "2TD",
+      }));
       form.append("selected_installation_id", installationId);
       form.append("proposal", buildPdfFile("propuesta.pdf"));
       return form;
     };
 
     const madridResponse = await fetch(`${testServer.baseUrl}/api/confirm-study`, {
-      body: buildConfirmForm("installation-near"),
+      body: buildConfirmForm("installation-near", "ES0031400000000001AA"),
       method: "POST",
     });
     const madrid = await readJsonResponse(madridResponse);
 
     const valenciaResponse = await fetch(`${testServer.baseUrl}/api/confirm-study`, {
-      body: buildConfirmForm("installation-far"),
+      body: buildConfirmForm("installation-far", "ES0031400000000001AA"),
       method: "POST",
     });
     const valencia = await readJsonResponse(valenciaResponse);

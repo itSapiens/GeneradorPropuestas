@@ -167,7 +167,8 @@ function createServerDependenciesForTests() {
             [...state.clients.values()].find(
               (client) =>
                 client.dni === params.dni &&
-                client.empresa_id === params.empresaId,
+                client.empresa_id === params.empresaId &&
+                (!params.cups || client.cups === params.cups),
             ) ?? null
           );
         },
@@ -187,7 +188,8 @@ function createServerDependenciesForTests() {
             [...state.clients.values()].find(
               (client) =>
                 client.dni === payload.dni &&
-                client.empresa_id === payload.empresa_id,
+                client.empresa_id === payload.empresa_id &&
+                (!payload.cups || client.cups === payload.cups),
             ) ??
             null;
 
@@ -820,7 +822,7 @@ describe("server sensitive frontend flows", () => {
 
     expect(first.status).toBe(201);
     expect(second.status).toBe(201);
-    expect(testServer.state.clients.size).toBe(1);
+    expect(testServer.state.clients.size).toBe(2);
     expect(testServer.state.studies.size).toBe(2);
 
     const firstSource = first.body.study.source_file;
@@ -829,7 +831,7 @@ describe("server sensitive frontend flows", () => {
     expect(firstSource.document_set_id).toBeTruthy();
     expect(secondSource.document_set_id).toBeTruthy();
     expect(firstSource.document_set_id).toMatch(/^Estudio01_/);
-    expect(secondSource.document_set_id).toMatch(/^Estudio02_/);
+    expect(secondSource.document_set_id).toMatch(/^Estudio01_/);
     expect(firstSource.document_set_id).toContain(
       first.body.study.id.slice(0, 8),
     );
@@ -885,6 +887,7 @@ describe("server sensitive frontend flows", () => {
     expect(second.body.study.customer.cups).toBe("ES0031400000000002BB");
     expect(first.body.study.client_id).toBe(first.body.client.id);
     expect(second.body.study.client_id).toBe(second.body.client.id);
+    expect(first.body.client.id).not.toBe(second.body.client.id);
     expect(second.body.client.factura_supabase_path).toBe(
       secondSource.factura_supabase_path,
     );
@@ -894,7 +897,7 @@ describe("server sensitive frontend flows", () => {
   it("allows the same DNI in different companies when the installation changes", async () => {
     testServer = await startTestServer();
 
-    const buildConfirmForm = (installationId: string) => {
+    const buildConfirmForm = (installationId: string, cups: string) => {
       const form = new FormData();
       form.append("customer", JSON.stringify({
         apellidos: "López",
@@ -908,19 +911,23 @@ describe("server sensitive frontend flows", () => {
       form.append("calculation", JSON.stringify({
         recommendedPowerKwp: 3.2,
       }));
+      form.append("invoice_data", JSON.stringify({
+        cups,
+        tipo_factura: "2TD",
+      }));
       form.append("selected_installation_id", installationId);
       form.append("proposal", buildPdfFile("propuesta.pdf"));
       return form;
     };
 
     const madridResponse = await fetch(`${testServer.baseUrl}/api/confirm-study`, {
-      body: buildConfirmForm("installation-near"),
+      body: buildConfirmForm("installation-near", "ES0031400000000001AA"),
       method: "POST",
     });
     const madrid = await readJsonResponse(madridResponse);
 
     const valenciaResponse = await fetch(`${testServer.baseUrl}/api/confirm-study`, {
-      body: buildConfirmForm("installation-far"),
+      body: buildConfirmForm("installation-far", "ES0031400000000001AA"),
       method: "POST",
     });
     const valencia = await readJsonResponse(valenciaResponse);

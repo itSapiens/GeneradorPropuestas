@@ -21,6 +21,8 @@ export async function getContractContextFromStudy(
   const customer = study.customer ?? {};
   const clientDni =
     pickFirstString(customer?.dni, customer?.documentNumber) ?? null;
+  const clientCups =
+    pickFirstString(customer?.cups, study.invoice_data?.cups) ?? null;
 
   if (!clientDni) {
     throw badRequest("El estudio no tiene DNI de cliente");
@@ -45,6 +47,7 @@ export async function getContractContextFromStudy(
   }
 
   const client = await deps.repositories.clients.findByDni({
+    cups: clientCups,
     dni: clientDni,
     empresaId: hasEmpresaIdColumn(installation) ? installation.empresa_id : null,
   });

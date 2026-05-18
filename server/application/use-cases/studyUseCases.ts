@@ -215,6 +215,8 @@ export async function sendStudyProposalEmailUseCase(
 
   const clientDni =
     pickFirstString(customer?.dni, customer?.documentNumber) ?? null;
+  const clientCups =
+    pickFirstString(customer?.cups, study.invoice_data?.cups) ?? null;
 
   if (!clientDni) {
     throw badRequest("No se encontró el DNI del cliente en el estudio");
@@ -239,6 +241,7 @@ export async function sendStudyProposalEmailUseCase(
   }
 
   const client = await deps.repositories.clients.findByDni({
+    cups: clientCups,
     dni: clientDni,
     empresaId: hasEmpresaIdColumn(installation) ? installation.empresa_id : null,
   });
@@ -712,6 +715,11 @@ export async function confirmStudyUseCase(
     normalizedCups && isValidCupsFormat(normalizedCups)
       ? normalizedCups
       : null;
+
+  if (!persistedCups) {
+    throw badRequest("Falta un CUPS válido para confirmar el estudio");
+  }
+
   const direccionCompleta = pickFirstString(
     body.direccion_completa,
     customer?.direccion_completa,
