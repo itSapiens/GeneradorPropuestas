@@ -1563,9 +1563,9 @@ body {
 .solar-comun-informe-wrapper.new-vibrant-design .participation-grid .stat-col,
 .solar-comun-informe-wrapper.new-vibrant-design .participation-grid .power-col {
     background:
-        linear-gradient(180deg, var(--participation-red-bg) 0%, var(--participation-red-bg-soft) 56%, var(--participation-red-bg-deep) 100%) !important;
-    border-color: var(--participation-red-border) !important;
-    color: var(--participation-red-text) !important;
+        linear-gradient(180deg, var(--bg-card) 0%, var(--participation-card-bg-accent) 100%) !important;
+    border-color: var(--brand-accent-border) !important;
+    color: var(--text-main) !important;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .extra-consumption-pill,
@@ -1576,7 +1576,7 @@ body {
 
 .solar-comun-informe-wrapper.new-vibrant-design .power-col {
     background:
-        linear-gradient(180deg, var(--participation-red-bg) 0%, var(--participation-red-bg-soft) 56%, var(--participation-red-bg-deep) 100%) !important;
+        linear-gradient(180deg, var(--bg-card) 0%, var(--participation-card-bg-accent) 100%) !important;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .destination-row {
@@ -1630,8 +1630,8 @@ body {
 
 .solar-comun-informe-wrapper.new-vibrant-design .participation-grid .power-value,
 .solar-comun-informe-wrapper.new-vibrant-design .participation-grid .stat-value {
-    color: var(--participation-red-text) !important;
-    -webkit-text-fill-color: var(--participation-red-text) !important;
+    color: var(--text-main) !important;
+    -webkit-text-fill-color: var(--text-main) !important;
     text-shadow: none !important;
 }
 
@@ -1642,7 +1642,7 @@ body {
 
 .solar-comun-informe-wrapper.new-vibrant-design .participation-grid .power-label,
 .solar-comun-informe-wrapper.new-vibrant-design .participation-grid .stat-label {
-    color: var(--participation-red-muted) !important;
+    color: var(--text-muted) !important;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .participation-grid .stat-icon {
@@ -1658,24 +1658,56 @@ body {
     height: 30px;
 }
 
-.solar-comun-informe-wrapper.new-vibrant-design .impact-icon-wrapper svg circle {
+.solar-comun-informe-wrapper.new-vibrant-design .item-co2 .impact-icon-wrapper svg circle {
     fill: var(--brand-accent-soft) !important;
 }
 
-.solar-comun-informe-wrapper.new-vibrant-design .impact-icon-wrapper {
-    color: var(--brand-mint) !important;
-}
-
-.solar-comun-informe-wrapper.new-vibrant-design .impact-icon-wrapper svg g,
-.solar-comun-informe-wrapper.new-vibrant-design .impact-icon-wrapper svg path {
+.solar-comun-informe-wrapper.new-vibrant-design .item-co2 .impact-icon-wrapper svg g,
+.solar-comun-informe-wrapper.new-vibrant-design .item-co2 .impact-icon-wrapper svg path {
     stroke: var(--brand-mint) !important;
 }
 
-.solar-comun-informe-wrapper.new-vibrant-design .value-co2,
-.solar-comun-informe-wrapper.new-vibrant-design .value-trees,
-.solar-comun-informe-wrapper.new-vibrant-design .value-energy,
-.solar-comun-informe-wrapper.new-vibrant-design .value-diesel {
+.solar-comun-informe-wrapper.new-vibrant-design .item-trees .impact-icon-wrapper svg circle {
+    fill: rgba(124,179,66,0.18) !important;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .item-trees .impact-icon-wrapper svg g,
+.solar-comun-informe-wrapper.new-vibrant-design .item-trees .impact-icon-wrapper svg path {
+    stroke: #2B7A2F !important;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .item-energy .impact-icon-wrapper svg circle {
+    fill: rgba(255,183,77,0.2) !important;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .item-energy .impact-icon-wrapper svg g,
+.solar-comun-informe-wrapper.new-vibrant-design .item-energy .impact-icon-wrapper svg path {
+    stroke: #F18A1D !important;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .item-diesel .impact-icon-wrapper svg circle {
+    fill: rgba(100,181,246,0.18) !important;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .item-diesel .impact-icon-wrapper svg g,
+.solar-comun-informe-wrapper.new-vibrant-design .item-diesel .impact-icon-wrapper svg path {
+    stroke: #1257A6 !important;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .value-co2 {
     color: var(--brand-mint) !important;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .value-trees {
+    color: #2E7D32 !important;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .value-energy {
+    color: #F57C00 !important;
+}
+
+.solar-comun-informe-wrapper.new-vibrant-design .value-diesel {
+    color: #1565C0 !important;
 }
 
 .solar-comun-informe-wrapper.new-vibrant-design .cta-title,

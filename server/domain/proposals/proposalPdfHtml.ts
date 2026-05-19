@@ -235,8 +235,6 @@ function buildBrandStyle(colors: BrandColors): string {
   const cardSurfaceMuted = cardSurfaceText === "#FFFFFF"
     ? rgba("#FFFFFF", 0.62)
     : mixHexColors(colors.text, "#FFFFFF", 0.46);
-  const participationOverlayText = getReadableTextColor(colors.primary, colors.text);
-
   return [
     `--text-main:${colors.text}`,
     `--text-light:${textLight}`,
@@ -255,12 +253,6 @@ function buildBrandStyle(colors: BrandColors): string {
     `--participation-card-bg-accent:${cardSurfaceAccent}`,
     `--participation-card-text:${cardSurfaceText}`,
     `--participation-card-muted:${cardSurfaceMuted}`,
-    `--participation-red-bg:${rgba(colors.primary, 0.61)}`,
-    `--participation-red-bg-soft:${rgba(colors.primary, 0.34)}`,
-    `--participation-red-bg-deep:${rgba(colors.primary, 0.18)}`,
-    `--participation-red-border:${rgba(colors.primary, 0.48)}`,
-    `--participation-red-text:${participationOverlayText}`,
-    `--participation-red-muted:${participationOverlayText === "#FFFFFF" ? rgba("#FFFFFF", 0.68) : rgba(colors.text, 0.72)}`,
     `--brand-primary-soft:${rgba(colors.primary, 0.1)}`,
     `--brand-primary-border:${rgba(colors.primary, 0.18)}`,
     `--brand-secondary-soft:${rgba(colors.secondary, 0.14)}`,
