@@ -334,7 +334,14 @@ describe("buildProposalPdfHtml", () => {
       ],
     });
 
-    expect(html).toContain(`style="--text-main:#222222;--brand-primary:#111111;--brand-blue:#3366FF;--brand-mint:#12AA99;--bg-page:#F1F7F4;--bg-card:#FAFCFF;`);
+    expect(html).toContain(`style="--text-main:#222222;`);
+    expect(html).toContain(`--brand-primary:#111111;`);
+    expect(html).toContain(`--brand-blue:#3366FF;`);
+    expect(html).toContain(`--brand-mint:#12AA99;`);
+    expect(html).toContain(`--bg-page:#F1F7F4;`);
+    expect(html).toContain(`--bg-card:#FAFCFF;`);
+    expect(html).toContain(`--brand-accent-soft:rgba(18,170,153,0.14);`);
+    expect(html).toContain(`--brand-secondary-border:rgba(51,102,255,0.3);`);
     expect(html).toContain(`<img class="company-logo" src="data:image/png;base64,ZmFrZS1sb2dv" alt="Marca Solar" />`);
     expect(html).toContain(`<span class="company-name">Marca Solar</span>`);
     expect(html).toContain("L'energia, <em>a les teues mans</em> sense tocar la teua teulada.");

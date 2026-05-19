@@ -622,7 +622,10 @@ async function buildFinalProposalPdfBuffer(params: {
     proposals: localizedProposalSummaries as any,
   });
 
-  return params.deps.services.pdf.convertHtmlToPdf({ html });
+  return params.deps.services.pdf.convertHtmlToPdf({
+    html,
+    waitForExpression: "window.chartReady === true",
+  });
 }
 
 export async function confirmStudyUseCase(

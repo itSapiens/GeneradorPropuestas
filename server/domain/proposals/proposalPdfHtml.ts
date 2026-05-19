@@ -111,6 +111,64 @@ function normalizeHexColor(value: unknown, fallback: string): string {
   return /^#[0-9A-F]{6}$/i.test(color) ? color : fallback;
 }
 
+function hexToRgb(color: string): { r: number; g: number; b: number } {
+  const normalized = normalizeHexColor(color, "#000000").slice(1);
+
+  return {
+    b: Number.parseInt(normalized.slice(4, 6), 16),
+    g: Number.parseInt(normalized.slice(2, 4), 16),
+    r: Number.parseInt(normalized.slice(0, 2), 16),
+  };
+}
+
+function colorToRgbTriplet(color: string): string {
+  const rgb = hexToRgb(color);
+  return `${rgb.r},${rgb.g},${rgb.b}`;
+}
+
+function rgba(color: string, alpha: number): string {
+  return `rgba(${colorToRgbTriplet(color)},${alpha})`;
+}
+
+function mixHexColors(color: string, target: string, targetWeight: number): string {
+  const sourceRgb = hexToRgb(color);
+  const targetRgb = hexToRgb(target);
+  const weight = Math.min(Math.max(targetWeight, 0), 1);
+  const channel = (source: number, targetValue: number) =>
+    Math.round(source * (1 - weight) + targetValue * weight)
+      .toString(16)
+      .padStart(2, "0");
+
+  return `#${channel(sourceRgb.r, targetRgb.r)}${channel(sourceRgb.g, targetRgb.g)}${channel(sourceRgb.b, targetRgb.b)}`;
+}
+
+function getRelativeLuminance(color: string): number {
+  const { r, g, b } = hexToRgb(color);
+  const channels = [r, g, b].map((channel) => {
+    const normalized = channel / 255;
+    return normalized <= 0.03928
+      ? normalized / 12.92
+      : Math.pow((normalized + 0.055) / 1.055, 2.4);
+  });
+
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function getReadableTextColor(background: string, darkText: string): string {
+  return getRelativeLuminance(background) > 0.58 ? darkText : "#FFFFFF";
+}
+
+function buildCardSurfaceColor(colors: BrandColors): string {
+  const pageLuminance = getRelativeLuminance(colors.pageBackground);
+  const cardLuminance = getRelativeLuminance(colors.cardBackground);
+
+  if (cardLuminance < 0.28) {
+    return mixHexColors(colors.pageBackground, "#FFFFFF", pageLuminance < 0.28 ? 0.08 : 0.02);
+  }
+
+  return mixHexColors(colors.cardBackground, "#FFFFFF", 0.02);
+}
+
 function normalizePhraseToken(value: string): string {
   return value
     .replace(/<[^>]*>/g, " ")
@@ -166,13 +224,54 @@ function buildBrandColors(proposal?: ProposalPdfSummary): BrandColors {
 }
 
 function buildBrandStyle(colors: BrandColors): string {
+  const textLight = mixHexColors(colors.text, "#FFFFFF", 0.34);
+  const textMuted = mixHexColors(colors.text, "#FFFFFF", 0.56);
+  const gradientMid = mixHexColors(colors.accent, colors.secondary, 0.5);
+  const ctaText = getReadableTextColor(gradientMid, colors.text);
+  const cardSurface = buildCardSurfaceColor(colors);
+  const cardSurfaceAlt = mixHexColors(cardSurface, colors.primary, 0.1);
+  const cardSurfaceAccent = mixHexColors(cardSurface, colors.accent, 0.08);
+  const cardSurfaceText = getReadableTextColor(cardSurface, colors.text);
+  const cardSurfaceMuted = cardSurfaceText === "#FFFFFF"
+    ? rgba("#FFFFFF", 0.62)
+    : mixHexColors(colors.text, "#FFFFFF", 0.46);
+  const participationOverlayText = getReadableTextColor(colors.primary, colors.text);
+
   return [
     `--text-main:${colors.text}`,
+    `--text-light:${textLight}`,
+    `--text-muted:${textMuted}`,
+    `--text-main-rgb:${colorToRgbTriplet(colors.text)}`,
     `--brand-primary:${colors.primary}`,
+    `--brand-primary-rgb:${colorToRgbTriplet(colors.primary)}`,
     `--brand-blue:${colors.secondary}`,
+    `--brand-blue-rgb:${colorToRgbTriplet(colors.secondary)}`,
     `--brand-mint:${colors.accent}`,
+    `--brand-mint-rgb:${colorToRgbTriplet(colors.accent)}`,
     `--bg-page:${colors.pageBackground}`,
     `--bg-card:${colors.cardBackground}`,
+    `--participation-card-bg:${cardSurface}`,
+    `--participation-card-bg-alt:${cardSurfaceAlt}`,
+    `--participation-card-bg-accent:${cardSurfaceAccent}`,
+    `--participation-card-text:${cardSurfaceText}`,
+    `--participation-card-muted:${cardSurfaceMuted}`,
+    `--participation-red-bg:${rgba(colors.primary, 0.61)}`,
+    `--participation-red-bg-soft:${rgba(colors.primary, 0.34)}`,
+    `--participation-red-bg-deep:${rgba(colors.primary, 0.18)}`,
+    `--participation-red-border:${rgba(colors.primary, 0.48)}`,
+    `--participation-red-text:${participationOverlayText}`,
+    `--participation-red-muted:${participationOverlayText === "#FFFFFF" ? rgba("#FFFFFF", 0.68) : rgba(colors.text, 0.72)}`,
+    `--brand-primary-soft:${rgba(colors.primary, 0.1)}`,
+    `--brand-primary-border:${rgba(colors.primary, 0.18)}`,
+    `--brand-secondary-soft:${rgba(colors.secondary, 0.14)}`,
+    `--brand-secondary-border:${rgba(colors.secondary, 0.3)}`,
+    `--brand-accent-soft:${rgba(colors.accent, 0.14)}`,
+    `--brand-accent-border:${rgba(colors.accent, 0.3)}`,
+    `--brand-neutral-border:${rgba(colors.text, 0.12)}`,
+    `--brand-cta-text:${ctaText}`,
+    `--brand-cta-button-text:${colors.primary}`,
+    `--card-gradient:linear-gradient(180deg, ${rgba(colors.cardBackground, 0.98)}, ${rgba(colors.accent, 0.08)})`,
+    `--grad-soft:linear-gradient(135deg, ${rgba(colors.accent, 0.14)} 0%, ${rgba(colors.secondary, 0.14)} 100%)`,
     `--grad-vibrant:linear-gradient(135deg, ${colors.accent} 0%, ${colors.secondary} 100%)`,
   ].join(";");
 }
@@ -915,8 +1014,8 @@ function buildStabilityGraphHtml(params: {
     .map((tick) => {
       const y = chartPointY(tick, chart, scale.min, scale.max);
       return `<g>
-          <line x1="${chart.left}" x2="${chart.right}" y1="${formatSvgNumber(y)}" y2="${formatSvgNumber(y)}" stroke="#E8ECF5" stroke-width="1" />
-          <text x="${chart.left - 12}" y="${formatSvgNumber(y + 3)}" text-anchor="end" font-size="9" fill="#8790B2" font-family="Cabin, Arial, sans-serif" font-weight="600">${formatEnergyPrice(tick, params.language)}</text>
+          <line x1="${chart.left}" x2="${chart.right}" y1="${formatSvgNumber(y)}" y2="${formatSvgNumber(y)}" stroke="var(--brand-neutral-border)" stroke-width="1" />
+          <text x="${chart.left - 12}" y="${formatSvgNumber(y + 3)}" text-anchor="end" font-size="9" fill="var(--text-muted)" font-family="Cabin, Arial, sans-serif" font-weight="600">${formatEnergyPrice(tick, params.language)}</text>
         </g>`;
     })
     .join("");
@@ -930,7 +1029,7 @@ function buildStabilityGraphHtml(params: {
     .map((year) => {
       const x = chart.left + ((chart.right - chart.left) / PROJECTION_YEARS) * year;
       return `<g>
-          <line x1="${formatSvgNumber(x)}" x2="${formatSvgNumber(x)}" y1="${chart.top}" y2="${chart.bottom}" stroke="#DCE3F1" stroke-width="1" stroke-dasharray="3 5" />
+          <line x1="${formatSvgNumber(x)}" x2="${formatSvgNumber(x)}" y1="${chart.top}" y2="${chart.bottom}" stroke="var(--brand-neutral-border)" stroke-width="1" stroke-dasharray="3 5" />
         </g>`;
     })
     .join("");
@@ -953,7 +1052,7 @@ function buildStabilityGraphHtml(params: {
         const x = chart.left + ((chart.right - chart.left) / PROJECTION_YEARS) * year;
         const y = chartPointY(value, chart, scale.min, scale.max);
 
-        return `<circle cx="${formatSvgNumber(x)}" cy="${formatSvgNumber(y)}" r="3.7" fill="${item.color}" stroke="#FFFFFF" stroke-width="2" />`;
+        return `<circle cx="${formatSvgNumber(x)}" cy="${formatSvgNumber(y)}" r="3.7" fill="${item.color}" stroke="var(--bg-card)" stroke-width="2" />`;
       }),
     )
     .join("");
@@ -977,7 +1076,7 @@ function buildStabilityGraphHtml(params: {
         );
 
         return `<g>
-          <rect x="${formatSvgNumber(boxX)}" y="${formatSvgNumber(boxY)}" width="${boxWidth}" height="${boxHeight}" rx="6" fill="#FFFFFF" fill-opacity="0.94" stroke="${item.color}" stroke-opacity="0.36" />
+          <rect x="${formatSvgNumber(boxX)}" y="${formatSvgNumber(boxY)}" width="${boxWidth}" height="${boxHeight}" rx="6" fill="var(--bg-card)" fill-opacity="0.94" stroke="${item.color}" stroke-opacity="0.36" />
           <text x="${formatSvgNumber(boxX + boxWidth / 2)}" y="${formatSvgNumber(boxY + 12)}" text-anchor="middle" font-size="8.5" fill="${item.color}" font-family="Cabin, Arial, sans-serif" font-weight="800">${formatEnergyPrice(value, params.language)}</text>
         </g>`;
       }),
@@ -992,11 +1091,11 @@ function buildStabilityGraphHtml(params: {
 
   return `<div class="proposal-stability-graph" style="margin:58px 0 30px;">
                   <div class="eyebrow graph-section-eyebrow">${escapeHtml(params.texts.stabilityTitle)}</div>
-                  <div class="graph-block condensed-graph p2-graph-block clean-stability-chart" style="padding:18px 24px 20px;background:var(--bg-card);border:1px solid #E2E8F5;border-radius:10px;box-shadow:none;overflow:hidden;">
+                  <div class="graph-block condensed-graph p2-graph-block clean-stability-chart" style="padding:18px 24px 20px;background:var(--bg-card);border:1px solid var(--brand-neutral-border);border-radius:10px;box-shadow:none;overflow:hidden;">
                     <div style="max-width:720px;margin:0 auto;">
                       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px;">
-                        <div style="font-size:10px;line-height:1.35;color:#5D668F;font-weight:600;max-width:330px;">${escapeHtml(getProjectionFootnote(params.language))}</div>
-                        <div style="display:flex;gap:12px;align-items:center;color:#7A81A8;font-size:9px;font-weight:700;white-space:nowrap;">${legendItems}</div>
+                        <div style="font-size:10px;line-height:1.35;color:var(--text-light);font-weight:600;max-width:330px;">${escapeHtml(getProjectionFootnote(params.language))}</div>
+                        <div style="display:flex;gap:12px;align-items:center;color:var(--text-muted);font-size:9px;font-weight:700;white-space:nowrap;">${legendItems}</div>
                       </div>
                       <svg viewBox="0 0 748 230" role="img" aria-label="${escapeHtml(params.texts.stabilityTitle)}" style="display:block;width:100%;height:230px;">
                         <defs>
@@ -1010,10 +1109,10 @@ function buildStabilityGraphHtml(params: {
                             )
                             .join("")}
                         </defs>
-                        <rect x="0" y="0" width="748" height="230" rx="8" fill="#FFFFFF" />
+                        <rect x="0" y="0" width="748" height="230" rx="8" fill="var(--bg-card)" />
                         ${gridLines}
                         ${milestoneGuides}
-                        <line x1="${chart.left}" x2="${chart.right}" y1="${chart.bottom}" y2="${chart.bottom}" stroke="#DCE3F1" stroke-width="1" />
+                        <line x1="${chart.left}" x2="${chart.right}" y1="${chart.bottom}" y2="${chart.bottom}" stroke="var(--brand-neutral-border)" stroke-width="1" />
                         ${seriesAreas}
                         ${seriesLines}
                         ${milestoneDots}
@@ -1021,7 +1120,7 @@ function buildStabilityGraphHtml(params: {
                         ${milestoneYears
                           .map((year) => {
                             const x = chart.left + ((chart.right - chart.left) / PROJECTION_YEARS) * year;
-                            return `<text x="${formatSvgNumber(x)}" y="214" text-anchor="middle" font-size="9.5" fill="#7A81A8" font-family="Cabin, Arial, sans-serif" font-weight="800">${yearLabels[year]}</text>`;
+                            return `<text x="${formatSvgNumber(x)}" y="214" text-anchor="middle" font-size="9.5" fill="var(--text-muted)" font-family="Cabin, Arial, sans-serif" font-weight="800">${yearLabels[year]}</text>`;
                           })
                           .join("")}
                       </svg>
