@@ -119,8 +119,10 @@ export interface CalculationResult {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Precio medio €/kWh usado cuando no se puede extraer de la factura */
-// 0.18 → 0.149 (v1.5): aligned with the PVPC reference price so the floor,
-// the no-price default and the disclosed fallback tell one coherent story.
+// 0.18 → 0.149 (v1.5). NOTE this is a PRE-TAX base: the engine adds the
+// electricity tax and VAT on top (≈0.1895 all-in). It shares the numeral with
+// the deployed PVPC fallback price, which is 0.149 TAXES INCLUDED — same
+// number, different tax base, deliberately.
 // Mirrored in the Python port (calc/constants.py) — parity vectors regenerate
 // from THIS engine, so both must move together.
 const DEFAULT_WEIGHTED_ENERGY_PRICE_KWH = 0.149;
