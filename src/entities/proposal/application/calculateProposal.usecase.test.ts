@@ -57,7 +57,7 @@ describe("calculateEnergyStudy", () => {
   });
 
   describe("weightedEnergyPriceKwh", () => {
-    it("keeps the reference savings price when period unit prices are below it", () => {
+    it("uses period unit prices when they sit above the reference floor (0.149)", () => {
       const result = calculateEnergyStudy({
         ...BASE_INPUT,
         invoiceConsumptionKwh: 400,
@@ -74,17 +74,19 @@ describe("calculateEnergyStudy", () => {
         },
       });
 
-      expect(result.weightedEnergyPriceKwh).toBe(0.18);
+      // (0.18×100 + 0.17×100 + 0.16×200) / 400 — above the 0.149 floor, used as-is.
+      expect(result.weightedEnergyPriceKwh).toBe(0.1675);
     });
 
-    it("keeps the reference savings price when the variable energy average is below it", () => {
+    it("uses the variable energy average when it sits above the reference floor", () => {
       const result = calculateEnergyStudy({
         ...BASE_INPUT,
         invoiceConsumptionKwh: 400,
         invoiceVariableEnergyAmountEur: 64,
       });
 
-      expect(result.weightedEnergyPriceKwh).toBe(0.18);
+      // 64 / 400 = 0.16 — above the 0.149 floor, used as-is.
+      expect(result.weightedEnergyPriceKwh).toBe(0.16);
     });
 
     it("does not let PVPC toll-only period prices reduce the reference savings price", () => {
@@ -104,7 +106,7 @@ describe("calculateEnergyStudy", () => {
         },
       });
 
-      expect(result.weightedEnergyPriceKwh).toBe(0.18);
+      expect(result.weightedEnergyPriceKwh).toBe(0.149);
     });
 
     it("uses invoice prices above the reference savings price", () => {

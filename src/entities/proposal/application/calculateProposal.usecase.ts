@@ -119,7 +119,11 @@ export interface CalculationResult {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Precio medio €/kWh usado cuando no se puede extraer de la factura */
-const DEFAULT_WEIGHTED_ENERGY_PRICE_KWH = 0.18;
+// 0.18 → 0.149 (v1.5): aligned with the PVPC reference price so the floor,
+// the no-price default and the disclosed fallback tell one coherent story.
+// Mirrored in the Python port (calc/constants.py) — parity vectors regenerate
+// from THIS engine, so both must move together.
+const DEFAULT_WEIGHTED_ENERGY_PRICE_KWH = 0.149;
 
 /** Coste de mantenimiento anual por kWp instalado (€/kWp/año) — modalidad inversión.
  *  0 = incluido en el precio de la instalación (no se descuenta del ahorro del cliente). */
